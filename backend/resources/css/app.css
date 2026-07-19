@@ -1,0 +1,27 @@
+@import 'tailwindcss';
+@import 'primeicons/primeicons.css';
+
+@theme {
+  --color-pdam-blue-50: #eff6ff;
+  --color-pdam-blue-100: #dbeafe;
+  --color-pdam-blue-200: #bfdbfe;
+  --color-pdam-blue-300: #93c5fd;
+  --color-pdam-blue-400: #60a5fa;
+  --color-pdam-blue-500: #3b82f6;
+  --color-pdam-blue-600: #2563eb;
+  --color-pdam-blue-700: #1d4ed8;
+  --color-pdam-blue-800: #1e40af;
+  --color-pdam-blue-900: #1e3a8a;
+}
+
+body {
+  margin: 0;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  @apply bg-gray-50 text-gray-900;
+}

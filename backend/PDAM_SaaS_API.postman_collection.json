@@ -1,0 +1,294 @@
+{
+  "info": {
+    "name": "PDAM SaaS API v1",
+    "description": "Platform manajemen PDAM multi-tenant. Web/platform memakai CSRF + cookie session; mobile/API device mengirim device_name saat login dan memakai bearer Sanctum. Laravel route registry adalah sumber endpoint aktual; OpenAPI dan koleksi ini adalah referensi parsial yang harus divalidasi terhadap registry.\n\nBase URL: {{baseUrl}}/api/v1\n\nKredensial fixture lengkap: backend/SEED_DATA.md.", 
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "pdam-platform"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{"key": "token", "value": "{{authToken}}", "type": "string"}]
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://127.0.0.1:8000"},
+    {"key": "authToken", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "Auth - Web Session and Mobile Bearer",
+      "item": [
+        {"name": "Web - Bootstrap CSRF Cookie", "request": {"auth":{"type":"noauth"},"method":"GET","url":"{{baseUrl}}/sanctum/csrf-cookie","description":"Jalankan sebelum login web. Aktifkan cookie jar Postman dan gunakan hostname yang sama untuk seluruh flow."}},
+        {"name": "Web - Login Tenant Session", "request": {"auth":{"type":"noauth"},"method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"pdam_code\":\"pdam-canada\",\"email\":\"admin_tenant@gmail.com\",\"password\":\"12345678\"}"}, "url": "{{baseUrl}}/api/v1/login","description":"Tidak mengembalikan token. Gunakan cookie dari CSRF bootstrap dan response login."}},
+        {"name": "Web - Check Session", "request": {"auth":{"type":"noauth"},"method":"GET","url":"{{baseUrl}}/api/v1/session"}},
+        {"name": "Mobile - Login Tenant Bearer", "request": {"auth":{"type":"noauth"},"method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"pdam_code\":\"pdam-canada\",\"email\":\"meter_officer@gmail.com\",\"password\":\"12345678\",\"device_name\":\"postman-device\"}"}, "url": "{{baseUrl}}/api/v1/login","description":"Response berisi token karena device_name dikirim. Set nilai token ke variable authToken untuk request bearer."}},
+        {"name": "Web - Logout Session", "request": {"auth":{"type":"noauth"},"method": "POST", "url": "{{baseUrl}}/api/v1/logout"}},
+        {"name": "Mobile - Logout Bearer", "request": {"method": "POST", "url": "{{baseUrl}}/api/v1/logout"}},
+        {"name": "Mobile - Refresh Bearer Token", "request": {"method": "POST", "url": "{{baseUrl}}/api/v1/refresh-token"}}
+      ]
+    },
+    {
+      "name": "Auth - Platform Web Session",
+      "item": [
+        {"name":"Platform - Login Session","request":{"auth":{"type":"noauth"},"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"email\":\"superadmin@gmail.com\",\"password\":\"12345678\"}"},"url":"{{baseUrl}}/api/v1/platform/login","description":"Jalankan bootstrap CSRF pada folder Auth lebih dahulu. Login platform tidak mengembalikan bearer token."}},
+        {"name":"Platform - Logout","request":{"auth":{"type":"noauth"},"method":"POST","url":"{{baseUrl}}/api/v1/platform/logout"}}
+      ]
+    },
+    {
+      "name": "CORE - Address",
+      "item": [
+        {"name": "List Provinces", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/address/provinces"}},
+        {"name": "List Cities", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/address/cities?province_id=1"}},
+        {"name": "List Districts", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/address/districts?city_id=1"}},
+        {"name": "List Villages", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/address/villages?district_id=1"}},
+        {"name": "List Streets", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/address/streets"}},
+        {"name": "Add Street", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"village_id\":1,\"name\":\"Jl. Baru\"}"},"url":"{{baseUrl}}/api/v1/address/streets"}}
+      ]
+    },
+    {
+      "name": "CORE - Customers",
+      "item": [
+        {"name": "List Customers", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/customers"}},
+        {"name": "Show Customer", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/customers/1"}},
+        {"name": "Create Customer", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"full_name\":\"Budi\",\"zone_id\":1,\"tariff_category_id\":1}"},"url":"{{baseUrl}}/api/v1/customers"}},
+        {"name": "Update Customer", "request": {"method":"PUT","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"full_name\":\"Budi Update\"}"},"url":"{{baseUrl}}/api/v1/customers/1"}},
+        {"name": "Customer Status History", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/customers/1/status-history"}}
+      ]
+    },
+    {
+      "name": "CORE - Tariffs",
+      "item": [
+        {"name": "List Tariffs", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/tariffs"}},
+        {"name": "Show Tariff", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/tariffs/1"}},
+        {"name": "Create Tariff", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"code\":\"R1\",\"name\":\"Rumah Tangga A1\",\"group_type\":\"rumah_tangga\",\"abonemen\":5000,\"meter_maintenance_fee\":2500,\"admin_fee\":2000,\"minimum_usage_m3\":10,\"tiers\":[{\"tier_order\":1,\"min_usage\":0,\"max_usage\":10,\"price_per_m3\":1500}]}"},"url":"{{baseUrl}}/api/v1/tariffs"}},
+        {"name": "Update Tariff", "request": {"method":"PUT","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"Rumah Tangga A1 Updated\"}"},"url":"{{baseUrl}}/api/v1/tariffs/1"}}
+      ]
+    },
+    {
+      "name": "CORE - Billing",
+      "item": [
+        {"name": "List Bills", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/bills"}},
+        {"name": "Generate Bills", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"period\":\"2026-07\"}"},"url":"{{baseUrl}}/api/v1/bills/generate"}},
+        {"name": "Show Bill", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/bills/1"}}
+      ]
+    },
+    {
+      "name": "CORE - Payments",
+      "item": [
+        {"name": "Create Payment", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"type\":\"monthly_bill\",\"bill_id\":1,\"channel\":\"gateway\"}"},"url":"{{baseUrl}}/api/v1/payments"}},
+        {"name": "Cash Payment", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"payment_id\":1}"},"url":"{{baseUrl}}/api/v1/payments/cash"}},
+        {"name": "Check Status", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/payments/check/ORD-xxx"}},
+        {"name": "Payment History (Mobile)", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/payments/history"}},
+        {"name": "Download Receipt", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/payments/1/receipt"}}
+      ]
+    },
+    {
+      "name": "CORE - Zones",
+      "item": [
+        {"name": "List Zones", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/zones"}},
+        {"name": "Show Zone", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/zones/1"}},
+        {"name": "Zone Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/zones/1/dashboard"}}
+      ]
+    },
+    {
+      "name": "SRV - Prospects",
+      "item": [
+        {"name": "List Prospects", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/prospects"}},
+        {"name": "Create Prospect", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"full_name\":\"Calon\",\"nik\":\"1234567890123456\",\"phone\":\"08123456789\",\"zone_id\":1,\"street_id\":1}"},"url":"{{baseUrl}}/api/v1/prospects"}}
+      ]
+    },
+    {
+      "name": "MTR - Meter Routes",
+      "item": [
+        {"name": "List Routes", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/meter-routes"}},
+        {"name": "Route Progress", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/meter-readings/route-progress"}}
+      ]
+    },
+    {
+      "name": "WH - Warehouse",
+      "item": [
+        {"name": "Stock Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/warehouse/dashboard"}},
+        {"name": "Stock Out", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"material_id\":1,\"warehouse_id\":1,\"quantity\":5,\"purpose\":\"repair\"}"},"url":"{{baseUrl}}/api/v1/warehouse/stock-out"}},
+        {"name": "Stock Adjustment", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"material_id\":1,\"warehouse_id\":1,\"actual_quantity\":100,\"reason\":\"Opname bulanan\"}"},"url":"{{baseUrl}}/api/v1/warehouse/adjustment"}}
+      ]
+    },
+    {
+      "name": "CRM - Complaints",
+      "item": [
+        {"name": "List Complaints", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/complaints"}},
+        {"name": "Create Complaint", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"category\":\"kebocoran\",\"subject\":\"Pipa bocor\",\"description\":\"Air keluar dari pipa depan rumah\"}"},"url":"{{baseUrl}}/api/v1/complaints"}},
+        {"name": "Complaint Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/complaints/dashboard"}},
+        {"name": "Show Complaint", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/complaints/1"}},
+        {"name": "Assign Complaint", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"assigned_to\":2}"},"url":"{{baseUrl}}/api/v1/complaints/1/assign"}},
+        {"name": "Resolve Complaint", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"resolution\":\"Pipa diperbaiki\"}"},"url":"{{baseUrl}}/api/v1/complaints/1/resolve"}}
+      ]
+    },
+    {
+      "name": "C360 - Customer 360",
+      "item": [
+        {"name": "Quick Search", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/customer-view/quick-search?q=Budi"}},
+        {"name": "Customer 360 View", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/customer-view/1"}},
+        {"name": "Customer Aggregation", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/customer-view/1/aggregation"}}
+      ]
+    },
+    {
+      "name": "FSM - Work Orders",
+      "item": [
+        {"name": "List WOs", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/work-orders"}},
+        {"name": "Create WO", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"type\":\"repair\",\"priority\":\"high\",\"address\":\"Jl. Damai No.5\"}"},"url":"{{baseUrl}}/api/v1/work-orders"}},
+        {"name": "Show WO", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/work-orders/1"}},
+        {"name": "Assign WO", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"assigned_to\":3}"},"url":"{{baseUrl}}/api/v1/work-orders/1/assign"}},
+        {"name": "Start WO", "request": {"method":"POST","url":"{{baseUrl}}/api/v1/work-orders/1/start"}},
+        {"name": "Complete WO", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"resolution\":\"Selesai diperbaiki\"}"},"url":"{{baseUrl}}/api/v1/work-orders/1/complete"}},
+        {"name": "Technician Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/work-orders/technician/dashboard"}}
+      ]
+    },
+    {
+      "name": "HR - Employee",
+      "item": [
+        {"name": "List Employees", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/employees"}},
+        {"name": "Create Employee", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"Ahmad\",\"join_date\":\"2024-01-15\",\"employment_status\":\"tetap\"}"},"url":"{{baseUrl}}/api/v1/employees"}},
+        {"name": "Show Employee", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/employees/1"}},
+        {"name": "Update Employee", "request": {"method":"PUT","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"Ahmad Updated\"}"},"url":"{{baseUrl}}/api/v1/employees/1"}},
+        {"name": "Employee Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/employees/dashboard/summary"}}
+      ]
+    },
+    {
+      "name": "HR - Attendance",
+      "item": [
+        {"name": "List Attendances", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/hr/attendances"}},
+        {"name": "Check In", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"date\":\"2026-07-05\",\"check_in\":\"08:00:00\",\"latitude\":-6.2,\"longitude\":106.8}"},"url":"{{baseUrl}}/api/v1/hr/attendances/check-in"}},
+        {"name": "Check Out", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"date\":\"2026-07-05\",\"check_out\":\"17:00:00\"}"},"url":"{{baseUrl}}/api/v1/hr/attendances/check-out"}}
+      ]
+    },
+    {
+      "name": "HR - Leave",
+      "item": [
+        {"name": "List Leaves", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/hr/leaves"}},
+        {"name": "Request Leave", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"leave_type_id\":1,\"start_date\":\"2026-07-10\",\"end_date\":\"2026-07-12\",\"reason\":\"Keperluan keluarga\"}"},"url":"{{baseUrl}}/api/v1/hr/leaves"}},
+        {"name": "Approve Leave", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"status\":\"approved\"}"},"url":"{{baseUrl}}/api/v1/hr/leaves/1/approve"}}
+      ]
+    },
+    {
+      "name": "HR - Payroll",
+      "item": [
+        {"name": "Calculate Payroll", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"employee_id\":1,\"period\":\"2026-07\"}"},"url":"{{baseUrl}}/api/v1/payroll/calculate"}},
+        {"name": "Batch Run", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"employee_ids\":[1,2,3],\"period\":\"2026-07\",\"post_journal\":true}"},"url":"{{baseUrl}}/api/v1/payroll/batch-run"}},
+        {"name": "Payroll Slip", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"employee_id\":1,\"period\":\"2026-07\"}"},"url":"{{baseUrl}}/api/v1/payroll/slip"}}
+      ]
+    },
+    {
+      "name": "HR - Contract & Termination",
+      "item": [
+        {"name": "List Contracts", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/hr/contracts"}},
+        {"name": "Create Contract", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"employee_id\":1,\"contract_number\":\"PKWT-2026-001\",\"start_date\":\"2026-01-01\",\"end_date\":\"2027-01-01\",\"type\":\"pkwt\"}"},"url":"{{baseUrl}}/api/v1/hr/contracts"}},
+        {"name": "Terminating Soon", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/hr/contracts/terminating-soon"}},
+        {"name": "List Terminations", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/hr/terminations"}},
+        {"name": "Create Termination", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"employee_id\":1,\"termination_date\":\"2026-12-31\",\"reason_type\":\"pensiun\"}"},"url":"{{baseUrl}}/api/v1/hr/terminations"}},
+        {"name": "Approve Termination", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"status\":\"approved\"}"},"url":"{{baseUrl}}/api/v1/hr/terminations/1/approve"}}
+      ]
+    },
+    {
+      "name": "FIN+ - Finance",
+      "item": [
+        {"name": "List Sales Invoices", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/fin/sales-invoices"}},
+        {"name": "Create Sales Invoice", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"invoice_date\":\"2026-07-01\",\"due_date\":\"2026-07-15\",\"items\":[{\"quantity\":1,\"unit_price\":500000}]}"},"url":"{{baseUrl}}/api/v1/fin/sales-invoices"}},
+        {"name": "AR Aging Report", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/fin/ar-aging-report"}},
+        {"name": "List Budgets", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/fin/budgets"}},
+        {"name": "List Bank Accounts", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/fin/bank-accounts"}},
+        {"name": "Create Bank Account", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"account_name\":\"Bank BNI\",\"account_number\":\"1234567890\",\"bank_name\":\"BNI\",\"code\":\"BNI01\"}"},"url":"{{baseUrl}}/api/v1/fin/bank-accounts"}},
+        {"name": "Bank Transfer", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"from_account_id\":1,\"to_account_id\":2,\"amount\":10000000,\"notes\":\"Transfer antar kas\"}"},"url":"{{baseUrl}}/api/v1/fin/bank/transfer"}},
+        {"name": "Reconcile Bank", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"statement_balance\":55000000,\"statement_date\":\"2026-07-01\"}"},"url":"{{baseUrl}}/api/v1/fin/bank/1/reconcile"}},
+        {"name": "Calculate Tax", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"type\":\"ppn\",\"amount\":10000000}"},"url":"{{baseUrl}}/api/v1/fin/tax/calculate"}},
+        {"name": "e-Faktur Export", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"month\":\"2026-07\"}"},"url":"{{baseUrl}}/api/v1/fin/tax/efaktur-export"}},
+        {"name": "Recurring Transactions", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/fin/recurring-transactions"}},
+        {"name": "Create Recurring", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"Sewa Bulanan\",\"frequency\":\"monthly\",\"amount\":5000000,\"journal_lines\":[{\"account_code\":\"5-205\",\"type\":\"DEBIT\",\"amount\":5000000},{\"account_code\":\"2-001\",\"type\":\"KREDIT\",\"amount\":5000000}],\"next_run_date\":\"2026-07-01\"}"},"url":"{{baseUrl}}/api/v1/fin/recurring-transactions"}}
+      ]
+    },
+    {
+      "name": "PROC - Vendor & Tender",
+      "item": [
+        {"name": "List Vendors", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/vendors"}},
+        {"name": "Create Vendor", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"PT Maju Jaya\",\"code\":\"V001\"}"},"url":"{{baseUrl}}/api/v1/vendors"}},
+        {"name": "Evaluate Vendor", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"quality_score\":4.5,\"delivery_score\":4,\"price_score\":3.5,\"compliance_score\":4}"},"url":"{{baseUrl}}/api/v1/vendors/1/evaluate"}},
+        {"name": "List Tenders", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/tenders"}},
+        {"name": "Create Tender", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"title\":\"Pengadaan Pipa PVC 2026\",\"budget_ceiling\":500000000,\"publish_date\":\"2026-07-01\",\"submission_deadline\":\"2026-07-15\"}"},"url":"{{baseUrl}}/api/v1/tenders"}},
+        {"name": "Submit Bid", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"vendor_id\":1,\"bid_price\":450000000}"},"url":"{{baseUrl}}/api/v1/tenders/1/bid"}},
+        {"name": "Evaluate Tender", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"evaluations\":[{\"bid_id\":1,\"technical_score\":85,\"price_score\":90}]}"},"url":"{{baseUrl}}/api/v1/tenders/1/evaluate"}},
+        {"name": "Award Tender", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"winner_vendor_id\":1,\"final_price\":450000000}"},"url":"{{baseUrl}}/api/v1/tenders/1/award"}}
+      ]
+    },
+    {
+      "name": "CHEM - Chemical",
+      "item": [
+        {"name": "List Chemicals", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/chem/chemicals"}},
+        {"name": "List Receipts", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/chem/receipts"}},
+        {"name": "Create Receipt", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"receipt_date\":\"2026-07-01\",\"batch_number\":\"B001\",\"items\":[{\"chemical_id\":1,\"quantity\":100,\"unit\":\"kg\"}]}"},"url":"{{baseUrl}}/api/v1/chem/receipts"}},
+        {"name": "QC Test", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"tests\":[{\"test_name\":\"Kemurnian\",\"result_value\":98.5,\"result_unit\":\"%\",\"verdict\":\"passed\"}]}"},"url":"{{baseUrl}}/api/v1/chem/receipts/1/qc"}},
+        {"name": "Record Usage", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"chemical_id\":1,\"usage_date\":\"2026-07-01\",\"quantity\":25,\"unit\":\"kg\",\"water_produced_m3\":5000}"},"url":"{{baseUrl}}/api/v1/chem/usage"}},
+        {"name": "Chem Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/chem/dashboard"}}
+      ]
+    },
+    {
+      "name": "GIS",
+      "item": [
+        {"name": "Customer GeoJSON", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/gis/customers"}},
+        {"name": "Status Summary", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/gis/customers/status-summary"}}
+      ]
+    },
+    {
+      "name": "DMS - Documents",
+      "item": [
+        {"name": "List Documents", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/documents"}},
+        {"name": "Upload Document", "request": {"method":"POST","body":{"mode":"formdata","formdata":[{"key":"file","type":"file"},{"key":"title","value":"Kontrak 2026","type":"text"},{"key":"category","value":"kontrak","type":"text"}]},"url":"{{baseUrl}}/api/v1/documents"}},
+        {"name": "Show Document", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/documents/1"}},
+        {"name": "Approve Document", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"comments\":\"Disetujui\"}"},"url":"{{baseUrl}}/api/v1/documents/1/approve"}}
+      ]
+    },
+    {
+      "name": "BI - Dashboards",
+      "item": [
+        {"name": "Director Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/dashboard/director"}},
+        {"name": "Finance Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/dashboard/finance"}},
+        {"name": "Operations Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/dashboard/operations"}},
+        {"name": "METX Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/dashboard/metx"}},
+        {"name": "Executive KPI", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/dashboard/executive-kpi"}}
+      ]
+    },
+    {
+      "name": "MNT - Maintenance",
+      "item": [
+        {"name": "List Schedules", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/maintenance/schedules"}},
+        {"name": "Create Schedule", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"code\":\"IPC-01\",\"name\":\"Perawatan Pompa IPA\",\"asset_type\":\"pompa\",\"frequency\":\"monthly\",\"next_due_date\":\"2026-07-15\"}"},"url":"{{baseUrl}}/api/v1/maintenance/schedules"}},
+        {"name": "List Records", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/maintenance/records"}},
+        {"name": "Create Record", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"schedule_id\":1,\"execution_date\":\"2026-07-15\",\"outcome\":\"completed\"}"},"url":"{{baseUrl}}/api/v1/maintenance/records"}}
+      ]
+    },
+    {
+      "name": "INT - Integration",
+      "item": [
+        {"name": "List Integrations", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/integrations"}},
+        {"name": "Create Integration", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"WA Gateway\",\"provider\":\"whatsapp\"}"},"url":"{{baseUrl}}/api/v1/integrations"}},
+        {"name": "Test Send", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"integration_id\":1,\"to\":\"6281234567890\",\"message\":\"Test\"}"},"url":"{{baseUrl}}/api/v1/integrations/test-send"}},
+        {"name": "List API Keys", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/api-keys"}},
+        {"name": "Create API Key", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"Mobile App Key\"}"},"url":"{{baseUrl}}/api/v1/api-keys"}},
+        {"name": "Revoke API Key", "request": {"method":"POST","url":"{{baseUrl}}/api/v1/api-keys/1/revoke"}}
+      ]
+    },
+    {
+      "name": "Other",
+      "item": [
+        {"name": "Export Data", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"format\":\"csv\",\"table\":\"customers\",\"title\":\"Laporan Pelanggan\"}"},"url":"{{baseUrl}}/api/v1/export"}},
+        {"name": "Inventory Valuation", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/inventory/valuation?material_id=1&warehouse_id=1&method=fifo"}},
+        {"name": "Inventory Balance Sheet", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/inventory/balance-sheet"}},
+        {"name": "Manual Journal", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"description\":\"Jurnal penyesuaian\",\"date\":\"2026-07-01\",\"lines\":[{\"account_code\":\"5-101\",\"type\":\"DEBIT\",\"amount\":1000000},{\"account_code\":\"2-001\",\"type\":\"KREDIT\",\"amount\":1000000}]}"},"url":"{{baseUrl}}/api/v1/journal/manual"}},
+        {"name": "IoT Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/iot/dashboard"}},
+        {"name": "Production Metrics", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/production/metrics?month=2026-07"}},
+        {"name": "DMA Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/distribution/dma-dashboard"}},
+        {"name": "NRW Dashboard", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/nrw/dashboard"}},
+        {"name": "Call Logs", "request": {"method":"GET","url":"{{baseUrl}}/api/v1/call-logs"}},
+        {"name": "Bill Reconciliation", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"period\":\"2026-07\"}"},"url":"{{baseUrl}}/api/v1/bill-reconciliation"}},
+        {"name": "Bill Audit", "request": {"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"bill_id\":1}"},"url":"{{baseUrl}}/api/v1/bill-audit"}}
+      ]
+    }
+  ]
+}

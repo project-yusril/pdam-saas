@@ -1,0 +1,64 @@
+database:
+  host: 127.0.0.1
+  port: 3306
+  user: root
+  password: ""
+  database: pdam_saas
+
+models:
+  base_path: models/
+
+  consumption:
+    enabled: true
+    name: consumption_xgboost
+    hyperparams:
+      n_estimators: 200
+      max_depth: 6
+      learning_rate: 0.1
+      subsample: 0.8
+      colsample_bytree: 0.8
+      random_state: 42
+    lookback_months: 24
+    validation_split: 0.2
+
+  anomaly:
+    enabled: true
+    name: anomaly_isolation_forest
+    hyperparams:
+      n_estimators: 150
+      contamination: 0.05
+      max_samples: 0.8
+      random_state: 42
+    autoencoder:
+      encoding_dim: 8
+      epochs: 100
+      batch_size: 32
+      learning_rate: 0.001
+
+  churn:
+    enabled: true
+    name: churn_xgboost
+    hyperparams:
+      n_estimators: 150
+      max_depth: 5
+      learning_rate: 0.08
+      scale_pos_weight: 3
+      random_state: 42
+    churn_window_days: 180
+
+  meter_failure:
+    enabled: true
+    name: meter_failure_xgboost
+    hyperparams:
+      n_estimators: 100
+      max_depth: 4
+      learning_rate: 0.1
+      random_state: 42
+
+training:
+  schedule: "0 2 * * 1"
+  retrain_days: 30
+
+api:
+  host: 0.0.0.0
+  port: 8100

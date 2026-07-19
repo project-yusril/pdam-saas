@@ -1,0 +1,49 @@
+services:
+  ml-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: pdam-ml-api
+    ports:
+      - "8100:8100"
+    environment:
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_USER=${DB_USER:-pdam}
+      - DB_PASSWORD=${DB_PASSWORD:-}
+      - DB_DATABASE=${DB_DATABASE:-pdam_saas}
+      - ML_SERVICE_TOKEN=${ML_SERVICE_TOKEN:?ML_SERVICE_TOKEN is required}
+    volumes:
+      - ../models:/app/models
+      - ../output:/app/output
+      - ../config.yaml:/app/config.yaml:ro
+    restart: unless-stopped
+    networks:
+      - pdam-network
+
+  ml-scheduler:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: pdam-ml-scheduler
+    entrypoint: ["python", "scripts/train_all.py", "--org", "${PDAM_ORG_ID:-1}"]
+    environment:
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_USER=${DB_USER:-pdam}
+      - DB_PASSWORD=${DB_PASSWORD:-}
+      - DB_DATABASE=${DB_DATABASE:-pdam_saas}
+      - ML_SERVICE_TOKEN=${ML_SERVICE_TOKEN:?ML_SERVICE_TOKEN is required}
+    volumes:
+      - ../models:/app/models
+      - ../output:/app/output
+      - ../config.yaml:/app/config.yaml:ro
+    profiles:
+      - scheduler
+    networks:
+      - pdam-network
+
+networks:
+  pdam-network:
+    external: true
+    name: pdam-network

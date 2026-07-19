@@ -1,0 +1,89 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "PDAM SaaS API",
+        "description": "API untuk platform manajemen PDAM multi-tenant.\\n\\n**Web/platform:** Sanctum stateful session. Panggil `/sanctum/csrf-cookie`, lalu login dengan cookie aktif. Login web tidak mengembalikan token.\\n\\n**Mobile/API device:** kirim `device_name` saat login tenant untuk menerima token Sanctum, lalu gunakan `Authorization: Bearer {token}`.\\n\\n**Tenant Context:** Semua endpoint tenant scope otomatis via middleware `SetTenant`\\n\\n**Response Standar:** `{ \"success\": bool, \"data\": ..., \"meta\": {...} }`\\n  - Error: `{ \"success\": false, \"error\": { \"code\": \"...\", \"message\": \"...\", \"details\": {...} } }`\\n\\nSetup, troubleshooting, dan kredensial demo: `backend/README.md` dan `backend/SEED_DATA.md`.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/api/v1",
+            "description": "API v1"
+        }
+    ],
+    "paths": {
+        "/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login tenant user",
+                "operationId": "67d6d0fdd54fba132e1b6f55ca254183",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "pdam_code",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "pdam_code": {
+                                        "type": "string",
+                                        "example": "pdam-canada"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "device_name": {
+                                        "description": "Opsional. Jika dikirim oleh mobile/API device, response menyertakan bearer token Sanctum.",
+                                        "type": "string",
+                                        "example": "android-emulator"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login sukses"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "Khusus mobile/API device. Token diterbitkan login tenant jika payload menyertakan device_name.",
+                "bearerFormat": "Sanctum",
+                "scheme": "bearer"
+            },
+            "sessionCookie": {
+                "type": "apiKey",
+                "description": "Khusus browser web/platform setelah bootstrap CSRF dan login stateful.",
+                "name": "pdam-saas-session",
+                "in": "cookie"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Login & manajemen sesi"
+        }
+    ]
+}

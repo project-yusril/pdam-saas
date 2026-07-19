@@ -1,0 +1,54 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    avoid_print: true
+    prefer_const_constructors: true
+    prefer_const_literals_to_create_immutables: true
+    prefer_final_fields: true
+    prefer_final_locals: true
+    prefer_single_quotes: true
+    always_specify_types: false
+    avoid_dynamic_calls: true
+    avoid_returning_null_for_void: true
+    cancel_subscriptions: true
+    close_sinks: true
+    directives_ordering: true
+    eol_at_end_of_file: true
+    flutter_style_todos: true
+    lines_longer_than_80_chars: false
+    prefer_relative_imports: true
+    sort_child_properties_last: true
+    unnecessary_breaks: true
+    unnecessary_const: true
+    unnecessary_null_aware_assignments: true
+    unnecessary_overrides: true
+    use_super_parameters: true
+    annotate_overrides: true
+    avoid_unnecessary_containers: true
+    sized_box_for_whitespace: true
+    prefer_interpolation_to_compose_strings: true
+    always_declare_return_types: true
+    avoid_shadowing_type_parameters: true
+    avoid_types_as_parameter_names: true
+    exhaustive_cases: true
+    no_duplicate_case_values: true
+    prefer_null_aware_operators: true
+    unnecessary_null_in_if_null_operators: true
+    unnecessary_string_escapes: true
+    use_enums: true
+    use_build_context_synchronously: false
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "build/**"
+  errors:
+    invalid_assignment: warning
+    missing_return: error
+    dead_code: info
+    avoid_print: warning
+  language:
+    strict-casts: true
+    strict-raw-types: true

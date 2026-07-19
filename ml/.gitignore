@@ -1,0 +1,8 @@
+*.pkl
+*.pickle
+*.joblib
+*.manifest.json
+models/
+output/
+__pycache__/
+*.py[cod]
