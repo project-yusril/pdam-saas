@@ -42,4 +42,20 @@ describe('web auth store', () => {
         expect(localStorage.getItem('auth_token')).toBeNull();
         expect(setItem).not.toHaveBeenCalled();
     });
+
+    it('captures active_modules from the login response', async () => {
+        api.post.mockResolvedValue({
+            data: {
+                user: { id: 7, name: 'Web User', is_tenant_admin: true },
+                organization: { id: 3, code: 'PDAM003', name: 'PDAM Test' },
+                active_modules: ['CORE', 'FIN+', 'WH', 'ZONE'],
+            },
+        });
+
+        const auth = useAuthStore();
+        await auth.login('PDAM003', 'web@example.test', 'password');
+
+        expect(auth.isTenantAdmin).toBe(true);
+        expect(auth.activeModules).toEqual(['CORE', 'FIN+', 'WH', 'ZONE']);
+    });
 });

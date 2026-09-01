@@ -28,11 +28,22 @@ const kpi = ref({ revenueYtd: 0, outstanding: 0, collectionRate: 0, overdueCount
 
 onMounted(async () => {
   try {
-    const [{ data: d }, { data: inv }] = await Promise.all([
+    const [{ data: d }, { data: inv }, { data: ar }] = await Promise.all([
       api.get('/dashboard/finance'),
       api.get('/inventory/balance-sheet'),
+      api.get('/fin/ar-aging-report'),
     ]);
-    kpi.value = { ...kpi.value, ...d.data, inventory: inv.data?.total_inventory_value || 0 };
+    const f = d.data || {};
+    const aging = ar.data || {};
+    kpi.value = {
+      ...kpi.value,
+      revenueYtd: f.revenue_ytd ?? 0,
+      outstanding: f.outstanding ?? 0,
+      collectionRate: f.collection_rate_percent ?? 0,
+      overdueCount: f.overdue_bills_count ?? 0,
+      ar: aging.total_outstanding ?? 0,
+      inventory: inv.data?.total_inventory_value || 0,
+    };
   } catch { /* Global API interceptor displays the failure. */ }
 });
 </script>

@@ -1,24 +1,24 @@
 <template>
-  <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <div class="flex items-center gap-3 mb-4">
+  <div class="bg-white rounded-l border border-gray-200 p-5">
+    <div class="flex items-start justify-between mb-3">
       <div
         v-if="icon"
-        class="w-10 h-10 rounded-lg flex items-center justify-center"
+        class="w-11 h-11 rounded-lg flex items-center justify-center shrink-0"
         :class="iconBg"
       >
-        <i :class="[icon, iconColor]" class="text-lg" />
+        <i :class="[icon, iconColor]" class="text-xl" />
       </div>
-      <div>
-        <div class="text-sm text-gray-500">{{ label }}</div>
-        <div class="text-2xl font-bold text-gray-800">{{ value }}</div>
-      </div>
-    </div>
-    <div v-if="trend !== undefined" class="flex items-center gap-1 text-sm">
-      <span :class="trend >= 0 ? 'text-green-600' : 'text-red-600'">
-        {{ trend >= 0 ? '+' : '' }}{{ trend }}%
+      <span v-if="trend !== undefined" class="flex items-center gap-1 text-xs">
+        <i
+          :class="trend >= 0 ? 'pi pi-arrow-up-right text-green-600' : 'pi pi-arrow-down-right text-red-600'"
+        />
+        <span :class="trend >= 0 ? 'text-green-600' : 'text-red-600'">
+          {{ trend >= 0 ? '+' : '' }}{{ trend }}%
+        </span>
       </span>
-      <span class="text-gray-400">vs periode lalu</span>
     </div>
+    <div class="text-2xl font-semibold text-vueheading">{{ value }}</div>
+    <div class="text-sm text-gray-400 mt-1">{{ label }}</div>
   </div>
 </template>
 

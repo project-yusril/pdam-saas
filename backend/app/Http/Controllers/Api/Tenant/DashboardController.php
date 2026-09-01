@@ -56,7 +56,7 @@ class DashboardController extends Controller
         $orgId = request()->user()->pdam_org_id;
         $now = now();
 
-        $revenueYtd = Bill::where('status', 'paid')->whereYear('period', $now->year)->sum('amount_due');
+        $revenueYtd = Bill::where('status', 'paid')->where('period', 'like', $now->year.'%')->sum('amount_due');
         $outstanding = Bill::whereIn('status', ['unpaid', 'overdue'])->sum('amount_due');
         $overdueCount = Bill::where('status', 'overdue')->count();
         $collectionsThisMonth = Bill::where('status', 'paid')->whereMonth('updated_at', $now->month)->whereYear('updated_at', $now->year)->sum('amount_due');

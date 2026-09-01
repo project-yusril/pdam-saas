@@ -109,6 +109,9 @@ class AuthController extends Controller
                 'code' => $org->code,
                 'name' => $org->name,
             ],
+            'active_modules' => $org->subscriptionModules()
+                ->where('status', 'active')
+                ->pluck('module_code'),
         ];
 
         if ($token) {
@@ -133,6 +136,8 @@ class AuthController extends Controller
             ]);
         }
 
+        $organization = $account->organization;
+
         return response()->json([
             'type' => 'tenant',
             'user' => [
@@ -142,7 +147,12 @@ class AuthController extends Controller
                 'is_tenant_admin' => $account->is_tenant_admin,
                 'roles' => $account->roles()->pluck('code'),
             ],
-            'organization' => $account->organization()->first(['id', 'code', 'name']),
+            'organization' => $organization?->only(['id', 'code', 'name']),
+            'active_modules' => $organization
+                ? $organization->subscriptionModules()
+                    ->where('status', 'active')
+                    ->pluck('module_code')
+                : [],
         ]);
     }
 

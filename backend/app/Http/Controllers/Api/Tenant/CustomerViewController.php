@@ -95,7 +95,7 @@ class CustomerViewController extends Controller
             'bill_stats' => [
                 'current_month' => $customer->bills()->where('period', now()->format('Y-m'))->sum('amount_due'),
                 'total_unpaid' => $customer->bills()->whereIn('status', ['unpaid', 'overdue'])->sum('amount_due'),
-                'total_paid_ytd' => $customer->bills()->where('status', 'paid')->whereYear('period', now()->year)->sum('amount_due'),
+                'total_paid_ytd' => $customer->bills()->where('status', 'paid')->where('period', 'like', now()->year.'%')->sum('amount_due'),
             ],
             'consumption' => [
                 'last_reading' => $customer->readings()->latest('reading_date')->first()?->reading_value ?? 0,

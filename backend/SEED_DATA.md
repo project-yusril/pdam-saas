@@ -44,7 +44,16 @@ Semua user demo memakai password: **`12345678`**
 
 Email user demo mengikuti pola **`{role_code}@gmail.com`**. Karena email unik **per tenant**, email yang
 sama dipakai di kedua PDAM; yang membedakan saat login adalah **kode PDAM**
-(`pdam-canada` / `pdam-brazil`). Tabel di bawah adalah daftar **lengkap** 35 role yang di-clone ke
+(`pdam-canada` / `pdam-brazil`).
+
+**Atribusi Admin PDAM per tenant:**
+
+| PDAM | Kode login | Admin PDAM (email) | Password |
+|------|-----------|--------------------|----------|
+| **PDAM Canada** | `pdam-canada` | `admin_tenant@gmail.com` | `12345678` |
+| **PDAM Brazil** | `pdam-brazil` | `admin_tenant@gmail.com` | `12345678` |
+
+Tabel di bawah adalah daftar **lengkap** 35 role yang di-clone ke
 **masing-masing** tenant (PDAM Canada & PDAM Brazil) oleh `RoleTemplateSeeder` + `TenantProvisioningService`.
 
 | # | Role Code | Nama Role | Email | Password | Berlaku di |

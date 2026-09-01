@@ -8,6 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
     const admin = ref(null);
     const isPlatform = ref(false);
     const initialized = ref(false);
+    const activeModules = ref([]);
 
     const isAuthenticated = computed(() => !!user.value || !!admin.value);
     const isTenantAdmin = computed(() => user.value?.is_tenant_admin ?? false);
@@ -19,6 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
         const { data } = await api.post('/login', { pdam_code, email, password });
         user.value = data.user;
         organization.value = data.organization;
+        activeModules.value = data.active_modules ?? [];
         admin.value = null;
         isPlatform.value = false;
         initialized.value = true;
@@ -31,6 +33,7 @@ export const useAuthStore = defineStore('auth', () => {
         admin.value = data.admin;
         user.value = null;
         organization.value = null;
+        activeModules.value = [];
         isPlatform.value = true;
         initialized.value = true;
     }
@@ -44,10 +47,12 @@ export const useAuthStore = defineStore('auth', () => {
             user.value = data.user ?? null;
             organization.value = data.organization ?? null;
             admin.value = data.admin ?? null;
+            activeModules.value = data.active_modules ?? [];
         } catch {
             user.value = null;
             organization.value = null;
             admin.value = null;
+            activeModules.value = [];
             isPlatform.value = false;
         } finally {
             initialized.value = true;
@@ -64,8 +69,9 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = null;
         organization.value = null;
         admin.value = null;
+        activeModules.value = [];
         isPlatform.value = false;
     }
 
-    return { user, organization, admin, isPlatform, initialized, isAuthenticated, isTenantAdmin, isSuperAdmin, initialize, login, platformLogin, logout };
+    return { user, organization, admin, isPlatform, initialized, activeModules, isAuthenticated, isTenantAdmin, isSuperAdmin, initialize, login, platformLogin, logout };
 });

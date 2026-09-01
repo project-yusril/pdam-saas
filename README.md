@@ -123,6 +123,14 @@ kode PDAM saat login, karena email unik per tenant):
 
 Semua user demo memakai password **`12345678`**. Email = **`{role_code}@gmail.com`**.
 
+Karena email unik **per tenant**, `admin_tenant@gmail.com` dipakai sebagai admin di **kedua** PDAM.
+Yang membedakan adalah **kode PDAM** saat login — sehingga atribusi admin per tenant adalah:
+
+| PDAM | Kode login | Admin PDAM (email) | Password |
+|------|-----------|--------------------|----------|
+| **PDAM Canada** | `pdam-canada` | `admin_tenant@gmail.com` | `12345678` |
+| **PDAM Brazil** | `pdam-brazil` | `admin_tenant@gmail.com` | `12345678` |
+
 | Field | PDAM Canada | PDAM Brazil |
 |-------|-------------|-------------|
 | `pdam_code` | `pdam-canada` | `pdam-brazil` |
@@ -205,8 +213,22 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 | Enterprise tenant | `/gis`, `/employees`, `/employee-self-service`, `/call-center`, `/tenders` | Tenant | UI modul enterprise; backend tetap menegakkan entitlement dan permission. |
 | Marketplace tenant | `/marketplace` | Tenant | Katalog/harga/dependency dari session tenant; purchase membuat order pending + URL Snap dan aktivasi menunggu settlement Midtrans terverifikasi. |
 | Dashboard role | `/dashboard/director`, `/dashboard/finance`, `/dashboard/technical`, `/dashboard/warehouse` | Tenant | Dashboard khusus role; kegagalan API ditampilkan melalui banner global. |
+| Laporan keuangan | `/finance/general-ledger`, `/finance/trial-balance`, `/finance/income-statement`, `/finance/balance-sheet`, `/finance/cash-flow` | Tenant | Buku Jurnal, Neraca Saldo, Laba Rugi, Neraca, Arus Kas; di-backend oleh `AccountingReportController` (`permission:core.report.view`). |
+| Halaman modul (generik) | `/modules/:code` (mis. `/modules/WH`, `/modules/METX`, `/modules/CHEM`) | Tenant | Halaman daftar generik per modul: menampilkan DataTable dari endpoint list asli modul, atau kartu KPI untuk endpoint dashboard (IoT/Produksi/DMA/NRW). |
 | Panel super admin | `/platform` | Super admin | Sidebar cerah + topbar. Kelola tenant, dashboard SaaS (MRR/ARR). |
 | Marketplace platform | `/platform/modules` | Super admin | Katalog dan pengelolaan commerce/manual platform tetap tersedia terpisah dari checkout tenant. |
+
+> **Sidebar dinamis (27 modul):** menu di `AppLayout.vue` disusun dari `active_modules` (entitlement
+> per tenant). Grup **Keuangan** muncul bila modul `FIN+` aktif (berisi sub-menu laporan). Grup lain
+> dikelompokkan per **tier** (Inti/Enterprise/Smart Utility) dan memuat sub-menu semua modul yang statusnya
+> `active` untuk tenant tersebut — untuk `admin_tenant` PDAM Canada (27 modul aktif) seluruh katalog tampil.
+> Modul non-aktif otomatis disembunyikan, sehingga sidebar selalu konsisten dengan entitlement tenant.
+
+> **Tampilan admin (setup UI):** shell tenant (`AppLayout.vue`) & super-admin (`PlatformLayout.vue`) memakai
+> design system ala **Vuexy** — font **Public Sans**, primary indigo **#7367F0**, sidebar putih dengan menu
+> ber-grup (item aktif = pill indigo), topbar search/theme/bell/avatar, dan kartu KPI dengan avatar ikon
+> tonal. Tetap dibangun dengan Tailwind CSS + PrimeVue (Tidak memakai Vuetify), sehingga seluruh halaman
+> yang sudah ada tetap berjalan.
 
 ## Architecture
 
@@ -214,7 +236,7 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 |-------|------|
 | Backend | Laravel 13, PHP 8.3, Sanctum |
 | Database | MySQL 8.0, Redis 7 |
-| Frontend | Vue 3, Vite, Tailwind CSS, PrimeVue |
+| Frontend | Vue 3, Vite, Tailwind CSS, PrimeVue (design system admin: **Public Sans + indigo `#7367F0` ala Vuexy**) |
 | Mobile | Flutter (Clean Architecture: auth, portal, meter reading, survey, OCR, offline sync) |
 | Payment | Midtrans Snap |
 | Queue | Redis |

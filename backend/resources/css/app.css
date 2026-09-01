@@ -1,27 +1,43 @@
+@import 'https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap';
 @import 'tailwindcss';
 @import 'primeicons/primeicons.css';
 
 @theme {
+  /* ### Vuexy palette (indigo primary) ### */
+  --color-primary-50: #ecebff;
+  --color-primary-100: #e7e5fa;
+  --color-primary-200: #ddd9fa;
+  --color-primary-300: #c8c1f5;
+  --color-primary-400: #aeabf2;
+  --color-primary-500: #958cec;
+  --color-primary-600: #7367f0;
+  --color-primary-700: #5f56d8;
+  --color-primary-800: #514bc4;
+  --color-primary-900: #423da0;
+
+  /* ### Vuexy neutral surface ### */
+  --color-vuelight: #f4f5fa;
+  --color-vuesurface: #fff;
+  --color-vuetext: #6e6b7b;
+  --color-vueheading: #5a5266;
+
+  /* ### Pdam blue (kept for legacy blue accents) ### */
   --color-pdam-blue-50: #eff6ff;
   --color-pdam-blue-100: #dbeafe;
-  --color-pdam-blue-200: #bfdbfe;
-  --color-pdam-blue-300: #93c5fd;
-  --color-pdam-blue-400: #60a5fa;
   --color-pdam-blue-500: #3b82f6;
   --color-pdam-blue-600: #2563eb;
   --color-pdam-blue-700: #1d4ed8;
-  --color-pdam-blue-800: #1e40af;
-  --color-pdam-blue-900: #1e3a8a;
 }
 
 body {
   margin: 0;
   font-family:
+    'Public Sans',
     'Inter',
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
     Roboto,
     sans-serif;
-  @apply bg-gray-50 text-gray-900;
+  @apply bg-vuelight text-vuetext;
 }

@@ -3,7 +3,7 @@
         <!-- Sidebar cerah -->
         <aside :class="['bg-white border-r border-slate-200 flex flex-col flex-shrink-0 transition-all duration-200', collapsed ? 'w-20' : 'w-64']">
             <div class="h-16 flex items-center gap-3 px-5 border-b border-slate-100">
-                <div class="w-9 h-9 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold flex-shrink-0">P</div>
+                <div class="w-9 h-9 rounded-lg bg-primary-600 text-white flex items-center justify-center font-bold flex-shrink-0">P</div>
                 <span v-if="!collapsed" class="text-base font-bold text-slate-800 truncate">PDAM SaaS</span>
             </div>
 
@@ -13,7 +13,7 @@
                     <div class="space-y-1">
                         <router-link v-for="item in group.items" :key="item.to" :to="item.to"
                             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
-                            :class="isActive(item) ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100'"
+                            :class="isActive(item) ? 'bg-primary-50 text-primary-600' : 'text-slate-600 hover:bg-slate-100'"
                             :title="collapsed ? item.label : ''">
                             <i :class="[item.icon, 'text-base flex-shrink-0']" />
                             <span v-if="!collapsed" class="truncate">{{ item.label }}</span>
@@ -32,7 +32,7 @@
                 </button>
 
                 <div class="flex items-center gap-3">
-                    <span class="hidden sm:inline-flex px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold">Panel Super Admin</span>
+                    <span class="hidden sm:inline-flex px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-semibold">Panel Super Admin</span>
                     <button class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 relative">
                         <i class="pi pi-bell text-lg" />
                     </button>
