@@ -20,4 +20,8 @@ class EmployeeContract extends Model
             'end_date' => 'date',
         ];
     }
+    public function employee(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(HrEmployee::class, 'employee_id');
+    }
 }

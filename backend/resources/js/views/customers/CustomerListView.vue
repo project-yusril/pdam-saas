@@ -189,7 +189,27 @@ async function loadOptions() {
         tariffs.value = t.data.data || [];
         streets.value = s.data.data || [];
         meterRoutes.value = r.data.data || [];
-    } catch { /* Global API interceptor displays the failure. */ }
+    } catch {
+        // Satu dropdown gagal → jangan kosongkan semuanya. Muat satu per satu.
+        const get = async (url) => {
+            try {
+                const { data } = await api.get(url);
+                return data.data || [];
+            } catch {
+                return [];
+            }
+        };
+        const [z, t, s, r] = await Promise.all([
+            get('/zones'),
+            get('/tariffs'),
+            get('/address/streets'),
+            get('/meter-routes'),
+        ]);
+        zones.value = z;
+        tariffs.value = t;
+        streets.value = s;
+        meterRoutes.value = r;
+    }
 }
 
 function openCreate() {
