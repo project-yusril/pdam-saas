@@ -105,6 +105,94 @@ seeder dan menghasilkan 167 tabel; lima migration terbaru hanya menambah constra
 `temuan2.md`; snapshot 8 Juli di `temuan.md` tetap arsip historis.
 
 
+## Demo Credentials (Akun & Role Demo)
+
+> **Development/demo only.** Kredensial di bawah **dilarang** untuk production. Daftar lengkap &
+> workflow reset non-destruktif hanya dipelihara di [`backend/SEED_DATA.md`](backend/SEED_DATA.md) dan
+> referensi role backend di [`backend/README.md`](backend/README.md).
+
+Ada **2 tenant demo** yang keduanya memakai **daftar role & kredensial yang sama** (perbedaannya hanya
+kode PDAM saat login, karena email unik per tenant):
+
+| Tenant | Kode login | Sumber data | Jumlah role |
+|--------|-----------|-------------|-------------|
+| PDAM Canada | `pdam-canada` | PDAM Pontianak | 35 role |
+| PDAM Brazil | `pdam-brazil` | PDAM Surabaya | 35 role |
+
+### Login tenant (web & mobile/API)
+
+Semua user demo memakai password **`12345678`**. Email = **`{role_code}@gmail.com`**.
+
+| Field | PDAM Canada | PDAM Brazil |
+|-------|-------------|-------------|
+| `pdam_code` | `pdam-canada` | `pdam-brazil` |
+
+Contoh body login sebagai Direktur di PDAM Canada (`POST /api/v1/login`):
+
+```json
+{
+  "pdam_code": "pdam-canada",
+  "email": "director@gmail.com",
+  "password": "12345678"
+}
+```
+
+Untuk mobile/API ditambah `"device_name": "<nama-perangkat>"`.
+
+### Daftar role lengkap (berlaku untuk kedua PDAM)
+
+| # | Role Code | Nama Role | Email | Password | Berlaku di |
+|---|-----------|-----------|-------|----------|-----------|
+| 1 | `super_admin` | Super-Admin (Platform Owner)* | `super_admin@gmail.com` | `12345678` | Canada & Brazil |
+| 2 | `admin_tenant` | Admin PDAM | `admin_tenant@gmail.com` | `12345678` | Canada & Brazil |
+| 3 | `compliance_officer` | Petugas Kepatuhan / Perlindungan Data | `compliance_officer@gmail.com` | `12345678` | Canada & Brazil |
+| 4 | `director` | Direktur | `director@gmail.com` | `12345678` | Canada & Brazil |
+| 5 | `finance_head` | Kabag Keuangan | `finance_head@gmail.com` | `12345678` | Canada & Brazil |
+| 6 | `finance_staff` | Staf Keuangan | `finance_staff@gmail.com` | `12345678` | Canada & Brazil |
+| 7 | `cashier` | Kasir / Loket Pembayaran | `cashier@gmail.com` | `12345678` | Canada & Brazil |
+| 8 | `customer_service` | Customer Service | `customer_service@gmail.com` | `12345678` | Canada & Brazil |
+| 9 | `customer` | Pelanggan | `customer@gmail.com` | `12345678` | Canada & Brazil |
+| 10 | `hublang_head` | Kepala Hublang | `hublang_head@gmail.com` | `12345678` | Canada & Brazil |
+| 11 | `survey_officer` | Petugas Survey | `survey_officer@gmail.com` | `12345678` | Canada & Brazil |
+| 12 | `survey_head` | Kepala Survey | `survey_head@gmail.com` | `12345678` | Canada & Brazil |
+| 13 | `technical_head` | Kepala Teknik | `technical_head@gmail.com` | `12345678` | Canada & Brazil |
+| 14 | `installer_technician` | Teknisi Pemasangan | `installer_technician@gmail.com` | `12345678` | Canada & Brazil |
+| 15 | `meter_office` | Koordinator Baca Meter (Kantor) | `meter_office@gmail.com` | `12345678` | Canada & Brazil |
+| 16 | `meter_officer` | Petugas Baca Meter | `meter_officer@gmail.com` | `12345678` | Canada & Brazil |
+| 17 | `warehouse_head` | Kepala Gudang | `warehouse_head@gmail.com` | `12345678` | Canada & Brazil |
+| 18 | `warehouse_staff` | Staf Gudang / Staf Wilayah | `warehouse_staff@gmail.com` | `12345678` | Canada & Brazil |
+| 19 | `procurement_staff` | Staf/Panitia Pengadaan | `procurement_staff@gmail.com` | `12345678` | Canada & Brazil |
+| 20 | `production_head` | Kepala Produksi / Operator IPA | `production_head@gmail.com` | `12345678` | Canada & Brazil |
+| 21 | `lab_analyst` | Analis Lab / QC | `lab_analyst@gmail.com` | `12345678` | Canada & Brazil |
+| 22 | `accountant` | Akuntan / Staf Akuntansi | `accountant@gmail.com` | `12345678` | Canada & Brazil |
+| 23 | `tax_officer` | Staf Pajak | `tax_officer@gmail.com` | `12345678` | Canada & Brazil |
+| 24 | `asset_manager` | Manajer Aset | `asset_manager@gmail.com` | `12345678` | Canada & Brazil |
+| 25 | `maintenance_technician` | Teknisi Pemeliharaan | `maintenance_technician@gmail.com` | `12345678` | Canada & Brazil |
+| 26 | `field_dispatcher` | Dispatcher Lapangan | `field_dispatcher@gmail.com` | `12345678` | Canada & Brazil |
+| 27 | `field_supervisor` | Supervisor Lapangan | `field_supervisor@gmail.com` | `12345678` | Canada & Brazil |
+| 28 | `field_technician` | Teknisi Lapangan (WO) | `field_technician@gmail.com` | `12345678` | Canada & Brazil |
+| 29 | `hr_staff` | Staf HR | `hr_staff@gmail.com` | `12345678` | Canada & Brazil |
+| 30 | `hr_head` | Kepala HR | `hr_head@gmail.com` | `12345678` | Canada & Brazil |
+| 31 | `gis_operator` | Operator GIS | `gis_operator@gmail.com` | `12345678` | Canada & Brazil |
+| 32 | `dms_officer` | Petugas Arsip/Dokumen | `dms_officer@gmail.com` | `12345678` | Canada & Brazil |
+| 33 | `call_agent` | Agent Call Center | `call_agent@gmail.com` | `12345678` | Canada & Brazil |
+| 34 | `call_supervisor` | Supervisor Call Center | `call_supervisor@gmail.com` | `12345678` | Canada & Brazil |
+| 35 | `data_analyst` | Analis Data / BI | `data_analyst@gmail.com` | `12345678` | Canada & Brazil |
+
+> \* Role `super_admin` ada sebagai template di tiap tenant untuk kelengkapan; Super-Admin platform
+> yang sesungguhnya adalah akun terpisah (lihat tabel berikut), bukan user tenant.
+
+### Super-Admin platform (lintas tenant)
+
+Login lewat `POST /api/v1/platform/login` **tanpa** kode PDAM.
+
+| Mode | Email | Password | Catatan |
+|------|-------|----------|---------|
+| Super Admin platform | `superadmin@gmail.com` | `12345678` | Pilih mode **Super Admin**; tanpa kode PDAM |
+
+**Catatan permission:** hanya `admin_tenant` yang otomatis mendapat seluruh permission (akses penuh
+dalam tenant-nya); role lain diisi bertahap per fase modul.
+
 
 ## Web Interface
 

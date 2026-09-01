@@ -237,7 +237,9 @@ Setiap role di bawah punya 1 user demo di **masing-masing** tenant (Canada &
 Brazil). Email sama, password `12345678`, dibedakan oleh `pdam_code`.
 
 > Tabel ini dipertahankan sebagai referensi role backend. Sumber operasional kredensial demo tetap
-> [`SEED_DATA.md`](SEED_DATA.md); perubahan pola akun harus diperbarui di sana terlebih dahulu.
+> [`SEED_DATA.md`](SEED_DATA.md); ringkasan lengkap per PDAM juga tersedia di
+> [`../README.md`](../README.md) (Section **Demo Credentials**). Perubahan pola akun harus diperbarui di
+> `SEED_DATA.md` terlebih dahulu.
 
 | #  | Role Code                 | Nama Role                              | Email Demo                       | Password   |
 | -- | ------------------------- | -------------------------------------- | -------------------------------- | ---------- |

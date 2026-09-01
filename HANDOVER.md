@@ -112,8 +112,9 @@ Fixture transaksi inti pelanggan, billing, pembayaran, jurnal, dan stok dasar di
 > "Canada/Brazil" hanya label anti-copyright; isi datanya Indonesia.
 
 **Contoh login tenant demo:** `pdam-canada` / `admin_tenant@gmail.com` / `12345678`.
-**Contoh platform demo:** `superadmin@gmail.com` / `12345678`, tanpa kode PDAM. Daftar lengkap hanya
-dipelihara di [`backend/SEED_DATA.md`](backend/SEED_DATA.md). `DatabaseSeeder` dilarang di production.
+**Contoh platform demo:** `superadmin@gmail.com` / `12345678`, tanpa kode PDAM. Daftar lengkap 35 role +
+email & password per PDAM (Canada & Brazil) dipelihara di [`README.md`](README.md#demo-credentials-akun--role-demo)
+dan [`backend/SEED_DATA.md`](backend/SEED_DATA.md). `DatabaseSeeder` dilarang di production.
 
 Login web memakai urutan CSRF cookie -> login -> session cookie; login mobile menambah `device_name`
 dan menerima bearer token. Diagnosis `localhost` versus `127.0.0.1`, 419, 401, dan data fixture kosong

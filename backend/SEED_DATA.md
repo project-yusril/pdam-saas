@@ -42,19 +42,55 @@ berstatus `locked` — persis skenario PDAM kecil yang belum berlangganan modul 
 
 Semua user demo memakai password: **`12345678`**
 
-| Peran | Email | Berlaku di |
-|-------|-------|-----------|
-| Admin Tenant | `admin_tenant@gmail.com` | kedua PDAM |
-| Direktur | `director@gmail.com` | kedua PDAM |
-| Kabag Keuangan | `finance_head@gmail.com` | kedua PDAM |
-| Kepala Gudang | `warehouse_head@gmail.com` | kedua PDAM |
-| Petugas Baca Meter | `meter_officer@gmail.com` | kedua PDAM |
-| Petugas Survey | `survey_officer@gmail.com` | kedua PDAM |
-| Petugas Kepatuhan | `compliance_officer@gmail.com` | kedua PDAM |
-| ...dan role lainnya | `{role_code}@gmail.com` | kedua PDAM |
+Email user demo mengikuti pola **`{role_code}@gmail.com`**. Karena email unik **per tenant**, email yang
+sama dipakai di kedua PDAM; yang membedakan saat login adalah **kode PDAM**
+(`pdam-canada` / `pdam-brazil`). Tabel di bawah adalah daftar **lengkap** 35 role yang di-clone ke
+**masing-masing** tenant (PDAM Canada & PDAM Brazil) oleh `RoleTemplateSeeder` + `TenantProvisioningService`.
 
-> Email sama dipakai di kedua tenant. Yang membedakan saat login adalah **kode PDAM**
-> (`pdam-canada` / `pdam-brazil`), karena email unik **per tenant**.
+| # | Role Code | Nama Role | Email | Password | Berlaku di |
+|---|-----------|-----------|-------|----------|-----------|
+| 1 | `super_admin` | Super-Admin (Platform Owner)* | `super_admin@gmail.com` | `12345678` | kedua PDAM |
+| 2 | `admin_tenant` | Admin PDAM | `admin_tenant@gmail.com` | `12345678` | kedua PDAM |
+| 3 | `compliance_officer` | Petugas Kepatuhan / Perlindungan Data | `compliance_officer@gmail.com` | `12345678` | kedua PDAM |
+| 4 | `director` | Direktur | `director@gmail.com` | `12345678` | kedua PDAM |
+| 5 | `finance_head` | Kabag Keuangan | `finance_head@gmail.com` | `12345678` | kedua PDAM |
+| 6 | `finance_staff` | Staf Keuangan | `finance_staff@gmail.com` | `12345678` | kedua PDAM |
+| 7 | `cashier` | Kasir / Loket Pembayaran | `cashier@gmail.com` | `12345678` | kedua PDAM |
+| 8 | `customer_service` | Customer Service | `customer_service@gmail.com` | `12345678` | kedua PDAM |
+| 9 | `customer` | Pelanggan | `customer@gmail.com` | `12345678` | kedua PDAM |
+| 10 | `hublang_head` | Kepala Hublang | `hublang_head@gmail.com` | `12345678` | kedua PDAM |
+| 11 | `survey_officer` | Petugas Survey | `survey_officer@gmail.com` | `12345678` | kedua PDAM |
+| 12 | `survey_head` | Kepala Survey | `survey_head@gmail.com` | `12345678` | kedua PDAM |
+| 13 | `technical_head` | Kepala Teknik | `technical_head@gmail.com` | `12345678` | kedua PDAM |
+| 14 | `installer_technician` | Teknisi Pemasangan | `installer_technician@gmail.com` | `12345678` | kedua PDAM |
+| 15 | `meter_office` | Koordinator Baca Meter (Kantor) | `meter_office@gmail.com` | `12345678` | kedua PDAM |
+| 16 | `meter_officer` | Petugas Baca Meter | `meter_officer@gmail.com` | `12345678` | kedua PDAM |
+| 17 | `warehouse_head` | Kepala Gudang | `warehouse_head@gmail.com` | `12345678` | kedua PDAM |
+| 18 | `warehouse_staff` | Staf Gudang / Staf Wilayah | `warehouse_staff@gmail.com` | `12345678` | kedua PDAM |
+| 19 | `procurement_staff` | Staf/Panitia Pengadaan | `procurement_staff@gmail.com` | `12345678` | kedua PDAM |
+| 20 | `production_head` | Kepala Produksi / Operator IPA | `production_head@gmail.com` | `12345678` | kedua PDAM |
+| 21 | `lab_analyst` | Analis Lab / QC | `lab_analyst@gmail.com` | `12345678` | kedua PDAM |
+| 22 | `accountant` | Akuntan / Staf Akuntansi | `accountant@gmail.com` | `12345678` | kedua PDAM |
+| 23 | `tax_officer` | Staf Pajak | `tax_officer@gmail.com` | `12345678` | kedua PDAM |
+| 24 | `asset_manager` | Manajer Aset | `asset_manager@gmail.com` | `12345678` | kedua PDAM |
+| 25 | `maintenance_technician` | Teknisi Pemeliharaan | `maintenance_technician@gmail.com` | `12345678` | kedua PDAM |
+| 26 | `field_dispatcher` | Dispatcher Lapangan | `field_dispatcher@gmail.com` | `12345678` | kedua PDAM |
+| 27 | `field_supervisor` | Supervisor Lapangan | `field_supervisor@gmail.com` | `12345678` | kedua PDAM |
+| 28 | `field_technician` | Teknisi Lapangan (WO) | `field_technician@gmail.com` | `12345678` | kedua PDAM |
+| 29 | `hr_staff` | Staf HR | `hr_staff@gmail.com` | `12345678` | kedua PDAM |
+| 30 | `hr_head` | Kepala HR | `hr_head@gmail.com` | `12345678` | kedua PDAM |
+| 31 | `gis_operator` | Operator GIS | `gis_operator@gmail.com` | `12345678` | kedua PDAM |
+| 32 | `dms_officer` | Petugas Arsip/Dokumen | `dms_officer@gmail.com` | `12345678` | kedua PDAM |
+| 33 | `call_agent` | Agent Call Center | `call_agent@gmail.com` | `12345678` | kedua PDAM |
+| 34 | `call_supervisor` | Supervisor Call Center | `call_supervisor@gmail.com` | `12345678` | kedua PDAM |
+| 35 | `data_analyst` | Analis Data / BI | `data_analyst@gmail.com` | `12345678` | kedua PDAM |
+
+> \* Role `super_admin` di-clone ke tiap tenant hanya untuk kelengkapan template; Super-Admin platform
+> yang sesungguhnya adalah akun terpisah di tabel `platform_admins` (lihat tabel di bawah), bukan user tenant.
+
+> **Catatan permission:** hanya `admin_tenant` yang otomatis mendapat **seluruh** permission (akses penuh
+> dalam tenant-nya). Role lain sudah dibuat tetapi pemetaan permission detail diisi bertahap per fase
+> modul (lihat `app/Support/RolePermissionPresets.php`).
 
 Super-admin platform (lintas tenant) di-seed oleh `PlatformAdminSeeder`:
 
@@ -63,6 +99,8 @@ Super-admin platform (lintas tenant) di-seed oleh `PlatformAdminSeeder`:
 | Super Admin platform | `superadmin@gmail.com` | `12345678` | Pilih mode **Super Admin**; tanpa kode PDAM |
 
 Role tenant `super_admin@gmail.com` berbeda dari akun platform di atas dan bukan identitas platform.
+Daftar role beserta contoh body login juga tersedia di [`backend/README.md`](README.md) Section 6 &
+[`../README.md`](../README.md).
 
 ---
 
