@@ -13,7 +13,7 @@ export const MODULE_CATALOG = [
     { code: 'AST', name: 'Aset Tetap & Penyusutan', tier: 1, route: '/assets', endpoint: '', kind: 'page' },
     { code: 'ZONE', name: 'Multi-Wilayah / Cabang', tier: 1, route: '/zones', endpoint: '', kind: 'page' },
     { code: 'APP', name: 'Portal & Mobile Pelanggan', tier: 1, route: '/modules/APP', endpoint: '/chats', kind: 'list' },
-    { code: 'C360', name: 'Customer 360 View', tier: 1, route: '/modules/C360', endpoint: '/customers', kind: 'list' },
+    { code: 'C360', name: 'Customer 360 View', tier: 1, route: '/customers', endpoint: '', kind: 'page' },
     { code: 'BILL+', name: 'Advanced Billing', tier: 1, route: '/modules/BILL+', endpoint: '/bill-adjustments', kind: 'list' },
     { code: 'METX', name: 'Meter Analytics', tier: 1, route: '/modules/METX', endpoint: '/meter-anomalies', kind: 'list' },
     { code: 'FSM', name: 'Field Service + Work Order', tier: 2, route: '/modules/FSM', endpoint: '/work-orders', kind: 'list' },

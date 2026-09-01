@@ -182,6 +182,13 @@ const avatarInitial = computed(() => (auth.user?.name || 'U').charAt(0).toUpperC
 const QUICK_MENU = [
     { to: '/dashboard', label: 'Dashboard', icon: 'pi-home', module: 'CORE' },
     {
+        to: '/customers-group', label: 'Pelanggan', icon: 'pi-users', module: 'CORE',
+        children: [
+            { to: '/customers', label: 'Data Pelanggan', icon: 'pi-users' },
+            { to: '/zones', label: 'Wilayah', icon: 'pi-map' },
+        ],
+    },
+    {
         to: '/finance', label: 'Keuangan', icon: 'pi-chart-bar', module: 'FIN+',
         children: [
             { to: '/dashboard/finance', label: 'Ringkasan Keuangan', icon: 'pi-chart-line' },

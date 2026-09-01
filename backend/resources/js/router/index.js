@@ -5,6 +5,7 @@ export const routes = [
     { path: '/', name: 'landing', component: () => import('../views/LandingView.vue'), meta: { public: true } },
     { path: '/login', name: 'login', component: () => import('../views/LoginView.vue'), meta: { guest: true } },
     { path: '/dashboard', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { requiresAuth: true } },
+    { path: '/customers', name: 'customers', component: () => import('../views/customers/CustomerListView.vue'), meta: { requiresAuth: true } },
     { path: '/zones', name: 'zones', component: () => import('../views/zones/ZoneListView.vue'), meta: { requiresAuth: true } },
     { path: '/zones/:id', name: 'zone-detail', component: () => import('../views/zones/ZoneDetailView.vue'), meta: { requiresAuth: true } },
     { path: '/prospects', name: 'prospects', component: () => import('../views/prospects/ProspectListView.vue'), meta: { requiresAuth: true } },
