@@ -42,6 +42,7 @@ export const SIDEBAR = [
         to: '/meter-group', label: 'Baca Meter & Metering', icon: 'pi-compass',
         children: [
             { to: '/meter-routes/dashboard', label: 'Dashboard Rute', icon: 'pi-chart-bar', module: 'MTR' },
+            { to: '/meter-reading-report', label: 'Laporan Baca Meter', icon: 'pi-file-excel', module: 'MTR' },
             { to: '/modules/METX', label: 'Meter Analytics', icon: 'pi-chart-line', module: 'METX' },
             { to: '/modules/IOT', label: 'Smart Meter / IoT', icon: 'pi-wifi', module: 'IOT' },
         ],

@@ -14,7 +14,21 @@
                 </button>
             </div>
 
-            <DataTable :rows="customers" :loading="loading">
+            <DataTable
+                :rows="customers"
+                :loading="loading"
+                server
+                :page="page"
+                :per-page="perPage"
+                :total="total"
+                :last-page="lastPage"
+                :from="from"
+                :to="to"
+                :external-search="search"
+                @page-change="onPageChange"
+                @per-page-change="onPerPageChange"
+                @search="onSearch"
+            >
                 <template #columns>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No. Pelanggan</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
@@ -139,6 +153,14 @@ import api from '../../api';
 const customers = ref([]);
 const loading = ref(true);
 
+const page = ref(1);
+const perPage = ref(25);
+const total = ref(0);
+const lastPage = ref(1);
+const from = ref(0);
+const to = ref(0);
+const search = ref('');
+
 const zones = ref([]);
 const tariffs = ref([]);
 const streets = ref([]);
@@ -173,19 +195,46 @@ const form = reactive(emptyForm());
 
 function statusClass(status) {
     if (status === 'active') return 'bg-green-100 text-green-700';
-    if (status === 'disconnected') return 'bg-red-100 text-red-700';
+    if (status === 'disconnected' || status === 'isolir') return 'bg-red-100 text-red-700';
     return 'bg-gray-100 text-gray-600';
 }
 
 async function loadCustomers() {
     loading.value = true;
     try {
-        const { data } = await api.get('/customers');
+        const params = { page: page.value, per_page: perPage.value };
+        if (search.value.trim()) params.q = search.value.trim();
+        const { data } = await api.get('/customers', { params });
         customers.value = data.data || [];
+        total.value = data.meta?.total || 0;
+        lastPage.value = data.meta?.last_page || 1;
+        from.value = data.meta?.from || 0;
+        to.value = data.meta?.to || 0;
     } catch {
         customers.value = [];
+        total.value = 0;
+        lastPage.value = 1;
+        from.value = 0;
+        to.value = 0;
     }
     loading.value = false;
+}
+
+function onPageChange(p) {
+    page.value = p;
+    loadCustomers();
+}
+
+function onPerPageChange(p) {
+    perPage.value = p;
+    page.value = 1;
+    loadCustomers();
+}
+
+function onSearch(q) {
+    search.value = q;
+    page.value = 1;
+    loadCustomers();
 }
 
 async function loadOptions() {

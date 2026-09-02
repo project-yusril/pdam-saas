@@ -47,6 +47,8 @@ class DatabaseSeeder extends Seeder
             SmartUtilitySeeder::class,        // Tier-3: IoT/SCADA, DMA/NRW, ML
             // Data komersial level platform (super admin).
             PlatformCommerceSeeder::class,    // price tier, bundle, promo, saas invoice
+            // Tenant demo pdam-sambas: 27 modul LENGKAP, 3000 pelanggan, integrasi penuh.
+            SambasTenantSeeder::class,        // PDAM Kabupaten Sambas (Kalbar)
         ]);
     }
 }

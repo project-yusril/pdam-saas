@@ -154,11 +154,15 @@ const totalCount = computed(() => (props.server ? props.total : filteredRows.val
 const lastPage = computed(() => (props.server ? props.lastPage : Math.max(1, Math.ceil(totalCount.value / pageSize.value))));
 const currentPage = computed(() => (props.server ? props.page : Math.min(page.value, lastPage.value)));
 const fromIndex = computed(() => {
-    if (props.server) return props.from;
+    if (props.server) {
+        return props.from || (totalCount.value === 0 ? 0 : (currentPage.value - 1) * props.perPage + 1);
+    }
     return totalCount.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1;
 });
 const toIndex = computed(() => {
-    if (props.server) return props.to;
+    if (props.server) {
+        return props.to || Math.min(currentPage.value * props.perPage, totalCount.value);
+    }
     return Math.min(currentPage.value * pageSize.value, totalCount.value);
 });
 

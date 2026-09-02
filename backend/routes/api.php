@@ -381,8 +381,10 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
         ->middleware('permission:mtr.reading.verify');
 
     // Dashboard progress baca per rute
-    Route::get('meter-readings/route-progress', [MeterReadingController::class, 'routeProgress'])
-        ->middleware('permission:mtr.dashboard.view');
+Route::get('meter-readings/route-progress', [MeterReadingController::class, 'routeProgress'])
+->middleware('permission:mtr.dashboard.view');
+Route::get('meter-readings/report', [MeterReadingController::class, 'report'])
+->middleware('permission:mtr.reading.view');
 
     // ── Fase 6: Meter Analytics (METX) ────────────────────────────────
     // Gated modul METX (add-on berbayar) + permission granular.

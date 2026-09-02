@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bill;
 use App\Models\Customer;
 use App\Models\MeterReading;
 use App\Models\MeterRoute;
@@ -208,6 +209,116 @@ class MeterReadingController extends Controller
                 'total_customers' => (int) $progress->sum('total_customers'),
                 'total_read' => (int) $progress->sum('read'),
                 'total_flagged' => (int) $progress->sum('flagged'),
+            ],
+        ]);
+    }
+
+    /**
+     * LAPORAN BACA METER per rute + periode.
+     *
+     * Untuk setiap pelanggan dalam rute: tampilkan angka baca bulan lalu vs bulan ini
+     * (nilai akumulatif meter), pemakaian (m³) = baca kini − baca lalu, golongan tarif,
+     * biaya tagihan, foto meter & rumah, serta petugas (read_by) & verifikator (verified_by)
+     * agar dapat dipertanggungjawabkan.
+     */
+    public function report(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'period' => ['required', 'regex:/^\d{4}-\d{2}$/'],
+            'route_id' => ['nullable', 'integer', 'exists:meter_routes,id'],
+        ]);
+        $period = $data['period'];
+        $prevPeriod = date('Y-m', strtotime($period.'-01 -1 month'));
+
+        $route = $request->filled('route_id')
+            ? MeterRoute::with(['zone:id,name', 'assignments' => fn ($q) => $q->where('is_active', true), 'assignments.officer:id,name'])
+                ->find($request->integer('route_id'))
+            : null;
+
+        $customers = Customer::query()
+            ->with(['tariffCategory:id,code,name', 'street:id,name', 'zone:id,name'])
+            ->whereNotNull('meter_route_id')
+            ->when($route, fn ($q, $r) => $q->where('meter_route_id', $r->id))
+            ->orderBy('customer_number')
+            ->get();
+
+        $ids = $customers->pluck('id');
+
+        $current = MeterReading::with(['reader:id,name', 'verifier:id,name'])
+            ->where('period', $period)
+            ->whereIn('customer_id', $ids)
+            ->get()
+            ->keyBy('customer_id');
+
+        $previous = MeterReading::where('period', $prevPeriod)
+            ->whereIn('customer_id', $ids)
+            ->get()
+            ->keyBy('customer_id');
+
+        $bills = Bill::where('period', $period)
+            ->whereIn('customer_id', $ids)
+            ->get()
+            ->keyBy('customer_id');
+
+        $rows = $customers->map(function (Customer $c) use ($current, $previous, $bills, $prevPeriod, $period) {
+            $curr = $current[$c->id] ?? null;
+            $prev = $previous[$c->id]?->reading_value ?? $c->initial_reading ?? 0;
+
+            $usage = null;
+            if ($curr) {
+                $usage = $curr->reading_value - $prev;
+                if ($usage < 0) {
+                    $usage = ($curr->reading_value + 100000) - $prev; // rollover / ganti meter
+                }
+            }
+
+            return [
+                'customer_id' => $c->id,
+                'customer_number' => $c->customer_number,
+                'full_name' => $c->full_name,
+                'zone' => $c->zone?->name,
+                'street' => $c->street?->name,
+                'address_detail' => $c->address_detail,
+                'status' => $c->status,
+                'tariff_code' => $c->tariffCategory?->code,
+                'tariff_name' => $c->tariffCategory?->name,
+                'previous_period' => $prevPeriod,
+                'previous_reading' => $prev,
+                'current_period' => $period,
+                'current_reading' => $curr?->reading_value,
+                'reading_date' => $curr?->reading_date?->toDateString(),
+                'reading_type' => $curr?->reading_type,
+                'is_flagged' => (bool) ($curr?->is_flagged ?? false),
+                'flag_reason' => $curr?->flag_reason,
+                'is_rollover' => (bool) ($curr?->is_rollover ?? false),
+                'usage_m3' => $usage,
+                'consumption' => $bills[$c->id]?->consumption,
+                'amount_due' => $bills[$c->id]?->amount_due !== null ? (float) $bills[$c->id]->amount_due : null,
+                'bill_status' => $bills[$c->id]?->status,
+                'photo_house_url' => $curr?->photo_house_url,
+                'photo_meter_url' => $curr?->photo_meter_url,
+                'reader' => $curr?->reader?->name,
+                'verifier' => $curr?->verifier?->name,
+            ];
+        });
+
+        return ApiResponse::success([
+            'period' => $period,
+            'previous_period' => $prevPeriod,
+            'route' => $route ? [
+                'id' => $route->id,
+                'code' => $route->code,
+                'name' => $route->name,
+                'zone' => $route->zone?->name,
+                'officer' => $route->assignments->first()?->officer?->name,
+            ] : null,
+            'rows' => $rows,
+            'summary' => [
+                'total_customers' => $rows->count(),
+                'read' => $rows->whereNotNull('current_reading')->count(),
+                'unread' => $rows->whereNull('current_reading')->count(),
+                'total_usage_m3' => (int) $rows->sum('usage_m3'),
+                'total_amount' => (float) $rows->sum('amount_due'),
             ],
         ]);
     }

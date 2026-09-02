@@ -14,6 +14,7 @@ export const routes = [
     { path: '/zones/:id', name: 'zone-detail', component: () => import('../views/zones/ZoneDetailView.vue'), meta: { requiresAuth: true } },
     { path: '/meter-routes', name: 'meter-routes', component: () => import('../views/meter/MeterRouteListView.vue'), meta: { requiresAuth: true } },
     { path: '/meter-routes/dashboard', name: 'meter-routes-dashboard', component: () => import('../views/meter/MeterRouteDashboardView.vue'), meta: { requiresAuth: true } },
+    { path: '/meter-reading-report', name: 'meter-reading-report', component: () => import('../views/meter/MeterReadingReportView.vue'), meta: { requiresAuth: true } },
     { path: '/meter-routes/:id', name: 'meter-route-detail', component: () => import('../views/meter/MeterRouteDetailView.vue'), meta: { requiresAuth: true } },
     { path: '/complaints', name: 'complaints', component: () => import('../views/complaints/ComplaintListView.vue'), meta: { requiresAuth: true } },
     { path: '/assets', name: 'assets', component: () => import('../views/assets/AssetListView.vue'), meta: { requiresAuth: true } },

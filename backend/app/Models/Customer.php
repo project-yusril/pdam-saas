@@ -41,6 +41,11 @@ class Customer extends Model
         return $this->belongsTo(Zone::class);
     }
 
+    public function street(): BelongsTo
+    {
+        return $this->belongsTo(Street::class);
+    }
+
     public function bills(): HasMany
     {
         return $this->hasMany(Bill::class);
