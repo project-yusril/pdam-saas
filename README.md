@@ -222,13 +222,12 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 | Panel super admin | `/platform` | Super admin | Sidebar cerah + topbar. Kelola tenant, dashboard SaaS (MRR/ARR). |
 | Marketplace platform | `/platform/modules` | Super admin | Katalog dan pengelolaan commerce/manual platform tetap tersedia terpisah dari checkout tenant. |
 
-> **Sidebar dinamis (27 modul):** menu di `AppLayout.vue` disusun dari `active_modules` (entitlement
-> per tenant). Grup **Keuangan** muncul bila modul `FIN+` aktif (berisi sub-menu laporan). Grup lain
-> dikelompokkan per **tier** (Inti/Enterprise/Smart Utility) dan memuat sub-menu semua modul yang statusnya
-> `active` untuk tenant tersebut — untuk `admin_tenant` PDAM Canada (27 modul aktif) seluruh katalog tampil.
-> Menu **Master Data** selalu tampil (Wilayah, Rute Baca Meter, Jalan, Master Alamat, Golongan Tarif), grup
-> **Pelanggan** berisi Data Pelanggan + Pemasangan Baru, dan grup **Alur Bisnis** berisi diagram alur tiap
-> proses. Modul non-aktif otomatis disembunyikan, sehingga sidebar selalu konsisten dengan entitlement tenant.
+> **Sidebar dinamis (domain bisnis):** menu di `AppLayout.vue` dibangun dari `resources/js/config/sidebar.js`
+> yang dikelompokkan **per domain bisnis** (Pelanggan & Layanan, Master Data, Keuangan, Baca Meter & Metering,
+> Gudang & Aset, Teknis Lapangan & GIS, SDM & Dokumen, Produksi Air, Integrasi & Analitik, Alur Bisnis) —
+> bukan per tier. Sub-menu tampil hanya bila **modul related-nya aktif** (`active_modules`):
+> untuk `admin_tenant` PDAM Canada (27 modul) hampir semua domain tampil; PDAM Brazil (10 modul) hanya domain
+> yang modulnya aktif. Menu Dashboard, Alur Bisnis, dan Marketplace selalu tampil.
 
 > **Tampilan admin (setup UI):** shell tenant (`AppLayout.vue`) & super-admin (`PlatformLayout.vue`) memakai
 > design system ala **Vuexy** — font **Public Sans**, primary indigo **#7367F0**, sidebar putih dengan menu

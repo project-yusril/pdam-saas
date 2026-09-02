@@ -167,8 +167,7 @@
 import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { MODULE_CATALOG, TIER_LABELS } from '../config/modules';
-import { BUSINESS_FLOWS } from '../config/flows';
+import { buildSidebar } from '../config/sidebar';
 
 const props = defineProps({ pageTitle: String, pageSubtitle: String });
 const route = useRoute();
@@ -180,69 +179,7 @@ const hoverMenu = ref(null);
 
 const avatarInitial = computed(() => (auth.user?.name || 'U').charAt(0).toUpperCase());
 
-const QUICK_MENU = [
-    { to: '/dashboard', label: 'Dashboard', icon: 'pi-home', module: 'CORE' },
-    {
-        to: '/customers-group', label: 'Pelanggan', icon: 'pi-users', module: 'CORE',
-        children: [
-            { to: '/customers', label: 'Data Pelanggan', icon: 'pi-users' },
-            { to: '/prospects', label: 'Pemasangan Baru', icon: 'pi-user-plus' },
-        ],
-    },
-    {
-        to: '/master-group', label: 'Master Data', icon: 'pi-database', module: 'CORE',
-        children: [
-            { to: '/zones', label: 'Wilayah', icon: 'pi-map-marker' },
-            { to: '/meter-routes', label: 'Rute Baca Meter', icon: 'pi-directions' },
-            { to: '/streets', label: 'Jalan', icon: 'pi-map' },
-            { to: '/address', label: 'Master Alamat', icon: 'pi-sitemap' },
-            { to: '/tariffs', label: 'Golongan Tarif', icon: 'pi-tags' },
-        ],
-    },
-    {
-        to: '/finance', label: 'Keuangan', icon: 'pi-chart-bar', module: 'FIN+',
-        children: [
-            { to: '/dashboard/finance', label: 'Ringkasan Keuangan', icon: 'pi-chart-line' },
-            { to: '/finance/general-ledger', label: 'Buku Jurnal', icon: 'pi-book' },
-            { to: '/finance/trial-balance', label: 'Neraca Saldo', icon: 'pi-table' },
-            { to: '/finance/income-statement', label: 'Laba Rugi', icon: 'pi-chart-line' },
-            { to: '/finance/balance-sheet', label: 'Neraca', icon: 'pi-building' },
-            { to: '/finance/cash-flow', label: 'Arus Kas', icon: 'pi-wallet' },
-        ],
-    },
-    {
-        to: '/flows-group', label: 'Alur Bisnis', icon: 'pi-sitemap',
-        children: [
-            { to: '/flows', label: 'Semua Alur', icon: 'pi-th-large' },
-            ...BUSINESS_FLOWS.map((f) => ({ to: '/flows/' + f.key, label: f.label, icon: f.icon })),
-        ],
-    },
-    { to: '/marketplace', label: 'Marketplace', icon: 'pi-shopping-cart' },
-];
-
-const TIER_ICONS = { 1: 'pi-box', 2: 'pi-briefcase', 3: 'pi-bolt' };
-
-function buildModuleGroups(active) {
-    const tiers = {};
-    MODULE_CATALOG.forEach((m) => {
-        if (m.code === 'FIN+' || m.code === 'CORE') return;
-        if (!active.has(m.code)) return;
-        if (!tiers[m.tier]) tiers[m.tier] = [];
-        tiers[m.tier].push({ to: m.route, label: m.name, icon: 'pi-box' });
-    });
-    return Object.entries(tiers).map(([tier, children]) => ({
-        to: `/modules/tier-${tier}`,
-        label: TIER_LABELS[tier],
-        icon: TIER_ICONS[tier],
-        children,
-    }));
-}
-
-const menu = computed(() => {
-    const active = new Set(auth.activeModules ?? []);
-    const quick = QUICK_MENU.filter((item) => !item.module || active.has(item.module));
-    return [...quick, ...buildModuleGroups(active)];
-});
+const menu = computed(() => buildSidebar(auth.activeModules));
 
 const expanded = ref(
     new Set(
