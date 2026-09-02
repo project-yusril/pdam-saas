@@ -6,7 +6,7 @@
         >
             <div class="h-16 flex items-center gap-2 px-3">
                 <div class="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center text-white shrink-0">
-                    <i class="pi pi-water text-lg" />
+                    <i class="pi pi-wave-pulse text-lg" />
                 </div>
                 <span v-if="!collapsed" class="text-lg font-semibold text-vueheading whitespace-nowrap">PDAM SaaS</span>
                 <button
@@ -192,7 +192,7 @@ const QUICK_MENU = [
         to: '/master-group', label: 'Master Data', icon: 'pi-database', module: 'CORE',
         children: [
             { to: '/zones', label: 'Wilayah', icon: 'pi-map-marker' },
-            { to: '/meter-routes', label: 'Rute Baca Meter', icon: 'pi-route' },
+            { to: '/meter-routes', label: 'Rute Baca Meter', icon: 'pi-directions' },
             { to: '/streets', label: 'Jalan', icon: 'pi-map' },
             { to: '/tariffs', label: 'Golongan Tarif', icon: 'pi-tags' },
         ],

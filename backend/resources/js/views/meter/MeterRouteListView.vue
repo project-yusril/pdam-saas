@@ -3,7 +3,7 @@
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <div class="flex items-center gap-2">
-                    <i class="pi pi-route text-primary-600 text-lg" />
+                    <i class="pi pi-directions text-primary-600 text-lg" />
                     <h2 class="font-semibold text-vueheading">Daftar Rute</h2>
                 </div>
                 <button @click="openCreate" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700">
@@ -34,7 +34,7 @@
         <div v-if="showCreate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" @click.self="closeCreate">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h3 class="font-semibold text-vueheading flex items-center gap-2"><i class="pi pi-route text-primary-600" /> {{ editingId ? 'Edit Rute' : 'Tambah Rute' }}</h3>
+                    <h3 class="font-semibold text-vueheading flex items-center gap-2"><i class="pi pi-directions text-primary-600" /> {{ editingId ? 'Edit Rute' : 'Tambah Rute' }}</h3>
                     <button class="p-2 rounded-md hover:bg-gray-100 text-gray-400" @click="closeCreate"><i class="pi pi-times" /></button>
                 </div>
                 <form class="p-6 space-y-4" @submit.prevent="submit">

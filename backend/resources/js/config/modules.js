@@ -6,7 +6,7 @@
 export const MODULE_CATALOG = [
     { code: 'CORE', name: 'Paket Dasar', tier: 1, route: '/dashboard', endpoint: '', kind: 'page' },
     { code: 'WH', name: 'Gudang & Inventory', tier: 1, route: '/modules/WH', endpoint: '/purchase-orders', kind: 'list' },
-    { code: 'MTR', name: 'Baca Meter Digital + Route', tier: 1, route: '/meter-routes', endpoint: '', kind: 'page' },
+    { code: 'MTR', name: 'Baca Meter Digital + Route', tier: 1, route: '/meter-routes/dashboard', endpoint: '', kind: 'page' },
     { code: 'SRV', name: 'Survey & Pemasangan', tier: 1, route: '/prospects', endpoint: '', kind: 'page' },
     { code: 'FIN+', name: 'Keuangan Advance', tier: 1, route: '/dashboard/finance', endpoint: '', kind: 'page' },
     { code: 'CRM', name: 'Pengaduan & CRM', tier: 1, route: '/complaints', endpoint: '', kind: 'page' },
