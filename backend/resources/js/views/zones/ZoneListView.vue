@@ -22,7 +22,10 @@
                     <td class="px-4 py-3 text-sm font-mono">{{ row.code }}</td>
                     <td class="px-4 py-3 font-medium text-vueheading">{{ row.name }}</td>
                     <td class="px-4 py-3"><span class="inline-block px-2 py-0.5 text-xs rounded-full" :class="row.is_main ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600'">{{ row.is_main ? 'Utama' : 'Cabang' }}</span></td>
-                    <td class="px-4 py-3 text-right"><router-link :to="'/zones/' + row.id" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Detail</router-link></td>
+                    <td class="px-4 py-3 text-right">
+                        <router-link :to="'/zones/' + row.id" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Detail</router-link>
+                        <button @click="openEdit(row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium ms-3">Edit</button>
+                    </td>
                 </template>
             </DataTable>
         </div>
@@ -31,7 +34,7 @@
         <div v-if="showCreate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" @click.self="closeCreate">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h3 class="font-semibold text-vueheading flex items-center gap-2"><i class="pi pi-map-marker text-primary-600" /> Tambah Wilayah</h3>
+                    <h3 class="font-semibold text-vueheading flex items-center gap-2"><i class="pi pi-map-marker text-primary-600" /> {{ editingId ? 'Edit Wilayah' : 'Tambah Wilayah' }}</h3>
                     <button class="p-2 rounded-md hover:bg-gray-100 text-gray-400" @click="closeCreate"><i class="pi pi-times" /></button>
                 </div>
                 <form class="p-6 space-y-4" @submit.prevent="submit">
@@ -50,7 +53,7 @@
                     <div class="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
                         <button type="button" @click="closeCreate" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">Batal</button>
                         <button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700" :disabled="saving">
-                            <i class="pi pi-check text-xs mr-1" /> {{ saving ? 'Menyimpan…' : 'Simpan Wilayah' }}
+                            <i class="pi pi-check text-xs mr-1" /> {{ saving ? 'Menyimpan…' : (editingId ? 'Simpan Perubahan' : 'Simpan Wilayah') }}
                         </button>
                     </div>
                 </form>
@@ -70,6 +73,7 @@ const loading = ref(true);
 const showCreate = ref(false);
 const saving = ref(false);
 const error = ref('');
+const editingId = ref(null);
 
 const form = reactive({ code: '', name: '', is_main: false });
 
@@ -85,22 +89,39 @@ async function load() {
 }
 
 function openCreate() {
+    editingId.value = null;
     form.code = '';
     form.name = '';
     form.is_main = false;
     error.value = '';
     showCreate.value = true;
 }
+
+function openEdit(row) {
+    editingId.value = row.id;
+    form.code = row.code;
+    form.name = row.name;
+    form.is_main = !!row.is_main;
+    error.value = '';
+    showCreate.value = true;
+}
+
 function closeCreate() {
     showCreate.value = false;
     error.value = '';
+    editingId.value = null;
 }
 
 async function submit() {
     saving.value = true;
     error.value = '';
     try {
-        await api.post('/zones', { code: form.code, name: form.name, is_main: form.is_main });
+        const payload = { code: form.code, name: form.name, is_main: form.is_main };
+        if (editingId.value) {
+            await api.put('/zones/' + editingId.value, payload);
+        } else {
+            await api.post('/zones', payload);
+        }
         closeCreate();
         await load();
     } catch (e) {

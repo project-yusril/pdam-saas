@@ -16,11 +16,13 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Jalan</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Desa / Kelurahan</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
                 </template>
                 <template #row="{ row }">
                     <td class="px-4 py-3 font-medium text-vueheading">{{ row.name }}</td>
                     <td class="px-4 py-3 text-sm">{{ villageName(row.village_id) }}</td>
                     <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded-full" :class="row.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'">{{ row.is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
+                    <td class="px-4 py-3 text-right"><button @click="openEdit(row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button></td>
                 </template>
             </DataTable>
         </div>
@@ -34,7 +36,7 @@
         <div v-if="showCreate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" @click.self="closeCreate">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h3 class="font-semibold text-vueheading flex items-center gap-2"><i class="pi pi-map text-primary-600" /> Tambah Jalan</h3>
+                    <h3 class="font-semibold text-vueheading flex items-center gap-2"><i class="pi pi-map text-primary-600" /> {{ editingId ? 'Edit Jalan' : 'Tambah Jalan' }}</h3>
                     <button class="p-2 rounded-md hover:bg-gray-100 text-gray-400" @click="closeCreate"><i class="pi pi-times" /></button>
                 </div>
                 <form class="p-6 space-y-4" @submit.prevent="submit">
@@ -53,7 +55,7 @@
                     <div class="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
                         <button type="button" @click="closeCreate" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">Batal</button>
                         <button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700" :disabled="saving">
-                            <i class="pi pi-check text-xs mr-1" /> {{ saving ? 'Menyimpan…' : 'Simpan Jalan' }}
+                            <i class="pi pi-check text-xs mr-1" /> {{ saving ? 'Menyimpan…' : (editingId ? 'Simpan Perubahan' : 'Simpan Jalan') }}
                         </button>
                     </div>
                 </form>
@@ -74,6 +76,7 @@ const loading = ref(true);
 const showCreate = ref(false);
 const saving = ref(false);
 const error = ref('');
+const editingId = ref(null);
 
 const form = reactive({ village_id: '', name: '' });
 
@@ -101,21 +104,37 @@ function villageName(id) {
 }
 
 function openCreate() {
+    editingId.value = null;
     form.village_id = '';
     form.name = '';
     error.value = '';
     showCreate.value = true;
 }
+
+function openEdit(row) {
+    editingId.value = row.id;
+    form.village_id = row.village_id;
+    form.name = row.name;
+    error.value = '';
+    showCreate.value = true;
+}
+
 function closeCreate() {
     showCreate.value = false;
     error.value = '';
+    editingId.value = null;
 }
 
 async function submit() {
     saving.value = true;
     error.value = '';
     try {
-        await api.post('/address/streets', { village_id: Number(form.village_id), name: form.name });
+        const payload = { village_id: Number(form.village_id), name: form.name };
+        if (editingId.value) {
+            await api.put('/address/streets/' + editingId.value, payload);
+        } else {
+            await api.post('/address/streets', payload);
+        }
         closeCreate();
         await load();
     } catch (e) {

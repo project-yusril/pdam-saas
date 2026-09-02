@@ -17,12 +17,14 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Golongan</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Abonemen</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tarif</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
                 </template>
                 <template #row="{ row }">
                     <td class="px-4 py-3 text-sm font-mono">{{ row.code }}</td>
                     <td class="px-4 py-3 font-medium text-vueheading">{{ row.name }}</td>
                     <td class="px-4 py-3 text-sm">{{ row.abonemen?.toLocaleString?.('id-ID') ?? '-' }}</td>
                     <td class="px-4 py-3 text-sm text-right">{{ formatTier(row) }}</td>
+                    <td class="px-4 py-3 text-right"><button @click="openEdit(row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button></td>
                 </template>
             </DataTable>
         </div>
@@ -31,7 +33,7 @@
         <div v-if="showCreate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" @click.self="closeCreate">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h3 class="font-semibold text-vueheading flex items-center gap-2"><i class="pi pi-tags text-primary-600" /> Tambah Golongan Tarif</h3>
+                    <h3 class="font-semibold text-vueheading flex items-center gap-2"><i class="pi pi-tags text-primary-600" /> {{ editingId ? 'Edit Golongan Tarif' : 'Tambah Golongan Tarif' }}</h3>
                     <button class="p-2 rounded-md hover:bg-gray-100 text-gray-400" @click="closeCreate"><i class="pi pi-times" /></button>
                 </div>
 
@@ -90,7 +92,7 @@
                     <div class="md:col-span-2 flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
                         <button type="button" @click="closeCreate" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">Batal</button>
                         <button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700" :disabled="saving">
-                            <i class="pi pi-check text-xs mr-1" /> {{ saving ? 'Menyimpan…' : 'Simpan Golongan' }}
+                            <i class="pi pi-check text-xs mr-1" /> {{ saving ? 'Menyimpan…' : (editingId ? 'Simpan Perubahan' : 'Simpan Golongan') }}
                         </button>
                     </div>
                 </form>
@@ -110,6 +112,7 @@ const loading = ref(true);
 const showCreate = ref(false);
 const saving = ref(false);
 const error = ref('');
+const editingId = ref(null);
 
 const emptyTier = () => ({ tier_order: 1, min_usage: 0, max_usage: 10, price_per_m3: 0 });
 const emptyForm = () => ({
@@ -151,13 +154,37 @@ function removeTier(i) {
 }
 
 function openCreate() {
+    editingId.value = null;
     Object.assign(form, emptyForm());
     error.value = '';
     showCreate.value = true;
 }
+
+function openEdit(row) {
+    editingId.value = row.id;
+    form.code = row.code;
+    form.name = row.name;
+    form.group_type = row.group_type || '';
+    form.description = row.description || '';
+    form.minimum_usage_m3 = row.minimum_usage_m3 ?? 0;
+    form.abonemen = row.abonemen ?? 0;
+    form.meter_maintenance_fee = row.meter_maintenance_fee ?? 0;
+    form.admin_fee = row.admin_fee ?? 0;
+    form.tiers = (row.tiers || []).map((t) => ({
+        tier_order: t.tier_order,
+        min_usage: t.min_usage,
+        max_usage: t.max_usage,
+        price_per_m3: t.price_per_m3,
+    }));
+    if (form.tiers.length === 0) form.tiers = [emptyTier()];
+    error.value = '';
+    showCreate.value = true;
+}
+
 function closeCreate() {
     showCreate.value = false;
     error.value = '';
+    editingId.value = null;
 }
 
 async function submit() {
@@ -180,7 +207,11 @@ async function submit() {
                 price_per_m3: Number(t.price_per_m3),
             })),
         };
-        await api.post('/tariffs', payload);
+        if (editingId.value) {
+            await api.put('/tariffs/' + editingId.value, payload);
+        } else {
+            await api.post('/tariffs', payload);
+        }
         closeCreate();
         await load();
     } catch (e) {
