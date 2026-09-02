@@ -46,6 +46,7 @@ class CustomerLifecycleSeeder extends Seeder
             ['Andi Pratama', 'survey_approved', 'feasible', 'approved'],
             ['Maria Ulfa', 'surveying', null, null],
             ['Joko Widodo', 'installation_scheduled', 'feasible', 'approved'],
+            ['Dedi Setiawan', 'installed', 'feasible', 'approved'],
         ];
 
         foreach ($prospects as $i => [$name, $status, $recommendation, $reviewStatus]) {
