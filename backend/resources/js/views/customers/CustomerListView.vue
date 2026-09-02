@@ -75,17 +75,18 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-vuetext mb-1">Jalan</label>
-                        <select v-model="form.street_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
-                            <option value="">Tidak ada</option>
-                            <option v-for="s in streets" :key="s.id" :value="s.id">{{ s.name }}</option>
+                        <label class="block text-sm font-medium text-vuetext mb-1">Rute Baca Meter</label>
+                        <select v-model="form.meter_route_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white" :disabled="!form.zone_id">
+                            <option value="" disabled>{{ form.zone_id ? 'Pilih Rute' : 'Pilih Wilayah dulu' }}</option>
+                            <option v-for="r in filteredRoutes" :key="r.id" :value="r.id">{{ r.name }}</option>
                         </select>
                     </div>
+
                     <div>
-                        <label class="block text-sm font-medium text-vuetext mb-1">Rute Baca Meter</label>
-                        <select v-model="form.meter_route_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
-                            <option value="">Tidak ada</option>
-                            <option v-for="r in meterRoutes" :key="r.id" :value="r.id">{{ r.name }}</option>
+                        <label class="block text-sm font-medium text-vuetext mb-1">Jalan</label>
+                        <select v-model="form.street_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white" :disabled="!form.meter_route_id">
+                            <option value="" disabled>{{ form.meter_route_id ? 'Pilih Jalan' : 'Pilih Rute dulu' }}</option>
+                            <option v-for="s in streets" :key="s.id" :value="s.id">{{ s.name }}</option>
                         </select>
                     </div>
 
@@ -127,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import AppLayout from '../../layouts/AppLayout.vue';
 import DataTable from '../../components/shared/DataTable.vue';
 import api from '../../api';
@@ -138,7 +139,13 @@ const loading = ref(true);
 const zones = ref([]);
 const tariffs = ref([]);
 const streets = ref([]);
-const meterRoutes = ref([]);
+const allRoutes = ref([]);
+
+// Rute difilter sesuai Wilayah yang dipilih (rute → zone_id).
+const filteredRoutes = computed(() => {
+    if (!form.zone_id) return allRoutes.value;
+    return allRoutes.value.filter((r) => String(r.zone_id) === String(form.zone_id));
+});
 
 const showCreate = ref(false);
 const saving = ref(false);
@@ -178,39 +185,47 @@ async function loadCustomers() {
 }
 
 async function loadOptions() {
-    try {
-        const [z, t, s, r] = await Promise.all([
-            api.get('/zones'),
-            api.get('/tariffs'),
-            api.get('/address/streets'),
-            api.get('/meter-routes'),
-        ]);
-        zones.value = z.data.data || [];
-        tariffs.value = t.data.data || [];
-        streets.value = s.data.data || [];
-        meterRoutes.value = r.data.data || [];
-    } catch {
-        // Satu dropdown gagal → jangan kosongkan semuanya. Muat satu per satu.
-        const get = async (url) => {
-            try {
-                const { data } = await api.get(url);
-                return data.data || [];
-            } catch {
-                return [];
-            }
-        };
-        const [z, t, s, r] = await Promise.all([
-            get('/zones'),
-            get('/tariffs'),
-            get('/address/streets'),
-            get('/meter-routes'),
-        ]);
-        zones.value = z;
-        tariffs.value = t;
-        streets.value = s;
-        meterRoutes.value = r;
-    }
+    const get = async (url) => {
+        try {
+            const { data } = await api.get(url);
+            return data.data || [];
+        } catch {
+            return [];
+        }
+    };
+    const [z, t, r] = await Promise.all([
+        get('/zones'),
+        get('/tariffs'),
+        get('/meter-routes'),
+    ]);
+    zones.value = z;
+    tariffs.value = t;
+    allRoutes.value = r;
 }
+
+// Saat Wilayah berubah → reset rute & jalan (jalan di-load ulang dari rute).
+watch(() => form.zone_id, (zid) => {
+    form.meter_route_id = '';
+    form.street_id = '';
+    if (!zid) {
+        streets.value = [];
+        return;
+    }
+});
+
+// Saat Rute berubah → muat jalan milik rute tsb (endpoint difilter meter_route_id).
+watch(
+    () => form.meter_route_id,
+    async (rid) => {
+        form.street_id = '';
+        if (rid) {
+            const { data } = await api.get('/address/streets', { params: { meter_route_id: rid } });
+            streets.value = data.data || [];
+        } else {
+            streets.value = [];
+        }
+    },
+);
 
 function openCreate() {
     Object.assign(form, emptyForm());

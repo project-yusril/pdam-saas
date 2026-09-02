@@ -84,13 +84,20 @@ class AddressController extends Controller
 
     public function streets(Request $request): JsonResponse
     {
-        $request->validate(['village_id' => 'integer']);
+        $request->validate(['village_id' => 'integer', 'meter_route_id' => 'integer']);
 
         $params = ListQueryParams::fromRequest($request, ['name']);
 
         $query = Street::where('is_active', true);
         if ($request->has('village_id')) {
             $query->where('village_id', $request->input('village_id'));
+        }
+        // Filter jalan yang tergabung dalam rute baca meter tertentu (pivot meter_route_streets).
+        if ($request->has('meter_route_id')) {
+            $routeStreetIds = \Illuminate\Support\Facades\DB::table('meter_route_streets')
+                ->where('meter_route_id', $request->integer('meter_route_id'))
+                ->pluck('street_id');
+            $query->whereIn('streets.id', $routeStreetIds);
         }
         $params->apply($query, ['name']);
 

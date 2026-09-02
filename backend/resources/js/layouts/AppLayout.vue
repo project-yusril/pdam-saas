@@ -185,7 +185,16 @@ const QUICK_MENU = [
         to: '/customers-group', label: 'Pelanggan', icon: 'pi-users', module: 'CORE',
         children: [
             { to: '/customers', label: 'Data Pelanggan', icon: 'pi-users' },
-            { to: '/zones', label: 'Wilayah', icon: 'pi-map' },
+            { to: '/prospects', label: 'Pemasangan Baru', icon: 'pi-user-plus' },
+        ],
+    },
+    {
+        to: '/master-group', label: 'Master Data', icon: 'pi-database', module: 'CORE',
+        children: [
+            { to: '/zones', label: 'Wilayah', icon: 'pi-map-marker' },
+            { to: '/meter-routes', label: 'Rute Baca Meter', icon: 'pi-route' },
+            { to: '/streets', label: 'Jalan', icon: 'pi-map' },
+            { to: '/tariffs', label: 'Golongan Tarif', icon: 'pi-tags' },
         ],
     },
     {
