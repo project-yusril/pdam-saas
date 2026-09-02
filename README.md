@@ -99,9 +99,10 @@ tenant terverifikasi **balance**.
 Daftar kredensial lengkap dan workflow reset/non-destruktif hanya dipelihara di
 [`backend/SEED_DATA.md`](backend/SEED_DATA.md). Kredensial ini dilarang pada production.
 
-**Snapshot database terbaru:** MySQL 8.4.9 disposable dan SQLite sama-sama lulus 60 migration + 24
-seeder dan menghasilkan 167 tabel; lima migration terbaru hanya menambah constraint. MySQL rollback
-`000004`-`000010` lalu migrate ulang juga lulus. Detail metadata FK/index dan batasan audit ada di
+**Snapshot database terbaru:** MySQL 8.4.9 disposable dan SQLite sama-sama lulus **62 migration + 24
+seeder** dan menghasilkan 167 tabel; migration terbaru menambah `pdam_org_id` + `deleted_at` pada tabel
+master alamat. MySQL rollback `000004`-`000010` lalu migrate ulang juga lulus. Detail metadata FK/index
+dan batasan audit ada di
 `temuan2.md`; snapshot 8 Juli di `temuan.md` tetap arsip historis.
 
 
@@ -209,7 +210,9 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 | Landing page | `/` | Publik | Profil produk: hero, tentang PDAM SaaS, keunggulan, katalog modul (3 tier), cara kerja, CTA. Tema biru muda/cyan lembut (identik air). Tombol CTA → `/login`. |
 | Login | `/login` | Publik | Login tenant (kode PDAM + email) atau super admin. Setelah login diarahkan ke `/dashboard` (tenant) atau `/platform` (super admin). |
 | Dashboard tenant | `/dashboard` | Tenant | Dashboard per role (Director, Finance, Warehouse, Technical). |
-| Operasional tenant | `/zones`, `/prospects`, `/meter-routes`, `/complaints`, `/assets` | Tenant | Halaman operasional yang terhubung ke endpoint backend nyata. |
+| Operasional tenant | `/zones`, `/prospects`, `/meter-routes`, `/meter-routes/dashboard`, `/complaints`, `/assets` | Tenant | Halaman operasional yang terhubung ke endpoint backend nyata. |
+| Master data tenant | `/streets`, `/address` (Master Alamat), `/tariffs` | Tenant | CRUD master: Jalan, Master Alamat berjenjang (Provinsi→Kota→Kecamatan→Desa/Kelurahan), Golongan Tarif. Data alamat bersifat *global reference + override per tenant* (soft-delete + restore). |
+| Pelanggan | `/customers`, `/tariffs` | Tenant | Daftar & tambah pelanggan; golongan tarif. Form pelanggan memiliki cascade Wilayah→Rute→Jalan. |
 | Enterprise tenant | `/gis`, `/employees`, `/employee-self-service`, `/call-center`, `/tenders` | Tenant | UI modul enterprise; backend tetap menegakkan entitlement dan permission. |
 | Marketplace tenant | `/marketplace` | Tenant | Katalog/harga/dependency dari session tenant; purchase membuat order pending + URL Snap dan aktivasi menunggu settlement Midtrans terverifikasi. |
 | Dashboard role | `/dashboard/director`, `/dashboard/finance`, `/dashboard/technical`, `/dashboard/warehouse` | Tenant | Dashboard khusus role; kegagalan API ditampilkan melalui banner global. |
@@ -222,7 +225,9 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 > per tenant). Grup **Keuangan** muncul bila modul `FIN+` aktif (berisi sub-menu laporan). Grup lain
 > dikelompokkan per **tier** (Inti/Enterprise/Smart Utility) dan memuat sub-menu semua modul yang statusnya
 > `active` untuk tenant tersebut — untuk `admin_tenant` PDAM Canada (27 modul aktif) seluruh katalog tampil.
-> Modul non-aktif otomatis disembunyikan, sehingga sidebar selalu konsisten dengan entitlement tenant.
+> Menu **Master Data** selalu tampil (Wilayah, Rute Baca Meter, Jalan, Master Alamat, Golongan Tarif), dan
+> grup **Pelanggan** berisi Data Pelanggan + Pemasangan Baru. Modul non-aktif otomatis disembunyikan,
+> sehingga sidebar selalu konsisten dengan entitlement tenant.
 
 > **Tampilan admin (setup UI):** shell tenant (`AppLayout.vue`) & super-admin (`PlatformLayout.vue`) memakai
 > design system ala **Vuexy** — font **Public Sans**, primary indigo **#7367F0**, sidebar putih dengan menu

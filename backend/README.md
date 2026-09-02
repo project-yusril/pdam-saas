@@ -11,7 +11,8 @@ kredensial demo dimiliki [`SEED_DATA.md`](SEED_DATA.md); deployment production d
 > **Sumber status saat ini:** [`../temuan2.md`](../temuan2.md), termasuk enam gate persetujuan production canonical. Verifikasi 15 Juli 2026: backend SQLite **89/89 (664
 > assertions)**, MySQL **88 passed + 1 intentionally SQLite-only skipped (756 assertions)**, frontend
 > **5/5 Vitest**, production build 322 modules, 358 route, dan route cache lulus. MySQL 8.4.9 juga lulus
-> 60 migration + 24 seeder, rollback/migrate ulang, dan audit FK/index/orphan.
+> 60 migration + 24 seeder, rollback/migrate ulang, dan audit FK/index/orphan. **Ditambah 2 migration
+> master alamat (`pdam_org_id` + `soft-deletes`) → total 62 migration; 91 test, 669 assertions.**
 >
 > Dokumen terkait: [`../README.md`](../README.md) · [`../PRD.md`](../PRD.md) dan [`../02_flow.md`](../02_flow.md) sebagai target/desain · [`../task.md`](../task.md) dan [`../temuan.md`](../temuan.md) sebagai arsip · [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) sebagai baseline internal · [`DEPLOY.md`](DEPLOY.md) sebagai runbook draft · [`SEED_DATA.md`](SEED_DATA.md) · [`../ml/README.md`](../ml/README.md).
 
@@ -311,6 +312,11 @@ CORE aktif otomatis (gratis) saat tenant di-provisioning. Sisanya berstatus
 - Trait `App\Models\Concerns\BelongsToTenant` memasang **global scope** yang
   otomatis memfilter query ke tenant aktif, plus mengisi `pdam_org_id` saat create.
 - Tenant aktif disimpan di `App\Support\TenantContext`, di-set oleh middleware `tenant`.
+- **Master alamat** memakai pola "global reference + override per tenant": `provinces/cities/districts/villages`
+  memiliki `pdam_org_id` nullable (`null` = reference global, di-scope `scopeForTenant()` = global OR own),
+  dan `streets` menyimpa `pdam_org_id` (seed: 12 jalan org 1, 6 org 2). Semua level alamat menggunakan
+  `SoftDeletes` sehingga penghapusan lembut & bisa dipulihkan (`/address/*/restore`); endpoint list mendukung
+  `?with_trashed=1`, dan `DELETE ...?cascade=1` menghapus induk beserta anak milik tenant.
 
 ### 8.2 Middleware (alias di `bootstrap/app.php`)
 | Alias        | Kelas                | Fungsi                                                      |
@@ -349,6 +355,11 @@ sebagai sumber endpoint aktual. Swagger dan Postman masih parsial dan harus diva
 | POST   | `/api/v1/login`            | —                   | Login user tenant (+ pdam_code) |
 | GET    | `/api/v1/me`               | Sanctum + tenant    | Profil + role + modul aktif     |
 | POST   | `/api/v1/logout`           | Sanctum + tenant    | Logout user tenant              |
+| GET    | `/api/v1/address/{level}`  | Sanctum + tenant    | List alamat berjenjang per level (`provinces/cities/districts/villages/streets`), mendukung filter parent + `?with_trashed=1` |
+| POST   | `/api/v1/address/{level}`  | Sanctum + tenant    | Create alamat (milik tenant, `pdam_org_id` otomatis) |
+| PUT    | `/api/v1/address/{level}/{id}` | Sanctum + tenant | Update alamat                    |
+| DELETE | `/api/v1/address/{level}/{id}` | Sanctum + tenant | Soft-delete; `?cascade=1` ikut menghapus anak milik tenant |
+| POST   | `/api/v1/address/{level}/{id}/restore` | Sanctum + tenant | Pulihkan record + keturunan |
 
 ---
 

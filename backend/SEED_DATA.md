@@ -10,9 +10,10 @@ baca meter → tagihan → pembayaran → jurnal → neraca, plus gudang → sto
 > `DatabaseSeeder` saat ini tidak production-safe karena masih memuat akun dan password demo. Jalur
 > production hanya mengikuti [`DEPLOY.md`](DEPLOY.md).
 
-> **Snapshot terbaru:** MySQL 8.4.9 disposable dan SQLite menjalankan 60 migration dan 24 seeder hingga
-> membangun 167 tabel; lima migration terbaru hanya menambah constraint. MySQL rollback `000004`-`000010`
-> lalu migrate ulang lulus. Snapshot lama tetap ada di `../temuan.md`; bukti aktif ada di `../temuan2.md`.
+> **Snapshot terbaru:** MySQL 8.4.9 disposable dan SQLite menjalankan **62 migration dan 24 seeder** hingga
+> membangun 167 tabel; migration terbaru menambah `pdam_org_id` + `deleted_at` pada tabel master alamat.
+> MySQL rollback `000004`-`000010` lalu migrate ulang lulus. Snapshot lama tetap ada di `../temuan.md`;
+> bukti aktif ada di `../temuan2.md`.
 
 > Audit aktif ada di `../temuan2.md`; `../temuan.md` adalah arsip snapshot 8 Juli 2026.
 >
@@ -258,7 +259,7 @@ sebelum `MaintenanceSeeder`).
 
 | Seeder | Tabel utama yang diisi | Catatan integrasi |
 |--------|------------------------|-------------------|
-| `AddressSeeder` | `provinces`, `cities`, `districts`, `villages`, `streets`, `meter_route_streets`, `meter_route_assignments` | Menyambungkan `customers.street_id` (15/15 valid, 0 orphan) + rute ↔ jalan ↔ petugas |
+| `AddressSeeder` | `provinces`, `cities`, `districts`, `villages`, `streets`, `meter_route_streets`, `meter_route_assignments` | Menyambungkan `customers.street_id` (15/15 valid, 0 orphan) + rute ↔ jalan ↔ petugas. Data alamat berjenjang (Provinsi→Kota→Kecamatan→Desa→Jalan) adalah **global reference** (`pdam_org_id` null) agar dipakai semua PDAM; tiap tenant bisa menambah data **privat** sendiri (`pdam_org_id` = tenant) melalui halaman **Master Alamat**. |
 | `CrmDetailSeeder` | `complaint_tracks`, `customer_feedbacks` | Histori penanganan + feedback tiap pengaduan yang selesai |
 | `CustomerLifecycleSeeder` | prospek, survey, jadwal instalasi, `disconnections`, `ownership_transfers` | Siklus hidup pelanggan (calon → aktif → isolir → balik nama) |
 | `NotificationSeeder` | notifikasi in-app, `chats`, `chat_messages` | Komunikasi pelanggan ↔ petugas |
