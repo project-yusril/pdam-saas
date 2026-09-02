@@ -168,6 +168,7 @@ import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { MODULE_CATALOG, TIER_LABELS } from '../config/modules';
+import { BUSINESS_FLOWS } from '../config/flows';
 
 const props = defineProps({ pageTitle: String, pageSubtitle: String });
 const route = useRoute();
@@ -207,6 +208,13 @@ const QUICK_MENU = [
             { to: '/finance/income-statement', label: 'Laba Rugi', icon: 'pi-chart-line' },
             { to: '/finance/balance-sheet', label: 'Neraca', icon: 'pi-building' },
             { to: '/finance/cash-flow', label: 'Arus Kas', icon: 'pi-wallet' },
+        ],
+    },
+    {
+        to: '/flows-group', label: 'Alur Bisnis', icon: 'pi-sitemap',
+        children: [
+            { to: '/flows', label: 'Semua Alur', icon: 'pi-th-large' },
+            ...BUSINESS_FLOWS.map((f) => ({ to: '/flows/' + f.key, label: f.label, icon: f.icon })),
         ],
     },
     { to: '/marketplace', label: 'Marketplace', icon: 'pi-shopping-cart' },

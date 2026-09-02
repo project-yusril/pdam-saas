@@ -217,6 +217,7 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 | Marketplace tenant | `/marketplace` | Tenant | Katalog/harga/dependency dari session tenant; purchase membuat order pending + URL Snap dan aktivasi menunggu settlement Midtrans terverifikasi. |
 | Dashboard role | `/dashboard/director`, `/dashboard/finance`, `/dashboard/technical`, `/dashboard/warehouse` | Tenant | Dashboard khusus role; kegagalan API ditampilkan melalui banner global. |
 | Laporan keuangan | `/finance/general-ledger`, `/finance/trial-balance`, `/finance/income-statement`, `/finance/balance-sheet`, `/finance/cash-flow` | Tenant | Buku Jurnal, Neraca Saldo, Laba Rugi, Neraca, Arus Kas; di-backend oleh `AccountingReportController` (`permission:core.report.view`). |
+| Alur Bisnis | `/flows`, `/flows/:key` (mis. `/flows/pemasangan-baru`) | Tenant | Halaman diagram alur per proses: Pemasangan Baru, Baca Meter, Penagihan & Pembayaran, Pengaduan, Lifecycle, Gudang & Pengadaan, Keuangan & Akuntansi. Di-render dari `resources/js/config/flows.js` (sumber `02_flow.md`). |
 | Halaman modul (generik) | `/modules/:code` (mis. `/modules/WH`, `/modules/METX`, `/modules/CHEM`) | Tenant | Halaman daftar generik per modul: menampilkan DataTable dari endpoint list asli modul, atau kartu KPI untuk endpoint dashboard (IoT/Produksi/DMA/NRW). |
 | Panel super admin | `/platform` | Super admin | Sidebar cerah + topbar. Kelola tenant, dashboard SaaS (MRR/ARR). |
 | Marketplace platform | `/platform/modules` | Super admin | Katalog dan pengelolaan commerce/manual platform tetap tersedia terpisah dari checkout tenant. |
@@ -225,9 +226,9 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 > per tenant). Grup **Keuangan** muncul bila modul `FIN+` aktif (berisi sub-menu laporan). Grup lain
 > dikelompokkan per **tier** (Inti/Enterprise/Smart Utility) dan memuat sub-menu semua modul yang statusnya
 > `active` untuk tenant tersebut — untuk `admin_tenant` PDAM Canada (27 modul aktif) seluruh katalog tampil.
-> Menu **Master Data** selalu tampil (Wilayah, Rute Baca Meter, Jalan, Master Alamat, Golongan Tarif), dan
-> grup **Pelanggan** berisi Data Pelanggan + Pemasangan Baru. Modul non-aktif otomatis disembunyikan,
-> sehingga sidebar selalu konsisten dengan entitlement tenant.
+> Menu **Master Data** selalu tampil (Wilayah, Rute Baca Meter, Jalan, Master Alamat, Golongan Tarif), grup
+> **Pelanggan** berisi Data Pelanggan + Pemasangan Baru, dan grup **Alur Bisnis** berisi diagram alur tiap
+> proses. Modul non-aktif otomatis disembunyikan, sehingga sidebar selalu konsisten dengan entitlement tenant.
 
 > **Tampilan admin (setup UI):** shell tenant (`AppLayout.vue`) & super-admin (`PlatformLayout.vue`) memakai
 > design system ala **Vuexy** — font **Public Sans**, primary indigo **#7367F0**, sidebar putih dengan menu

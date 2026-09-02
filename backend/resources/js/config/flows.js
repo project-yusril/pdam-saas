@@ -1,0 +1,118 @@
+// Registri Alur Bisnis menampilkan diagram per proses (sumber: `02_flow.md`).
+// `type`: 'process' (default) | 'decision' (percabangan) | 'end' (akhir).
+export const BUSINESS_FLOWS = [
+    {
+        key: 'pemasangan-baru',
+        label: 'Pemasangan Baru',
+        group: 'SRV',
+        icon: 'pi-user-plus',
+        color: 'blue',
+        summary: 'Calon pelanggan daftar → survey → bayar biaya pasang → material dipasang → menjadi pelanggan aktif.',
+        steps: [
+            { title: 'Pendaftaran', description: 'Calon pelanggan / CS daftar sambungan baru (NIK, alamat, tarif). Status: pending_review.', role: 'Pelanggan / CS', type: 'process' },
+            { title: 'Verifikasi & Assign Survey', description: 'Hublang memverifikasi data lalu menugaskan petugas survey. Status: surveying.', role: 'Hublang', type: 'process' },
+            { title: 'Survey Lapangan', description: 'Petugas survey cek lokasi, GPS, rekomendasi kelayakan.', role: 'Survey Officer', type: 'process' },
+            { title: 'Approval Kepala Survey', description: 'Approve, Reject, atau Re-survey beserta catatan.', role: 'Kepala Survey', type: 'decision' },
+            { title: 'Notifikasi & Bayar Biaya Pasang', description: 'Pelanggan menerima rincian biaya pasang & membayar. Status: payment_paid.', role: 'Pelanggan', type: 'process' },
+            { title: 'Penyediaan Material', description: 'Warehouse sediakan material sesuai hasil survey (stock-out + jurnal).', role: 'Warehouse', type: 'process' },
+            { title: 'Pemasangan & Aktivasi', description: 'Teknisi pasang meter → status installed → Aktivasi jadi pelanggan aktif.', role: 'Teknisi', type: 'end' },
+        ],
+    },
+    {
+        key: 'baca-meter',
+        label: 'Baca Meter Bulanan',
+        group: 'MTR',
+        icon: 'pi-compass',
+        color: 'teal',
+        summary: 'Buka periode → petugas baca tiap rute → verifikasi kantor → tutup periode (prasyarat tagihan).',
+        steps: [
+            { title: 'Buka Periode Baca', description: 'Kantor buka reading period (open) per zona.', role: 'Meter Office', type: 'process' },
+            { title: 'Tugas per Rute', description: 'Petugas menerima daftar pelanggan di rutenya (urut jalan).', role: 'Meter Officer', type: 'process' },
+            { title: 'Foto Rumah & Meter', description: 'Bukti hadir + foto kondisi meter di lokasi.', role: 'Meter Officer', type: 'process' },
+            { title: 'Baca / Estimasi', description: 'OCB konfirmasi/koreksi; bila tak terbaca → estimasi + alasan.', role: 'Meter Officer', type: 'decision' },
+            { title: 'Submit (offline → online)', description: 'Data baca meter dikirim & disinkronkan.', role: 'Meter Officer', type: 'process' },
+            { title: 'Verifikasi & Edge Case', description: 'Rollover, ganti meter, konsumsi negatif/anomali → flag.', role: 'Meter Office', type: 'process' },
+            { title: 'Tutup Periode', description: 'Reading period closed → siap generate tagihan.', role: 'Meter Office', type: 'end' },
+        ],
+    },
+    {
+        key: 'penagihan',
+        label: 'Penagihan & Pembayaran',
+        group: 'CORE',
+        icon: 'pi-credit-card',
+        color: 'green',
+        summary: 'Generate tagihan dari periode tertutup → notifikasi → pelanggan bayar → tunggakan ditangani.',
+        steps: [
+            { title: 'Generate Tagihan', description: 'Konsumsi tiered + abonemen + admin (+denda). Hanya periode closed.', role: 'Finance Head', type: 'process' },
+            { title: 'Notifikasi Tagihan', description: 'Cron notif tgl 23–25 (jatuh tempo).', role: 'Sistem', type: 'process' },
+            { title: 'Pelanggan Bayar', description: 'QRIS/VA/e-wallet atau tunai di loket kasir.', role: 'Pelanggan / Kasir', type: 'decision' },
+            { title: 'Verifikasi Pembayaran', description: 'Webhook signature + idempotency → bills.status=paid.', role: 'Sistem', type: 'process' },
+            { title: 'Tangani Tunggakan', description: 'Belum bayar → overdue + denda; ≥ N bulan → flag isolir.', role: 'Sistem', type: 'end' },
+        ],
+    },
+    {
+        key: 'pengaduan',
+        label: 'Pengaduan & Call Center',
+        group: 'CRM',
+        icon: 'pi-comments',
+        color: 'purple',
+        summary: 'Kanal masuk (form/telepon) → assign penanganan → tuntaskan (admin/teknis) → SLA & feedback.',
+        steps: [
+            { title: 'Kanal Masuk', description: 'Pelanggan isi form + foto, atau call agent catat dari telepon.', role: 'Pelanggan / Call Agent', type: 'process' },
+            { title: 'Terima & Assign', description: 'CS terima aduan dan menugaskan penanganan.', role: 'Customer Service', type: 'process' },
+            { title: 'Tentukan Jenis', description: 'Administratif (kantor) atau Teknis (field service).', role: 'Customer Service', type: 'decision' },
+            { title: 'Penanganan Teknis', description: 'Technician ke lapangan, pakai material gudang.', role: 'Technician / FSM', type: 'process' },
+            { title: 'Pantau SLA', description: 'SLA dipantau; lewat → eskalasi ke supervisor.', role: 'Supervisor', type: 'process' },
+            { title: 'Resolve & Feedback', description: 'Aduan selesai → pelanggan beri rating.', role: 'Customer Service', type: 'end' },
+        ],
+    },
+    {
+        key: 'lifecycle',
+        label: 'Lifecycle Pelanggan',
+        group: 'CORE',
+        icon: 'pi-sync',
+        color: 'orange',
+        summary: 'Setelah pelanggan aktif: isolir, tutup sementara, balik nama, atau berhenti permanen.',
+        steps: [
+            { title: 'Pelanggan Aktif', description: 'Sambungan air aktif, terhubung billing & rute.', role: '—', type: 'process' },
+            { title: 'Isolir (tunggakan ≥ N bln)', description: 'Hublang perintahkan → teknisi isolir. Status: isolated.', role: 'Hublang / Teknisi', type: 'decision' },
+            { title: 'Tutup Sementara', description: 'Atas permintaan (rumah kosong). Status: suspended_temporary.', role: 'Hublang', type: 'process' },
+            { title: 'Balik Nama', description: 'Ganti pemilik → approval → nama baru. Status: ownership_transfers.', role: 'Hublang', type: 'process' },
+            { title: 'Berhenti Permanen', description: 'Status: terminated. Semua perubahan terekam customer_status_history.', role: 'Hublang', type: 'end' },
+        ],
+    },
+    {
+        key: 'gudang',
+        label: 'Gudang & Pengadaan',
+        group: 'WH',
+        icon: 'pi-box',
+        color: 'amber',
+        summary: 'Pengadaan material dengan approval berjenjang, lalu distribusi ke gudang wilayah.',
+        steps: [
+            { title: 'Buat PO', description: 'Warehouse head membuat Purchase Order (draft).', role: 'Warehouse Head', type: 'process' },
+            { title: 'Validasi Teknis', description: 'Technical head validasi kebutuhan. Status: tech_approved.', role: 'Technical Head', type: 'process' },
+            { title: 'Approval Direktur', description: 'Director menyetujui pengadaan. Status: dir_approved.', role: 'Director', type: 'process' },
+            { title: 'Validasi Anggaran', description: 'Finance head validasi anggaran. Status: fin_approved.', role: 'Finance Head', type: 'process' },
+            { title: 'Eksekusi & Terima', description: 'Material masuk → stock_in + jurnal persediaan.', role: 'Finance / Warehouse', type: 'process' },
+            { title: 'Distribusi ke Wilayah', description: 'Transfer order main → buffer wilayah. Konfirmasi penerimaan.', role: 'Warehouse', type: 'end' },
+        ],
+    },
+    {
+        key: 'keuangan',
+        label: 'Keuangan & Akuntansi',
+        group: 'FIN+',
+        icon: 'pi-chart-line',
+        color: 'indigo',
+        summary: 'Setiap pergerakan uang → jurnal → buku besar → 5 laporan keuangan.',
+        steps: [
+            { title: 'Sumber Jurnal', description: 'Tagihan, pembayaran, persediaan, biaya pasang, dll.', role: 'Sistem', type: 'process' },
+            { title: 'Jurnal Otomatis', description: 'Debit/Kredit sesuai transaksi (DOUBLE ENTRY).', role: 'Sistem', type: 'process' },
+            { title: 'Buku Besar', description: 'Seluruh jurnal terakumulasi per akun.', role: 'Accountant', type: 'process' },
+            { title: '5 Laporan Keuangan', description: 'Neraca Saldo, Buku Jurnal, Laba Rugi, Neraca, Arus Kas.', role: 'Finance', type: 'end' },
+        ],
+    },
+];
+
+export function findFlow(key) {
+    return BUSINESS_FLOWS.find((f) => f.key === key);
+}
