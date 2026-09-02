@@ -95,11 +95,12 @@ platform, tetapi tidak boleh dianggap sebagai inventaris endpoint lengkap.
 
 ### Data Demo (Seeder) — detail di `backend/SEED_DATA.md`
 
-`php artisan migrate --seed` mengisi **2 tenant demo terintegrasi**. Audit terbaru menjalankan **60
-migration dan 24 seeder** pada MySQL 8.4.9 disposable dan SQLite: 167 tabel dibuat. MySQL rollback
-`000004`-`000010` lalu migrate ulang lulus. Metadata terbaru mencatat 234 FK total, termasuk 97 tenant
-batch FK dan 8 actor FK, dengan preflight orphan/cross-tenant actor nol. Angka 8 Juli di `temuan.md`
-tetap arsip historis.
+`php artisan migrate --seed` mengisi **3 tenant demo terintegrasi** (Canada, Brazil, Sambas). Audit terbaru
+menjalankan **60 migration dan 24 seeder** pada MySQL 8.4.9 disposable dan SQLite: 167 tabel dibuat; dataset
+demo kini ditambah `SambasTenantSeeder` → **25 seeder** dan tenant **pdam-sambas** (3.000 pelanggan), tanpa
+mengubah angka 167 tabel pada snapshot audit. MySQL rollback `000004`-`000010` lalu migrate ulang lulus.
+Metadata terbaru mencatat 234 FK total, termasuk 97 tenant batch FK dan 8 actor FK, dengan preflight
+orphan/cross-tenant actor nol. Angka 8 Juli di `temuan.md` tetap arsip historis.
 
 
 Fixture transaksi inti pelanggan, billing, pembayaran, jurnal, dan stok dasar digerakkan lewat service aplikasi dan menghasilkan neraca demo balance. Fixture enterprise tambahan tidak seluruhnya membuat transaksi/jurnal penuh; sejumlah record memang referensial atau memakai `journal_entry_id = null`.
@@ -108,12 +109,16 @@ Fixture transaksi inti pelanggan, billing, pembayaran, jurnal, dan stok dasar di
 |--------|-----------|------|-------------|-----------|---------|
 | PDAM Canada | `pdam-canada` | Pontianak | 27 (LENGKAP) | 10 | 30 |
 | PDAM Brazil | `pdam-brazil` | Surabaya | 10 (SEBAGIAN) | 5 | 10 |
+| PDAM Sambas | `pdam-sambas` | Kabupaten Sambas (Kalbar) | 27 (LENGKAP) | 3.000 | 36.000 |
 
-> "Canada/Brazil" hanya label anti-copyright; isi datanya Indonesia.
+> "Canada/Brazil" hanya label anti-copyright; isi datanya Indonesia. Tenant **pdam-sambas** di-seed
+> `SambasTenantSeeder` memakai alamat nyata Kab. Sambas (BPS 6101) + simulasi 1 tahun, tunggakan 1/2/3 bulan,
+> 150 pelanggan diisolir, dan rantai baca meter (foto + petugas → tarif → tagihan → jurnal).
 
-**Contoh login tenant demo:** `pdam-canada` / `admin_tenant@gmail.com` / `12345678`.
+**Contoh login tenant demo:** `pdam-canada` / `admin_tenant@gmail.com` / `12345678` (juga berlaku untuk
+`pdam-brazil` & `pdam-sambas` — beda hanya kode PDAM-nya).
 **Contoh platform demo:** `superadmin@gmail.com` / `12345678`, tanpa kode PDAM. Daftar lengkap 35 role +
-email & password per PDAM (Canada & Brazil) dipelihara di [`README.md`](README.md#demo-credentials-akun--role-demo)
+email & password per PDAM (Canada, Brazil & Sambas) dipelihara di [`README.md`](README.md#demo-credentials-akun--role-demo)
 dan [`backend/SEED_DATA.md`](backend/SEED_DATA.md). `DatabaseSeeder` dilarang di production.
 
 Login web memakai urutan CSRF cookie -> login -> session cookie; login mobile menambah `device_name`

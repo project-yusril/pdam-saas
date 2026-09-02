@@ -6,8 +6,9 @@
 
 > **Dokumen terkait:** [`temuan2.md`](temuan2.md) sebagai sumber status saat ini · [`PRD.md`](PRD.md) sebagai target produk · [`README.md`](README.md) · [`task.md`](task.md) dan [`temuan.md`](temuan.md) sebagai arsip · [`HANDOVER.md`](HANDOVER.md) · [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) sebagai baseline internal · [`backend/DEPLOY.md`](backend/DEPLOY.md) sebagai runbook draft · [`backend/SEED_DATA.md`](backend/SEED_DATA.md)
 >
-> **Contoh nyata (data demo seeder):** flow di dokumen ini sudah terwujud pada 2 tenant demo —
-> **PDAM Canada** (data Pontianak, 27 modul lengkap) & **PDAM Brazil** (data Surabaya, sebagian modul).
+> **Contoh nyata (data demo seeder):** flow di dokumen ini sudah terwujud pada **3 tenant demo** —
+> **PDAM Canada** (data Pontianak, 27 modul lengkap), **PDAM Brazil** (data Surabaya, sebagian modul), dan
+> **PDAM Sambas** (`pdam-sambas`, 27 modul lengkap, 3.000 pelanggan).
 > Rantai Pelanggan → Baca Meter → Tagihan → Pembayaran → Jurnal → Neraca berjalan penuh & neraca balance.
 > Detail: [`backend/SEED_DATA.md`](backend/SEED_DATA.md).
 >

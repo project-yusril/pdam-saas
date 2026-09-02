@@ -1,6 +1,6 @@
 # SEED DATA - Dokumentasi Data Demo PDAM
 
-**Diperbarui:** 18 Juli 2026 | **Seeder inti:** `database/seeders/OperationalDataSeeder.php` | **Seeder modul:** 16 seeder tambahan (lihat Section 8)
+**Diperbarui:** 18 Juli 2026 | **Seeder inti:** `database/seeders/OperationalDataSeeder.php` | **Seeder tambahan:** 17 seeder (16 seeder modul + `SambasTenantSeeder`; lihat Section 8)
 
 Dokumen ini menjelaskan seluruh data demo yang dibuat otomatis saat `php artisan db:seed`
 (atau `php artisan migrate --seed`). Data dirancang **saling terintegrasi** — dari pelanggan →
@@ -12,6 +12,8 @@ baca meter → tagihan → pembayaran → jurnal → neraca, plus gudang → sto
 
 > **Snapshot terbaru:** MySQL 8.4.9 disposable dan SQLite menjalankan **62 migration dan 24 seeder** hingga
 > membangun 167 tabel; migration terbaru menambah `pdam_org_id` + `deleted_at` pada tabel master alamat.
+> Sejak audit tersebut dataset demo **ditambah 1 seeder tenant** (`SambasTenantSeeder`) → **25 seeder**,
+> membangun **3 tenant demo** (lihat Section 1) — tidak mengubah angka 167 tabel pada snapshot audit.
 > MySQL rollback `000004`-`000010` lalu migrate ulang lulus. Snapshot lama tetap ada di `../temuan.md`;
 > bukti aktif ada di `../temuan2.md`.
 
@@ -32,6 +34,15 @@ baca meter → tagihan → pembayaran → jurnal → neraca, plus gudang → sto
 |--------|-----------|-------------|-------------|------------|
 | **PDAM Canada** | `pdam-canada` | PDAM Pontianak | **27 modul (LENGKAP)** | 4 zona, 10 pelanggan, 5 material |
 | **PDAM Brazil** | `pdam-brazil` | PDAM Surabaya | **10 modul (SEBAGIAN)** | 2 zona, 5 pelanggan, 3 material |
+| **PDAM Sambas** | `pdam-sambas` | Kabupaten Sambas (Kalimantan Barat) | **27 modul (LENGKAP)** | 7 zona, **3.000 pelanggan**, 8 material |
+
+> **PDAM Sambas** (`SambasTenantSeeder`) memakai alamat nyata Kabupaten Sambas (kode BPS 6101):
+> 19 kecamatan, desa & jalan asli yang membentuk rute meter. Simulasi berjalan **1 tahun** (Sep 2025 →
+> bulan penuh terakhir), pelanggan baru mulai `initial_reading = 0` dan di-baca tiap bulan (nilai akumulatif).
+> Setiap pembacaan punya **foto rumah + foto meter** dan **`read_by` (petugas rute)** sehingga pertanggungjawaban jelas.
+> Pola pembayaran dibuat realistis: **1, 2, 3 bulan menunggak**, serta pelanggan **diisolir** karena >6 bulan
+> tidak bayar. Gudang menghubungkan **permintaan wilayah → gudang pusat**, pengadaan **tawas** (PO, PR, tender, vendor),
+> dan seluruh 27 modul saling terintegrasi (tagihan → jurnal → neraca BALANCE).
 
 **Modul aktif PDAM Brazil (partial):** `CORE, ZONE, WH, MTR, SRV, FIN+, CRM, BILL+, C360, APP`.
 Sisanya (`AST, METX, FSM, PROC, MNT, HR, DMS, GIS, CC, BI, INT, CHEM, IOT, PROD, DIST, NRW, AI`)
@@ -44,8 +55,8 @@ berstatus `locked` — persis skenario PDAM kecil yang belum berlangganan modul 
 Semua user demo memakai password: **`12345678`**
 
 Email user demo mengikuti pola **`{role_code}@gmail.com`**. Karena email unik **per tenant**, email yang
-sama dipakai di kedua PDAM; yang membedakan saat login adalah **kode PDAM**
-(`pdam-canada` / `pdam-brazil`).
+sama dipakai di ketiga PDAM; yang membedakan saat login adalah **kode PDAM**
+(`pdam-canada` / `pdam-brazil` / `pdam-sambas`).
 
 **Atribusi Admin PDAM per tenant:**
 
@@ -53,11 +64,18 @@ sama dipakai di kedua PDAM; yang membedakan saat login adalah **kode PDAM**
 |------|-----------|--------------------|----------|
 | **PDAM Canada** | `pdam-canada` | `admin_tenant@gmail.com` | `12345678` |
 | **PDAM Brazil** | `pdam-brazil` | `admin_tenant@gmail.com` | `12345678` |
+| **PDAM Sambas** | `pdam-sambas` | `admin_tenant@gmail.com` | `12345678` |
+
+> **Akun tambahan tenant Sambas:** `SambasTenantSeeder` membuat **1 petugas baca meter per rute**
+> (`meter_officer1@gmail.com` … `meter_officer7@gmail.com`, password `12345678`) yang di-assign ke
+> masing-masing rute — selain user per role standar (35 role). Total akun user demo saat ini:
+> **(35 role × 3 tenant) + 7 petugas Sambas + 1 super-admin platform = 113 akun**.
 
 Tabel di bawah adalah daftar **lengkap** 35 role yang di-clone ke
-**masing-masing** tenant (PDAM Canada & PDAM Brazil) oleh `RoleTemplateSeeder` + `TenantProvisioningService`.
-Karena **email & password identik** di kedua tenant (unik per tenant, hanya dibedakan oleh `pdam_code`),
-tabel berikut berlaku untuk **keduanya** (35 role × 2 tenant = 70 akun user).
+**masing-masing** tenant oleh `RoleTemplateSeeder` + `TenantProvisioningService`.
+Karena **email & password identik** di ketiga tenant (unik per tenant, hanya dibedakan oleh `pdam_code`),
+tabel berikut berlaku untuk **PDAM Canada, PDAM Brazil, dan PDAM Sambas**
+(35 role × 3 tenant = 105 akun; belum termasuk 7 petugas baca meter per rute milik tenant Sambas).
 
 #### PDAM Canada (`pdam-canada`)
 
@@ -160,8 +178,11 @@ Daftar role beserta contoh body login juga tersedia di [`backend/README.md`](REA
 
 ## 3. Rantai Data Terintegrasi
 
-Seeder tidak menulis angka mentah ke tabel keuangan. Semua transaksi digerakkan lewat
-**service asli** agar jurnal double-entry selalu balance:
+Seeder tidak menulis angka mentah ke tabel keuangan. Transaksi digerakkan lewat **service asli** agar
+jurnal double-entry selalu balance. **Pengecualian (perf):** `SambasTenantSeeder` (tenant Sambas, 3.000
+pelanggan) menulis tagihan/pembayaran/jurnal secara **langsung** (`insertJournal`) dengan **guard
+`DEBIT == KREDIT`** (throw bila tidak balance), karena `BillingService`/`PaymentService` pada skala 3.000
+pelanggan memakan ±36 menit. Hasil akhir tetap jurnal ber-format sama & neraca BALANCE.
 
 ```
 Modal awal ──▶ JournalService  (DEBIT Kas 1-001 | KREDIT Modal 3-001)
@@ -203,20 +224,23 @@ tagihan periode terakhir **sengaja menunggak** agar laporan piutang & aging tida
 
 Diverifikasi setelah `php artisan migrate:fresh --seed`:
 
-| Metrik | PDAM Canada | PDAM Brazil |
-|--------|------------:|------------:|
-| Pelanggan | 10 | 5 |
-| Tagihan | 30 (26 lunas, 4 nunggak) | 10 (8 lunas, 2 nunggak) |
-| Jenis material | 5 | 3 |
-| Total stok fisik | 1.800 unit | 700 unit |
-| Jurnal (entries) | 58 | 20 |
-| Modul aktif | **27** | **10** |
-| Total DEBIT | Rp 5.183.181.700 | Rp 3.082.347.000 |
-| Total KREDIT | Rp 5.183.181.700 | Rp 3.082.347.000 |
-| **Neraca** | ✅ **BALANCE** | ✅ **BALANCE** |
+| Metrik | PDAM Canada | PDAM Brazil | PDAM Sambas |
+|--------|------------:|------------:|------------:|
+| Pelanggan | 10 | 5 | 3.000 |
+| Tagihan | 30 (26 lunas, 4 nunggak) | 10 (8 lunas, 2 nunggak) | 36.000 (33.600 lunas, 2.400 nunggak) |
+| Jenis material | 5 | 3 | 8 |
+| Total stok fisik | 1.800 unit | 700 unit | 7.600 unit (beli awal) |
+| Baca meter (foto+petugas) | — (fokus inti) | — (fokus inti) | 36.000 |
+| Pelanggan isolir (putus) | — | — | 150 |
+| Jurnal (entries) | 58 | 20 | 69.602 |
+| Modul aktif | **27** | **10** | **27** |
+| Total DEBIT | Rp 5.183.181.700 | Rp 3.082.347.000 | Rp 117.524.114.700 |
+| Total KREDIT | Rp 5.183.181.700 | Rp 3.082.347.000 | Rp 117.524.114.700 |
+| **Neraca** | ✅ **BALANCE** | ✅ **BALANCE** | ✅ **BALANCE** |
 
-Karena `SUM(DEBIT) == SUM(KREDIT)` di kedua tenant, **neraca (balance sheet) pasti seimbang**
-dan laporan keuangan (Kas, Piutang, Persediaan, Pendapatan, Modal) langsung punya isi.
+Karena `SUM(DEBIT) == SUM(KREDIT)` di ketiga tenant, **neraca (balance sheet) pasti seimbang**
+dan laporan keuangan langsung punya isi. Khusus Sambas, angka pemakaian (m³) pada tagihan = selisih
+baca meter (kini − lalu) sehingga integrasi **baca meter → tarif → tagihan → jurnal** terbukti nyambung.
 
 ---
 
@@ -255,10 +279,11 @@ php artisan migrate:fresh --seed
 ## 6. Golongan Tarif & COA
 
 - **17 golongan tarif** (data PDAM Pontianak, PRD 10.2) di-seed `MasterFinanceSeeder` untuk
-  kedua tenant, lengkap dengan tier bertingkat (0–10 / 10–20 / >20 m³).
+  kedua tenant (Canada & Brazil), lengkap dengan tier bertingkat (0–10 / 10–20 / >20 m³).
+  Tenant **Sambas** mendapat COA + 17 golongan tarif yang sama dari `SambasTenantSeeder`.
 - **Chart of Accounts** standar PDAM (Kas, Piutang, Persediaan, Aset Jaringan, Utang, Modal,
   Pendapatan Air/Pemasangan/Denda, Beban, + akun Aset Tetap & Penyusutan) juga dari
-  `MasterFinanceSeeder`.
+  `MasterFinanceSeeder` (untuk Canada/Brazil) dan `SambasTenantSeeder` (untuk Sambas).
 
 Pemetaan akun yang dipakai transaksi otomatis:
 
@@ -290,16 +315,16 @@ Katalog ini menjadi sumber data endpoint `GET /platform/modules` dan halaman **M
 
 ---
 
-## 8. Seeder Modul Tambahan (16 seeder)
+## 8. Seeder Modul Tambahan (17 seeder)
 
-Selain seeder inti (Section 3), ada **16 seeder modul** yang mengisi master data fondasi,
-modul aktif, dan modul enterprise. Semuanya **idempotent** dan **tenant-aware**: data enterprise
-hanya diisi untuk tenant yang modulnya `active` (PDAM Canada full; PDAM Brazil hanya modul aktif).
+Selain seeder inti (Section 3), ada **16 seeder modul** + **`SambasTenantSeeder`** yang mengisi master data
+fondasi, modul aktif, dan modul enterprise. Semuanya **idempotent** dan **tenant-aware**: data enterprise
+hanya diisi untuk tenant yang modulnya `active` (PDAM Canada & SAMBAS full 27 modul; PDAM Brazil hanya modul aktif).
 
 Urutan eksekusi di `DatabaseSeeder.php` sudah menghormati dependency (mis. `AssetSeeder`
-sebelum `MaintenanceSeeder`).
+sebelum `MaintenanceSeeder`), dan `SambasTenantSeeder` berada paling akhir (punya cakupan lintas modul sendiri).
 
-### 8.1 Fondasi & Modul Aktif (kedua tenant)
+### 8.1 Fondasi & Modul Aktif (ketiga tenant)
 
 | Seeder | Tabel utama yang diisi | Catatan integrasi |
 |--------|------------------------|-------------------|
@@ -310,6 +335,9 @@ sebelum `MaintenanceSeeder`).
 | `BillingExtraSeeder` | `installment_plans`, `installment_plan_bills`, `installment_schedules`, `bill_adjustments` | Cicilan tagihan + penyesuaian |
 
 ### 8.2 Modul Enterprise (utamanya PDAM Canada)
+
+> Seeder enterprise di bawah mengisi **PDAM Canada** (tenant Sambas mengisi modul enterprisenya sendiri
+> lewat `SambasTenantSeeder` — lihat 8.4).
 
 | Seeder | Modul | Tabel utama yang diisi |
 |--------|-------|------------------------|
@@ -331,15 +359,48 @@ sebelum `MaintenanceSeeder`).
 |--------|------------------------|---------|
 | `PlatformCommerceSeeder` | `module_price_tiers`, `module_bundles` (+items), `promos` (+targets/redemptions), `saas_invoices` | Harga berjenjang per skala pelanggan, paket bundling, promo, tagihan langganan SaaS |
 
+### 8.4 Seeder Tenant Sambas (tenant demo ke-3)
+
+| Seeder | Tenant | Yang diisi | Catatan |
+|--------|--------|-----------|---------|
+| `SambasTenantSeeder` | PDAM Sambas (`pdam-sambas`) | Provisioning tenant + 27 modul aktif + 35 role; COA & 17 golongan tarif; alamat nyata Kab. Sambas (19 kecamatan/desa/jalan; kode BPS 6101); 7 zona + 7 gudang + rute + petugas baca per rute; **3.000 pelanggan + meter + 36.000 baca (foto + `read_by`)** → tagihan → pembayaran → jurnal; tunggakan 1/2/3 bulan & 150 isolir; gudang (transfer wilayah→pusat, PO/PR tawas, opname); procurement (vendor/tender/kontrak); modul enterprise (METX, AST, FIN+, CHEM, FSM, MNT, HR, DMS/GIS/INT/CC, IOT/PROD/DIST/NRW/AI, BILL+, CRM, SRV, APP, C360) | Idempotent (dilewati bila tenant sudah punya pelanggan; `SEED_SAMBAS_FORCE=true` untuk reseed). Memakai data alamat & jalan asli Sambas sehingga rute meter punya nama jalan nyata. |
+
 > **Catatan balance:** entri di `depreciation_entries`, maintenance, dan asset di-set
 > `journal_entry_id = null` agar **tidak mengganggu neraca inti** yang sudah balance (Section 4).
 
-### 8.4 Tabel yang sengaja dibiarkan kosong (⚪ wajar)
+### 8.5 Tabel yang sengaja dibiarkan kosong (⚪ wajar)
 
 Bukan karena seeder gagal — memang tidak perlu di-seed karena terisi otomatis saat runtime:
 `payment_gateway_logs`, `personal_access_tokens`, `password_reset_tokens`, `jobs`, `job_batches`,
 `failed_jobs`, `cache`/`cache_locks`, `sessions`, `user_permissions`, `subscriptions`,
 `tenant_module_overrides`, `price_change_logs`, `activity_logs`, `employees` (dipakai `hr_employees`).
+
+---
+
+## 9. Laporan Baca Meter & Perubahan Terkait
+
+### 9.1 Fitur Laporan Baca Meter
+
+Ditambahkan untuk membuktikan rantai **petugas → rute → pelanggan → baca meter → tarif → tagihan** hingga
+dapat dipertanggungjawabkan (foto + petugas).
+
+| Komponen | Lokasi | Keterangan |
+|----------|--------|-----------|
+| Endpoint | `GET /api/v1/meter-readings/report?period=YYYY-MM&route_id=` | `MeterReadingController@report` — izin `mtr.reading.view` |
+| Halaman web | `#/meter-reading-report` (menu **Baca Meter & Metering → Laporan Baca Meter**) | `resources/js/views/meter/MeterReadingReportView.vue` |
+| Isi laporan | per pelanggan | No. Pelanggan, Nama, Jalan, Golongan, **Baca Lalu**, **Baca Kini**, **Pemakaian (m³)**, **Biaya**, foto meter & rumah, **Petugas (read_by)**, Verifikator, Status |
+
+> **Bukti integrasi untuk tenant Sambas (rute RT-01, periode 2026-08):** `SMBS-00001` baca lalu `84` →
+> baca kini `91` → **pemakaian 7 m³** → tarif `2A1` → biaya `Rp 28.000`, dan `pemakaian == bill.consumption`
+> (**BENAR**). Foto meter & rumah ada, petugas `Rahmat Hidayat` + verifikator kantor tercatat.
+
+### 9.2 Perubahan lain yang menyertai
+
+- **`CustomerListView.vue`** → tabel pelanggan kini **server-side pagination** (default 25/halaman,
+  `Show X entries` + Previous/Next); footer menampilkan total benar (mis. `Showing 1 to 25 of 3.000 entries`).
+- **`DataTable.vue`** (shared) → fallback `from`/`to` pada mode server agar list yang tidak mengirim
+  `:from`/`:to` (mis. Pegawai) tidak menampilkan `0 to 0`.
+- **`Customer`** → relasi `street(): BelongsTo` ditambahkan agar laporan baca meter bisa menampilkan jalan.
 
 ---
 

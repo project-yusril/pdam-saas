@@ -84,26 +84,31 @@ php artisan serve
 
 ## Demo Data (Seeder)
 
-Untuk environment development/demo, `php artisan migrate --seed` mengisi **2 tenant demo terintegrasi** (pelanggan → baca meter →
-tagihan → pembayaran → jurnal → neraca, plus gudang → stok → jurnal persediaan). Neraca kedua
-tenant terverifikasi **balance**.
+Untuk environment development/demo, `php artisan migrate --seed` mengisi **3 tenant demo terintegrasi** (pelanggan → baca meter →
+tagihan → pembayaran → jurnal → neraca, plus gudang → stok → jurnal persediaan). Neraca ketiga
+tenant terverifikasi **balance**. Detail lengkap di [`backend/SEED_DATA.md`](backend/SEED_DATA.md) Section 4.
 
-| Tenant | Kode login | Sumber data | Modul aktif |
-|--------|-----------|-------------|-------------|
-| PDAM Canada | `pdam-canada` | PDAM Pontianak | 27 modul (LENGKAP) |
-| PDAM Brazil | `pdam-brazil` | PDAM Surabaya | 10 modul (SEBAGIAN) |
+| Tenant | Kode login | Sumber data | Modul aktif | Skala |
+|--------|-----------|-------------|-------------|-------|
+| PDAM Canada | `pdam-canada` | PDAM Pontianak | 27 modul (LENGKAP) | 4 zona, 10 pelanggan |
+| PDAM Brazil | `pdam-brazil` | PDAM Surabaya | 10 modul (SEBAGIAN) | 2 zona, 5 pelanggan |
+| PDAM Sambas | `pdam-sambas` | Kabupaten Sambas (Kalimantan Barat) | 27 modul (LENGKAP) | 7 zona, **3.000 pelanggan** |
 
-> "Canada/Brazil" hanya label agar tidak terkena copyright; isi datanya Indonesia.
+> "Canada/Brazil" hanya label agar tidak terkena copyright; isi datanya Indonesia. Tenant **pdam-sambas**
+> di-seed oleh `SambasTenantSeeder` memakai alamat nyata Kab. Sambas (BPS 6101), simulasi 1 tahun penuh
+> (Sep 2025 → bulan penuh terakhir), 3.000 pelanggan, tunggakan 1/2/3 bulan + 150 pelanggan diisolir
+> (>6 bulan tidak bayar), dan rantai baca meter (foto + petugas → tarif → tagihan → jurnal) yang terbukti
+> nyambung — lihat [`backend/SEED_DATA.md`](backend/SEED_DATA.md) Section 9.
 
 **Contoh login demo:** kode `pdam-canada`, email `admin_tenant@gmail.com`, password `12345678`.
 Daftar kredensial lengkap dan workflow reset/non-destruktif hanya dipelihara di
 [`backend/SEED_DATA.md`](backend/SEED_DATA.md). Kredensial ini dilarang pada production.
 
 **Snapshot database terbaru:** MySQL 8.4.9 disposable dan SQLite sama-sama lulus **62 migration + 24
-seeder** dan menghasilkan 167 tabel; migration terbaru menambah `pdam_org_id` + `deleted_at` pada tabel
-master alamat. MySQL rollback `000004`-`000010` lalu migrate ulang juga lulus. Detail metadata FK/index
-dan batasan audit ada di
-`temuan2.md`; snapshot 8 Juli di `temuan.md` tetap arsip historis.
+seeder** dan menghasilkan 167 tabel; dataset demo kini ditambah `SambasTenantSeeder` → **25 seeder** dan
+**3 tenant demo** (tidak mengubah angka 167 tabel pada snapshot audit). Migration terbaru menambah `pdam_org_id`
++ `deleted_at` pada tabel master alamat. MySQL rollback `000004`-`000010` lalu migrate ulang juga lulus. Detail
+metadata FK/index dan batasan audit ada di `temuan2.md`; snapshot 8 Juli di `temuan.md` tetap arsip historis.
 
 
 ## Demo Credentials (Akun & Role Demo)
@@ -112,14 +117,15 @@ dan batasan audit ada di
 > workflow reset non-destruktif hanya dipelihara di [`backend/SEED_DATA.md`](backend/SEED_DATA.md) dan
 > referensi role backend di [`backend/README.md`](backend/README.md).
 
-Ada **2 tenant demo**. Setiap tenant memakai **35 role yang sama**, namun karena email unik **per tenant**,
-keduanya memiliki **71 akun terpisah** (35 role × 2 tenant + 1 super-admin platform). Untuk login, cukup
-pilih kode PDAM yang sesuai — tabel role di bawah disajikan **terpisah per PDAM**.
+Ada **3 tenant demo**. Setiap tenant memakai **35 role yang sama**, namun karena email unik **per tenant**,
+ketiganya memiliki **113 akun terpisah** (35 role × 3 tenant + 7 petugas baca meter tenant Sambas + 1 super-admin
+platform). Untuk login, cukup pilih kode PDAM yang sesuai — tabel role di bawah disajikan **terpisah per PDAM**.
 
 | Tenant | Kode login | Sumber data | Jumlah role | User |
 |--------|-----------|-------------|-------------|------|
 | PDAM Canada | `pdam-canada` | PDAM Pontianak | 35 role | 35 user |
 | PDAM Brazil | `pdam-brazil` | PDAM Surabaya | 35 role | 35 user |
+| PDAM Sambas | `pdam-sambas` | Kabupaten Sambas (Kalbar) | 35 role | 35 user + 7 petugas baca meter |
 
 ### Login tenant (web & mobile/API)
 
@@ -132,10 +138,11 @@ Yang membedakan adalah **kode PDAM** saat login — sehingga atribusi admin per 
 |------|-----------|--------------------|----------|
 | **PDAM Canada** | `pdam-canada` | `admin_tenant@gmail.com` | `12345678` |
 | **PDAM Brazil** | `pdam-brazil` | `admin_tenant@gmail.com` | `12345678` |
+| **PDAM Sambas** | `pdam-sambas` | `admin_tenant@gmail.com` | `12345678` |
 
-| Field | PDAM Canada | PDAM Brazil |
-|-------|-------------|-------------|
-| `pdam_code` | `pdam-canada` | `pdam-brazil` |
+| Field | PDAM Canada | PDAM Brazil | PDAM Sambas |
+|-------|-------------|-------------|-------------|
+| `pdam_code` | `pdam-canada` | `pdam-brazil` | `pdam-sambas` |
 
 Contoh body login sebagai Direktur di PDAM Canada (`POST /api/v1/login`):
 
@@ -151,8 +158,9 @@ Untuk mobile/API ditambah `"device_name": "<nama-perangkat>"`.
 
 ### Daftar role lengkap per PDAM
 
-Karena **email & password sama persis** di kedua tenant (unik per tenant, hanya dibedakan oleh `pdam_code` saat
-login), daftar di bawah berlaku untuk **masing-masing** PDAM (Canada & Brazil) — 35 role × 2 tenant = **70 akun user**.
+Karena **email & password sama persis** di ketiga tenant (unik per tenant, hanya dibedakan oleh `pdam_code` saat
+login), daftar di bawah berlaku untuk **masing-masing** PDAM (Canada, Brazil, & Sambas) — 35 role × 3 tenant = **105 akun user**
+(ditambah 7 petugas baca meter `meter_officer1..7@gmail.com` milik tenant Sambas).
 
 #### PDAM Canada (`pdam-canada`)
 
@@ -257,6 +265,7 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 | Login | `/login` | Publik | Login tenant (kode PDAM + email) atau super admin. Setelah login diarahkan ke `/dashboard` (tenant) atau `/platform` (super admin). |
 | Dashboard tenant | `/dashboard` | Tenant | Dashboard per role (Director, Finance, Warehouse, Technical). |
 | Operasional tenant | `/zones`, `/prospects`, `/meter-routes`, `/meter-routes/dashboard`, `/complaints`, `/assets` | Tenant | Halaman operasional yang terhubung ke endpoint backend nyata. |
+| Laporan Baca Meter | `/meter-reading-report` | Tenant | Rincian baca meter per rute & periode: baca lalu vs kini, pemakaian (m³), golongan tarif, biaya, foto meter & rumah, serta petugas (read_by) & verifikator — di-backend `MeterReadingController@report` (`GET /api/v1/meter-readings/report`, izin `mtr.reading.view`). |
 | Master data tenant | `/streets`, `/address` (Master Alamat), `/tariffs` | Tenant | CRUD master: Jalan, Master Alamat berjenjang (Provinsi→Kota→Kecamatan→Desa/Kelurahan), Golongan Tarif. Data alamat bersifat *global reference + override per tenant* (soft-delete + restore). |
 | Pelanggan | `/customers`, `/tariffs` | Tenant | Daftar & tambah pelanggan; golongan tarif. Form pelanggan memiliki cascade Wilayah→Rute→Jalan. |
 | Enterprise tenant | `/gis`, `/employees`, `/employee-self-service`, `/call-center`, `/tenders` | Tenant | UI modul enterprise; backend tetap menegakkan entitlement dan permission. |
@@ -272,8 +281,8 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 > yang dikelompokkan **per domain bisnis** (Pelanggan & Layanan, Master Data, Keuangan, Baca Meter & Metering,
 > Gudang & Aset, Teknis Lapangan & GIS, SDM & Dokumen, Produksi Air, Integrasi & Analitik, Alur Bisnis) —
 > bukan per tier. Sub-menu tampil hanya bila **modul related-nya aktif** (`active_modules`):
-> untuk `admin_tenant` PDAM Canada (27 modul) hampir semua domain tampil; PDAM Brazil (10 modul) hanya domain
-> yang modulnya aktif. Menu Dashboard, Alur Bisnis, dan Marketplace selalu tampil.
+> untuk `admin_tenant` PDAM Canada & SAMBAS (27 modul) hampir semua domain tampil; PDAM Brazil (10 modul) hanya
+> domain yang modulnya aktif. Menu Dashboard, Alur Bisnis, dan Marketplace selalu tampil.
 
 > **Tampilan admin (setup UI):** shell tenant (`AppLayout.vue`) & super-admin (`PlatformLayout.vue`) memakai
 > design system ala **Vuexy** — font **Public Sans**, primary indigo **#7367F0**, sidebar putih dengan menu

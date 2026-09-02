@@ -23,9 +23,10 @@ Production approval requires evidence for exactly these six gates. The definitio
 - Confirm change approval, maintenance window, rollback owner, release artifact checksums, and incident contacts.
 - Confirm `APP_ENV=production`, `APP_DEBUG=false`, strong `APP_KEY`, production domains, stateful Sanctum/CORS settings, secure cookie settings, and non-demo secrets.
 - Separate runtime, migration, backup, and audit database accounts. Runtime must not have schema-drop privileges. Apply append-only privileges where required, including `privacy_audit_events`.
-- Remove `DemoTenantSeeder` from the production seed path. Provision production tenants through the approved workflow.
+- Remove `DemoTenantSeeder` and `SambasTenantSeeder` from the production seed path. Provision production tenants through the approved workflow.
 - Do not run `php artisan db:seed`, `migrate --seed`, or `migrate:fresh --seed` in production. The
-  current `DatabaseSeeder` includes demo credentials. Production bootstrap is migration-only until a
+  current `DatabaseSeeder` includes demo credentials and a 3.000-customer tenant (`SambasTenantSeeder`,
+  `pdam-sambas`); it is for development/demo only. Production bootstrap is migration-only until a
   dedicated production seeder path is implemented and verified in `../temuan2.md`.
 - Confirm the current backup has already passed a restore drill in an isolated environment.
 - Run dependency checks from `backend/`:

@@ -14,6 +14,10 @@ kredensial demo dimiliki [`SEED_DATA.md`](SEED_DATA.md); deployment production d
 > 60 migration + 24 seeder, rollback/migrate ulang, dan audit FK/index/orphan. **Ditambah 2 migration
 > master alamat (`pdam_org_id` + `soft-deletes`) → total 62 migration; 91 test, 669 assertions.**
 >
+> **Dataset demo kini ditambah 1 seeder tenant (`SambasTenantSeeder`, `pdam-sambas`) → 25 seeder dan
+> 3 tenant demo (Canada, Brazil, Sambas).** Angka audit 15 Juli (24 seeder, 167 tabel) tidak berubah
+> karena `SambasTenantSeeder` memakai tabel yang sudah ada — detail di [`SEED_DATA.md`](SEED_DATA.md).
+>
 > Dokumen terkait: [`../README.md`](../README.md) · [`../PRD.md`](../PRD.md) dan [`../02_flow.md`](../02_flow.md) sebagai target/desain · [`../task.md`](../task.md) dan [`../temuan.md`](../temuan.md) sebagai arsip · [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) sebagai baseline internal · [`DEPLOY.md`](DEPLOY.md) sebagai runbook draft · [`SEED_DATA.md`](SEED_DATA.md) · [`../ml/README.md`](../ml/README.md).
 
 ---
@@ -91,11 +95,11 @@ Dijalankan berurutan oleh `DatabaseSeeder` (`database/seeders/DatabaseSeeder.php
 | 2      | `ModuleSeeder`          | 27 modul katalog (CORE default + 26 modul berbayar), 3 tier                           |
 | 3      | `RoleTemplateSeeder`    | 35 role template global, termasuk `compliance_officer`                                |
 | 4      | `PermissionSeeder`      | Permission granular pola `modul.resource.aksi` (snapshot seed terbaru: 202)            |
-| 5      | `DemoTenantSeeder`      | 2 tenant demo + user per role template                                                |
+| 5      | `DemoTenantSeeder`      | 2 tenant demo (Canada & Brazil) + user per role template                                 |
 | 6      | `MasterFinanceSeeder`   | COA standar + 17 golongan tarif Pontianak + billing settings (per tenant)             |
 | 7      | `OperationalDataSeeder` | Data operasional terintegrasi: pelanggan, meter, tagihan, pembayaran, jurnal, neraca  |
 
-**Pelengkap modul (16 seeder — mengisi tabel modul aktif & enterprise):**
+**Pelengkap modul (17 seeder — mengisi tabel modul aktif & enterprise):**
 
 | Urutan | Seeder                     | Modul / Isi                                                          |
 | ------ | -------------------------- | ------------------------------------------------------------------- |
@@ -116,10 +120,16 @@ Dijalankan berurutan oleh `DatabaseSeeder` (`database/seeders/DatabaseSeeder.php
 | 22     | `DmsGisIntegrationSeeder`  | DMS/GIS/INT/CC: dokumen, GIS, integrasi, call center                |
 | 23     | `SmartUtilitySeeder`       | Tier-3: IoT/SCADA, DMA/NRW, ML                                      |
 | 24     | `PlatformCommerceSeeder`   | Komersial platform: price tier, bundle, promo, saas invoice         |
+| 25     | `SambasTenantSeeder`       | Tenant demo ke-3 `pdam-sambas`: 27 modul, 3.000 pelanggan, alamat nyata Kab. Sambas, baca meter (foto+petugas), tunggakan/isolir, gudang & tawas, procurement, modul enterprise |
 
 > Semua seeder **idempotent** & **tenant-aware** (data enterprise hanya untuk tenant yang modulnya
-> aktif — Canada full, Brazil hanya modul aktif). Snapshot MySQL 8.4.9 dan SQLite terbaru menghasilkan
-> **167 tabel dari 60 migration**; lima migration terbaru hanya menambah constraint.
+> aktif — Canada & SAMBAS full 27 modul, Brazil hanya modul aktif). Snapshot MySQL 8.4.9 dan SQLite terbaru
+> menghasilkan **167 tabel dari 60 migration**; lima migration terbaru hanya menambah constraint, dan
+> `SambasTenantSeeder` memakai tabel yang sudah ada.
+>
+> **Tenant:** `DemoTenantSeeder` membuat Canada & Brazil; `SambasTenantSeeder` membuat tenant ke-3
+> (`pdam-sambas`, 3.000 pelanggan) — kredensial & akun tambahan (7 petugas baca per rute) ada di
+> [`SEED_DATA.md`](SEED_DATA.md) Section 2.
 
 > Database kini memiliki 97 tenant FK `RESTRICT` dan 8 composite same-tenant meter actor FK. Jangan
 > menghapus tenant secara fisik; gunakan workflow decommission. Tidak semua tabel memerlukan model:
@@ -151,12 +161,13 @@ Login lewat `POST /api/v1/platform/login` (tanpa kode PDAM).
 ### 5.2 User Tenant (PDAM)
 
 Login lewat `POST /api/v1/login` dengan menyertakan **kode PDAM**. Email user demo
-mengikuti pola `{role_code}@gmail.com` dan **sama di kedua tenant** — yang
-membedakan adalah kode PDAM saat login.
+mengikuti pola `{role_code}@gmail.com` dan **sama di ketiga tenant** — yang
+membedakan adalah kode PDAM saat login. (Tenant Sambas juga menambah 7 petugas baca meter
+`meter_officer1..7@gmail.com` — lihat [`SEED_DATA.md`](SEED_DATA.md) Section 2.)
 
-| Field       | PDAM Canada     | PDAM Brazil     |
-| ----------- | --------------- | --------------- |
-| `pdam_code` | `pdam-canada`   | `pdam-brazil`   |
+| Field       | PDAM Canada     | PDAM Brazil     | PDAM Sambas     |
+| ----------- | --------------- | --------------- | --------------- |
+| `pdam_code` | `pdam-canada`   | `pdam-brazil`   | `pdam-sambas`   |
 
 Contoh body login sebagai Direktur di PDAM Canada:
 
@@ -360,6 +371,12 @@ sebagai sumber endpoint aktual. Swagger dan Postman masih parsial dan harus diva
 | PUT    | `/api/v1/address/{level}/{id}` | Sanctum + tenant | Update alamat                    |
 | DELETE | `/api/v1/address/{level}/{id}` | Sanctum + tenant | Soft-delete; `?cascade=1` ikut menghapus anak milik tenant |
 | POST   | `/api/v1/address/{level}/{id}/restore` | Sanctum + tenant | Pulihkan record + keturunan |
+
+> **Laporan baca meter (MTR):** `GET /meter-readings/report?period=YYYY-MM&route_id=`
+> (`MeterReadingController@report`, izin `mtr.reading.view`) mengembalikan rincian baca per pelanggan
+> dalam rute — baca lalu vs kini, pemakaian (m³), golongan tarif, biaya, foto meter & rumah, petugas
+> (`read_by`) & verifikator. UI-nya di halaman **Laporan Baca Meter** (`#/meter-reading-report`).
+> Detail integrasi ada di [`SEED_DATA.md`](SEED_DATA.md) Section 9.
 
 ---
 

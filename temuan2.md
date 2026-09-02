@@ -9,6 +9,12 @@
 >
 > Dokumen ini adalah **sumber authoritative status implementasi/audit saat ini**. Bila angka atau status dokumen lain berbeda, gunakan dokumen ini.
 
+> **Catatan (setelah audit 15 Juli 2026):** dataset demo ditambah **1 seeder tenant** (`SambasTenantSeeder`,
+> tenant `pdam-sambas`, 3.000 pelanggan, 27 modul) → **25 seeder / 3 tenant demo**, dan fitur
+> **Laporan Baca Meter** ditambahkan (`GET /api/v1/meter-readings/report` + halaman web
+> `#/meter-reading-report`). Perubahan ini **demo-level saja**; angka audit di bawah (24 seeder, 167 tabel,
+> 358 route) merujuk snapshot 15 Juli dan tidak berubah. Detail: [`backend/SEED_DATA.md`](backend/SEED_DATA.md) Section 1 & 9.
+
 ## Status Task
 
 - `[ ]` = belum diperbaiki atau belum diverifikasi pada target sebenarnya.
