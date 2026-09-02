@@ -1,6 +1,17 @@
 <template>
     <AppLayout page-title="Data Pegawai">
-        <DataTable :rows="employees" :loading="loading" :page="page" :per-page="perPage" :total="total">
+        <DataTable
+            :rows="employees"
+            :loading="loading"
+            server
+            :page="page"
+            :per-page="perPage"
+            :total="total"
+            :external-search="search"
+            @page-change="onPageChange"
+            @per-page-change="onPerPageChange"
+            @search="onSearch"
+        >
             <template #columns>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">NIP</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
@@ -28,11 +39,38 @@ import api from '../../api';
 const employees = ref([]);
 const loading = ref(true);
 const page = ref(1);
-const perPage = ref(25);
+const perPage = ref(10);
 const total = ref(0);
+const search = ref('');
 
-onMounted(async () => {
-    try { const { data } = await api.get('/employees', { params: { page: page.value, per_page: perPage.value } }); employees.value = data.data || []; total.value = data.meta?.total || 0; } catch { /* Global API interceptor displays the failure. */ }
+async function load() {
+    loading.value = true;
+    try {
+        const params = { page: page.value, per_page: perPage.value };
+        if (search.value.trim()) params.q = search.value.trim();
+        const { data } = await api.get('/employees', { params });
+        employees.value = data.data || [];
+        total.value = data.meta?.total || 0;
+    } catch { /* Global API interceptor displays the failure. */ }
     loading.value = false;
-});
+}
+
+function onPageChange(p) {
+    page.value = p;
+    load();
+}
+
+function onPerPageChange(p) {
+    perPage.value = p;
+    page.value = 1;
+    load();
+}
+
+function onSearch(q) {
+    search.value = q;
+    page.value = 1;
+    load();
+}
+
+onMounted(load);
 </script>
