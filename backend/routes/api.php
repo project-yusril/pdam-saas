@@ -154,6 +154,16 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
     Route::post('address/streets', [AddressController::class, 'storeStreet']);
     Route::put('address/streets/{street}', [AddressController::class, 'updateStreet']);
 
+    // ── CRUD master alamat berjenjang (global, dipakai semua PDAM) ──────
+    Route::post('address/provinces', [AddressController::class, 'storeProvince']);
+    Route::put('address/provinces/{province}', [AddressController::class, 'updateProvince']);
+    Route::post('address/cities', [AddressController::class, 'storeCity']);
+    Route::put('address/cities/{city}', [AddressController::class, 'updateCity']);
+    Route::post('address/districts', [AddressController::class, 'storeDistrict']);
+    Route::put('address/districts/{district}', [AddressController::class, 'updateDistrict']);
+    Route::post('address/villages', [AddressController::class, 'storeVillage']);
+    Route::put('address/villages/{village}', [AddressController::class, 'updateVillage']);
+
     // ── MFA — Two-Factor Authentication (TOTP) ──────────────────────────
     Route::post('mfa/setup', [MfaController::class, 'setup']);
     Route::post('mfa/enable', [MfaController::class, 'enable']);

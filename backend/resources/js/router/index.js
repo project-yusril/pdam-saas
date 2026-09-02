@@ -8,6 +8,7 @@ export const routes = [
     { path: '/customers', name: 'customers', component: () => import('../views/customers/CustomerListView.vue'), meta: { requiresAuth: true } },
     { path: '/tariffs', name: 'tariffs', component: () => import('../views/tariffs/TariffListView.vue'), meta: { requiresAuth: true } },
     { path: '/streets', name: 'streets', component: () => import('../views/streets/StreetListView.vue'), meta: { requiresAuth: true } },
+    { path: '/address', name: 'address', component: () => import('../views/address/AddressManagementView.vue'), meta: { requiresAuth: true } },
     { path: '/prospects', name: 'prospects', component: () => import('../views/prospects/ProspectListView.vue'), meta: { requiresAuth: true } },
     { path: '/zones', name: 'zones', component: () => import('../views/zones/ZoneListView.vue'), meta: { requiresAuth: true } },
     { path: '/zones/:id', name: 'zone-detail', component: () => import('../views/zones/ZoneDetailView.vue'), meta: { requiresAuth: true } },

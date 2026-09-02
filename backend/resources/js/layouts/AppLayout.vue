@@ -194,6 +194,7 @@ const QUICK_MENU = [
             { to: '/zones', label: 'Wilayah', icon: 'pi-map-marker' },
             { to: '/meter-routes', label: 'Rute Baca Meter', icon: 'pi-directions' },
             { to: '/streets', label: 'Jalan', icon: 'pi-map' },
+            { to: '/address', label: 'Master Alamat', icon: 'pi-sitemap' },
             { to: '/tariffs', label: 'Golongan Tarif', icon: 'pi-tags' },
         ],
     },

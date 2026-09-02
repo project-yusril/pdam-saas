@@ -12,6 +12,7 @@ use App\Support\ApiResponse;
 use App\Support\ListQueryParams;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /**
  * AddressController — CRUD alamat berjenjang + endpoint dropdown bertingkat.
@@ -131,5 +132,115 @@ class AddressController extends Controller
         $street->update($data);
 
         return ApiResponse::success($street);
+    }
+
+    /** ── CRUD Provinsi (master alamat global) ─────────────────────────── */
+    public function storeProvince(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:10', 'unique:provinces,code'],
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        $province = Province::create($data);
+
+        return ApiResponse::success($province, status: 201);
+    }
+
+    public function updateProvince(Request $request, Province $province): JsonResponse
+    {
+        $data = $request->validate([
+            'code' => ['sometimes', 'string', 'max:10', Rule::unique('provinces', 'code')->ignore($province->id)],
+            'name' => ['sometimes', 'string', 'max:255'],
+        ]);
+
+        $province->update($data);
+
+        return ApiResponse::success($province->fresh());
+    }
+
+    /** ── CRUD Kota/Kabupaten ──────────────────────────────────────────── */
+    public function storeCity(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'province_id' => ['required', 'integer', 'exists:provinces,id'],
+            'code' => ['required', 'string', 'max:10', 'unique:cities,code'],
+            'name' => ['required', 'string', 'max:255'],
+            'type' => ['nullable', 'string', Rule::in(['kota', 'kabupaten'])],
+        ]);
+
+        $city = City::create($data);
+
+        return ApiResponse::success($city, status: 201);
+    }
+
+    public function updateCity(Request $request, City $city): JsonResponse
+    {
+        $data = $request->validate([
+            'province_id' => ['sometimes', 'integer', 'exists:provinces,id'],
+            'code' => ['sometimes', 'string', 'max:10', Rule::unique('cities', 'code')->ignore($city->id)],
+            'name' => ['sometimes', 'string', 'max:255'],
+            'type' => ['nullable', 'string', Rule::in(['kota', 'kabupaten'])],
+        ]);
+
+        $city->update($data);
+
+        return ApiResponse::success($city->fresh());
+    }
+
+    /** ── CRUD Kecamatan ───────────────────────────────────────────────── */
+    public function storeDistrict(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'city_id' => ['required', 'integer', 'exists:cities,id'],
+            'code' => ['required', 'string', 'max:15', 'unique:districts,code'],
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        $district = District::create($data);
+
+        return ApiResponse::success($district, status: 201);
+    }
+
+    public function updateDistrict(Request $request, District $district): JsonResponse
+    {
+        $data = $request->validate([
+            'city_id' => ['sometimes', 'integer', 'exists:cities,id'],
+            'code' => ['sometimes', 'string', 'max:15', Rule::unique('districts', 'code')->ignore($district->id)],
+            'name' => ['sometimes', 'string', 'max:255'],
+        ]);
+
+        $district->update($data);
+
+        return ApiResponse::success($district->fresh());
+    }
+
+    /** ── CRUD Desa/Kelurahan ──────────────────────────────────────────── */
+    public function storeVillage(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'district_id' => ['required', 'integer', 'exists:districts,id'],
+            'code' => ['required', 'string', 'max:20', 'unique:villages,code'],
+            'name' => ['required', 'string', 'max:255'],
+            'postal_code' => ['nullable', 'string', 'max:10'],
+        ]);
+
+        $village = Village::create($data);
+
+        return ApiResponse::success($village, status: 201);
+    }
+
+    public function updateVillage(Request $request, Village $village): JsonResponse
+    {
+        $data = $request->validate([
+            'district_id' => ['sometimes', 'integer', 'exists:districts,id'],
+            'code' => ['sometimes', 'string', 'max:20', Rule::unique('villages', 'code')->ignore($village->id)],
+            'name' => ['sometimes', 'string', 'max:255'],
+            'postal_code' => ['nullable', 'string', 'max:10'],
+        ]);
+
+        $village->update($data);
+
+        return ApiResponse::success($village->fresh());
     }
 }
