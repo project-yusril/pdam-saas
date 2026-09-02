@@ -134,4 +134,20 @@ class ZoneController extends Controller
 
         return ApiResponse::message('Wilayah dinonaktifkan.');
     }
+
+    public function destroy(Request $request, Zone $zone): JsonResponse
+    {
+        if ($zone->is_main) {
+            return ApiResponse::error(
+                'CANNOT_DELETE_MAIN',
+                'Kantor utama tidak dapat dihapus.',
+                null,
+                422
+            );
+        }
+
+        $zone->delete();
+
+        return ApiResponse::message('Wilayah dihapus.');
+    }
 }

@@ -106,4 +106,11 @@ class TariffController extends Controller
 
         return ApiResponse::success($tariffCategory);
     }
+
+    public function destroy(Request $request, TariffCategory $tariffCategory): JsonResponse
+    {
+        $tariffCategory->delete();
+
+        return ApiResponse::message('Golongan tarif dihapus.');
+    }
 }

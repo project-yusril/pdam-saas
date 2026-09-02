@@ -24,7 +24,7 @@
                     <td class="px-4 py-3 font-medium text-vueheading">{{ row.name }}</td>
                     <td class="px-4 py-3 text-sm">{{ row.abonemen?.toLocaleString?.('id-ID') ?? '-' }}</td>
                     <td class="px-4 py-3 text-sm text-right">{{ formatTier(row) }}</td>
-                    <td class="px-4 py-3 text-right"><button @click="openEdit(row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button></td>
+                    <td class="px-4 py-3"><ActionButtons :row="row" @edit="openEdit" @delete="removeRow" /></td>
                 </template>
             </DataTable>
         </div>
@@ -105,6 +105,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import AppLayout from '../../layouts/AppLayout.vue';
 import DataTable from '../../components/shared/DataTable.vue';
+import ActionButtons from '../../components/shared/ActionButtons.vue';
 import api from '../../api';
 
 const tariffs = ref([]);
@@ -185,6 +186,16 @@ function closeCreate() {
     showCreate.value = false;
     error.value = '';
     editingId.value = null;
+}
+
+async function removeRow(row) {
+    if (!confirm(`Yakin hapus golongan tarif "${row.name}"?`)) return;
+    try {
+        await api.delete('/tariffs/' + row.id);
+        await load();
+    } catch (e) {
+        alert(e.response?.data?.error?.message || 'Gagal menghapus golongan tarif.');
+    }
 }
 
 async function submit() {

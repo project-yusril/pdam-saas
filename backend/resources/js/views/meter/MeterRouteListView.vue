@@ -24,7 +24,7 @@
                     <td class="px-4 py-3 text-sm">{{ row.zone?.name || '-' }}</td>
                     <td class="px-4 py-3 text-right">
                         <router-link :to="'/meter-routes/' + row.id" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Kelola Jalan</router-link>
-                        <button @click="openEdit(row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium ms-3">Edit</button>
+                        <ActionButtons :row="row" @edit="openEdit" @delete="removeRow" />
                     </td>
                 </template>
             </DataTable>
@@ -70,6 +70,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import AppLayout from '../../layouts/AppLayout.vue';
 import DataTable from '../../components/shared/DataTable.vue';
+import ActionButtons from '../../components/shared/ActionButtons.vue';
 import api from '../../api';
 
 const routes = ref([]);
@@ -122,6 +123,16 @@ function closeCreate() {
     showCreate.value = false;
     error.value = '';
     editingId.value = null;
+}
+
+async function removeRow(row) {
+    if (!confirm(`Yakin hapus rute "${row.name}"?`)) return;
+    try {
+        await api.delete('/meter-routes/' + row.id);
+        await load();
+    } catch (e) {
+        alert(e.response?.data?.error?.message || 'Gagal menghapus rute.');
+    }
 }
 
 async function submit() {

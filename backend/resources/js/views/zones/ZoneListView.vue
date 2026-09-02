@@ -24,7 +24,7 @@
                     <td class="px-4 py-3"><span class="inline-block px-2 py-0.5 text-xs rounded-full" :class="row.is_main ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600'">{{ row.is_main ? 'Utama' : 'Cabang' }}</span></td>
                     <td class="px-4 py-3 text-right">
                         <router-link :to="'/zones/' + row.id" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Detail</router-link>
-                        <button @click="openEdit(row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium ms-3">Edit</button>
+                        <ActionButtons :row="row" @edit="openEdit" @delete="removeRow" />
                     </td>
                 </template>
             </DataTable>
@@ -66,6 +66,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import AppLayout from '../../layouts/AppLayout.vue';
 import DataTable from '../../components/shared/DataTable.vue';
+import ActionButtons from '../../components/shared/ActionButtons.vue';
 import api from '../../api';
 
 const zones = ref([]);
@@ -110,6 +111,16 @@ function closeCreate() {
     showCreate.value = false;
     error.value = '';
     editingId.value = null;
+}
+
+async function removeRow(row) {
+    if (!confirm(`Yakin hapus wilayah "${row.name}"?`)) return;
+    try {
+        await api.delete('/zones/' + row.id);
+        await load();
+    } catch (e) {
+        alert(e.response?.data?.error?.message || 'Gagal menghapus wilayah.');
+    }
 }
 
 async function submit() {

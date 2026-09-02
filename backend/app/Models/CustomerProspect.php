@@ -4,13 +4,15 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-/** CustomerProspect — calon pelanggan. NIK dienkripsi at-rest. Fase 2.1 */
+/** CustomerProspect â€” calon pelanggan. NIK dienkripsi at-rest. Fase 2.1 */
 class CustomerProspect extends Model
 {
     use BelongsToTenant;
+    use SoftDeletes;
 
     protected $fillable = [
         'pdam_org_id', 'user_id', 'registration_number', 'nik', 'full_name',
@@ -50,3 +52,4 @@ class CustomerProspect extends Model
         return $this->belongsTo(Street::class);
     }
 }
+

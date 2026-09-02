@@ -132,6 +132,37 @@ class ProspectController extends Controller
         return ApiResponse::message('Pendaftaran diterima.', $prospect, 201);
     }
 
+    /** Update data prospek (kontak/alamat) — NIK tidak dapat berubah setelah submit. */
+    public function show(Request $request, CustomerProspect $prospect): JsonResponse
+    {
+        return ApiResponse::success($prospect->load(['survey', 'street']));
+    }
+
+    public function update(Request $request, CustomerProspect $prospect): JsonResponse
+    {
+        $data = $request->validate([
+            'full_name' => ['sometimes', 'string', 'max:150'],
+            'birth_place' => ['nullable', 'string', 'max:100'],
+            'birth_date' => ['nullable', 'date'],
+            'gender' => ['nullable', 'in:L,P'],
+            'religion' => ['nullable', 'string', 'max:30'],
+            'marital_status' => ['nullable', 'in:belum_kawin,kawin,cerai_hidup,cerai_mati'],
+            'occupation' => ['nullable', 'string', 'max:100'],
+            'blood_type' => ['nullable', 'in:A,B,AB,O'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'installation_address' => ['sometimes', 'string', 'max:255'],
+            'house_number' => ['nullable', 'string', 'max:20'],
+            'rt' => ['nullable', 'string', 'max:5'],
+            'rw' => ['nullable', 'string', 'max:5'],
+            'email' => ['nullable', 'email', 'max:150'],
+            'phone' => ['nullable', 'string', 'max:30'],
+        ]);
+
+        $prospect->update($data);
+
+        return ApiResponse::success($prospect->fresh());
+    }
+
     /** Hublang: assign surveyor → status surveying. */
     public function assignSurveyor(Request $request, CustomerProspect $prospect): JsonResponse
     {
@@ -269,6 +300,13 @@ class ProspectController extends Controller
         }
 
         return ApiResponse::message('Pembayaran pemasangan dibuat.', $payment, 201);
+    }
+
+    public function destroy(Request $request, CustomerProspect $prospect): JsonResponse
+    {
+        $prospect->delete();
+
+        return ApiResponse::message('Calon pelanggan dihapus (soft-delete).');
     }
 
     private function tenantFileRule(Request $request, string $purpose): \Closure

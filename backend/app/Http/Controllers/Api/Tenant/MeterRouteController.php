@@ -168,4 +168,11 @@ class MeterRouteController extends Controller
             'unrouted_count' => $unroutedStreets->count(),
         ]);
     }
+
+    public function destroy(Request $request, MeterRoute $route): JsonResponse
+    {
+        $route->delete();
+
+        return ApiResponse::message('Rute baca meter dihapus.');
+    }
 }

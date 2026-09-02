@@ -96,6 +96,13 @@ class CustomerController extends Controller
         return ApiResponse::success($customer);
     }
 
+    public function destroy(Request $request, Customer $customer): JsonResponse
+    {
+        $customer->delete();
+
+        return ApiResponse::message('Pelanggan dihapus (soft-delete).');
+    }
+
     public function statusHistory(Customer $customer): JsonResponse
     {
         $history = $customer->statusHistory()->latest()->get();

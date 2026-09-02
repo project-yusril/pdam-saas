@@ -4,12 +4,14 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** TariffCategory — golongan tarif (17 golongan). Fase 1.3 */
+/** TariffCategory â€” golongan tarif (17 golongan). Fase 1.3 */
 class TariffCategory extends Model
 {
     use BelongsToTenant;
+    use SoftDeletes;
 
     protected $fillable = [
         'pdam_org_id', 'code', 'name', 'group_type', 'description',
@@ -32,3 +34,4 @@ class TariffCategory extends Model
         return $this->hasMany(TariffTier::class)->orderBy('tier_order');
     }
 }
+

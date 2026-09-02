@@ -216,6 +216,8 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
         ->middleware('permission:zone.zone.update');
     Route::post('zones/{zone}/deactivate', [ZoneController::class, 'deactivate'])
         ->middleware('permission:zone.zone.deactivate');
+    Route::delete('zones/{zone}', [ZoneController::class, 'destroy'])
+        ->middleware('permission:zone.zone.update');
     Route::get('zones/{zone}/dashboard', [ZoneDashboardController::class, 'show'])
         ->middleware('permission:zone.dashboard.view');
 
@@ -228,6 +230,8 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
         ->middleware('permission:core.tariff.view');
     Route::put('tariffs/{tariffCategory}', [TariffController::class, 'update'])
         ->middleware('permission:core.tariff.manage');
+    Route::delete('tariffs/{tariffCategory}', [TariffController::class, 'destroy'])
+        ->middleware('permission:core.tariff.manage');
 
     Route::get('customers', [CustomerController::class, 'index'])
         ->middleware('permission:core.customer.view');
@@ -236,6 +240,8 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
     Route::get('customers/{customer}', [CustomerController::class, 'show'])
         ->middleware('permission:core.customer.view');
     Route::put('customers/{customer}', [CustomerController::class, 'update'])
+        ->middleware('permission:core.customer.update');
+    Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])
         ->middleware('permission:core.customer.update');
     Route::get('customers/{customer}/status-history', [CustomerController::class, 'statusHistory'])
         ->middleware('permission:core.customer.view');
@@ -310,6 +316,12 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
         ->middleware('permission:srv.prospect.create');
     Route::post('prospects', [ProspectController::class, 'store'])
         ->middleware('permission:srv.prospect.create');
+    Route::get('prospects/{prospect}', [ProspectController::class, 'show'])
+        ->middleware('permission:srv.prospect.view');
+    Route::delete('prospects/{prospect}', [ProspectController::class, 'destroy'])
+        ->middleware('permission:srv.prospect.create');
+    Route::put('prospects/{prospect}', [ProspectController::class, 'update'])
+        ->middleware('permission:srv.prospect.create');
     Route::post('prospects/{prospect}/assign-surveyor', [ProspectController::class, 'assignSurveyor'])
         ->middleware('permission:srv.prospect.assign');
     Route::post('prospects/{prospect}/survey', [ProspectController::class, 'submitSurvey'])
@@ -348,6 +360,8 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
     Route::get('meter-routes/{route}', [MeterRouteController::class, 'show'])
         ->middleware('permission:mtr.route.view');
     Route::put('meter-routes/{route}', [MeterRouteController::class, 'update'])
+        ->middleware('permission:mtr.route.update');
+    Route::delete('meter-routes/{route}', [MeterRouteController::class, 'destroy'])
         ->middleware('permission:mtr.route.update');
     Route::post('meter-routes/{route}/streets', [MeterRouteController::class, 'syncStreets'])
         ->middleware('permission:mtr.route.assign');

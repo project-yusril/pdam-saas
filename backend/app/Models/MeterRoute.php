@@ -4,14 +4,16 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** MeterRoute — rute baca meter. Fase 3.1 */
+/** MeterRoute â€” rute baca meter. Fase 3.1 */
 class MeterRoute extends Model
 {
     use BelongsToTenant;
+    use SoftDeletes;
 
     protected $fillable = ['pdam_org_id', 'zone_id', 'code', 'name', 'is_active'];
 
@@ -35,3 +37,4 @@ class MeterRoute extends Model
         return $this->hasMany(MeterRouteAssignment::class);
     }
 }
+

@@ -4,7 +4,7 @@
             <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <div class="flex items-center gap-2">
                     <i class="pi pi-users text-primary-600 text-lg" />
-                    <h2 class="font-semibold text-vueheading">Daftar Pelanggan</h2>
+                    <h2 class="font-semibold text-vueheading">{{ editingId ? 'Edit Pelanggan' : 'Daftar Pelanggan' }}</h2>
                 </div>
                 <button
                     @click="openCreate"
@@ -22,6 +22,7 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Golongan</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Telepon</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
                 </template>
                 <template #row="{ row }">
                     <td class="px-4 py-3 text-sm font-mono">{{ row.customer_number }}</td>
@@ -32,6 +33,7 @@
                     <td class="px-4 py-3">
                         <span class="px-2 py-0.5 text-xs rounded-full" :class="statusClass(row.status)">{{ row.status }}</span>
                     </td>
+                    <td class="px-4 py-3"><ActionButtons :row="row" @edit="openEdit" @delete="removeRow" /></td>
                 </template>
             </DataTable>
         </div>
@@ -40,7 +42,7 @@
         <div v-if="showCreate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" @click.self="closeCreate">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h3 class="font-semibold text-vueheading flex items-center gap-2"><i class="pi pi-plus text-primary-600" /> Tambah Pelanggan Baru</h3>
+                    <h3 class="font-semibold text-vueheading flex items-center gap-2"><i class="pi pi-plus text-primary-600" /> {{ editingId ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru' }}</h3>
                     <button class="p-2 rounded-md hover:bg-gray-100 text-gray-400" @click="closeCreate"><i class="pi pi-times" /></button>
                 </div>
 
@@ -117,8 +119,8 @@
 
                     <div class="md:col-span-2 flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
                         <button type="button" @click="closeCreate" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">Batal</button>
-                        <button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700" :disabled="saving">
-                            <i class="pi pi-check text-xs mr-1" /> {{ saving ? 'Menyimpan…' : 'Simpan Pelanggan' }}
+<button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700" :disabled="saving">
+                            <i class="pi pi-check text-xs mr-1" /> {{ saving ? 'Menyimpan...' : (editingId ? 'Simpan Perubahan' : 'Simpan Pelanggan') }}
                         </button>
                     </div>
                 </form>
@@ -131,6 +133,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import AppLayout from '../../layouts/AppLayout.vue';
 import DataTable from '../../components/shared/DataTable.vue';
+import ActionButtons from '../../components/shared/ActionButtons.vue';
 import api from '../../api';
 
 const customers = ref([]);
@@ -150,6 +153,7 @@ const filteredRoutes = computed(() => {
 const showCreate = ref(false);
 const saving = ref(false);
 const error = ref('');
+const editingId = ref(null);
 
 const emptyForm = () => ({
     full_name: '',
@@ -228,9 +232,39 @@ watch(
 );
 
 function openCreate() {
+    editingId.value = null;
     Object.assign(form, emptyForm());
     error.value = '';
     showCreate.value = true;
+}
+
+function openEdit(row) {
+    editingId.value = row.id;
+    Object.assign(form, emptyForm());
+    form.full_name = row.full_name;
+    form.phone = row.phone || '';
+    form.email = row.email || '';
+    form.zone_id = row.zone_id || '';
+    form.tariff_category_id = row.tariff_category_id || '';
+    form.street_id = row.street_id || '';
+    form.address_detail = row.address_detail || '';
+    form.latitude = row.latitude || '';
+    form.longitude = row.longitude || '';
+    form.meter_serial_number = row.meter_serial_number || '';
+    form.meter_route_id = row.meter_route_id || '';
+    form.installation_date = row.installation_date || '';
+    error.value = '';
+    showCreate.value = true;
+}
+
+async function removeRow(row) {
+    if (!confirm(`Yakin hapus pelanggan "${row.full_name}"?`)) return;
+    try {
+        await api.delete('/customers/' + row.id);
+        await loadCustomers();
+    } catch (e) {
+        alert(e.response?.data?.error?.message || 'Gagal menghapus pelanggan.');
+    }
 }
 
 function closeCreate() {
@@ -253,7 +287,11 @@ async function submit() {
         if (payload.latitude) payload.latitude = Number(payload.latitude);
         if (payload.longitude) payload.longitude = Number(payload.longitude);
 
-        await api.post('/customers', payload);
+        if (editingId.value) {
+            await api.put('/customers/' + editingId.value, payload);
+        } else {
+            await api.post('/customers', payload);
+        }
         closeCreate();
         await loadCustomers();
     } catch (e) {

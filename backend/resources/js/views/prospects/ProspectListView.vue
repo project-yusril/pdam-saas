@@ -24,11 +24,13 @@
                     <td class="px-4 py-3 text-sm">{{ row.phone || '-' }}<div v-if="row.email" class="text-xs text-gray-400">{{ row.email }}</div></td>
                     <td class="px-4 py-3 text-sm text-gray-600">{{ row.installation_address || row.address || '-' }}</td>
                     <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded-full" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></td>
-                    <td class="px-4 py-3 text-right">
-                        <template v-if="activatable(row.status)">
-                            <button @click="activate(row)" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Aktivasi → Pelanggan</button>
-                        </template>
-                        <span v-else class="text-xs text-gray-400">menunggu survey</span>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center justify-end gap-2">
+                            <template v-if="activatable(row.status)">
+                                <button @click="activate(row)" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Aktivasi</button>
+                            </template>
+                            <ActionButtons :row="row" @edit="openEdit" @delete="removeRow" />
+                        </div>
                     </td>
                 </template>
             </DataTable>
@@ -83,6 +85,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import AppLayout from '../../layouts/AppLayout.vue';
 import DataTable from '../../components/shared/DataTable.vue';
+import ActionButtons from '../../components/shared/ActionButtons.vue';
 import api from '../../api';
 
 const prospects = ref([]);
@@ -90,6 +93,7 @@ const loading = ref(true);
 const showCreate = ref(false);
 const saving = ref(false);
 const error = ref('');
+const editingId = ref(null);
 const form = reactive({ full_name: '', nik: '', phone: '', email: '', installation_address: '' });
 
 const STATUS_LABELS = {
@@ -147,10 +151,29 @@ async function activate(row) {
 }
 
 function openCreate() {
+    editingId.value = null;
     Object.assign(form, { full_name: '', nik: '', phone: '', email: '', installation_address: '' });
     error.value = '';
     showCreate.value = true;
 }
+
+function openEdit(row) {
+    editingId.value = row.id;
+    Object.assign(form, { full_name: row.full_name, nik: '', phone: row.phone || '', email: row.email || '', installation_address: row.installation_address || row.address || '' });
+    error.value = '';
+    showCreate.value = true;
+}
+
+async function removeRow(row) {
+    if (!confirm(`Yakin hapus pemasangan "${row.full_name}"?`)) return;
+    try {
+        await api.delete('/prospects/' + row.id);
+        await load();
+    } catch (e) {
+        alert(e.response?.data?.error?.message || 'Gagal menghapus pemasangan.');
+    }
+}
+
 function closeCreate() {
     showCreate.value = false;
     error.value = '';
@@ -160,14 +183,19 @@ async function submit() {
     saving.value = true;
     error.value = '';
     try {
-        await api.post('/prospects', {
+        const payload = {
             full_name: form.full_name,
             nik: form.nik,
             phone: form.phone || null,
             email: form.email || null,
             installation_address: form.installation_address,
             status: 'pending_review',
-        });
+        };
+        if (editingId.value) {
+            await api.put('/prospects/' + editingId.value, payload);
+        } else {
+            await api.post('/prospects', payload);
+        }
         closeCreate();
         await load();
     } catch (e) {

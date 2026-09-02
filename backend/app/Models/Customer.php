@@ -4,13 +4,15 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** Customer — sambungan air aktif. Fase 1.4 */
+/** Customer â€” sambungan air aktif. Fase 1.4 */
 class Customer extends Model
 {
     use BelongsToTenant;
+    use SoftDeletes;
 
     protected $fillable = [
         'pdam_org_id', 'user_id', 'prospect_id', 'customer_number', 'full_name',
@@ -68,3 +70,4 @@ class Customer extends Model
         ]);
     }
 }
+
