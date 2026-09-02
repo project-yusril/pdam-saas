@@ -21,6 +21,7 @@
                         </td>
                         <td class="px-4 py-3 text-right">
                             <button @click="openModal('province', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button>
+                            <button @click="remove('province', row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button>
                         </td>
                     </template>
                 </DataTable>
@@ -51,7 +52,7 @@
                             <button class="font-medium text-vueheading hover:text-primary-600 text-left" @click="selectCity(row)">{{ row.name }}</button>
                         </td>
                         <td class="px-4 py-3 text-sm capitalize">{{ row.type }}</td>
-                        <td class="px-4 py-3 text-right"><button @click="openModal('city', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button></td>
+                        <td class="px-4 py-3 text-right"><button @click="openModal('city', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button><button @click="remove('city', row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button></td>
                     </template>
                 </DataTable>
             </div>
@@ -79,7 +80,7 @@
                         <td class="px-4 py-3">
                             <button class="font-medium text-vueheading hover:text-primary-600 text-left" @click="selectDistrict(row)">{{ row.name }}</button>
                         </td>
-                        <td class="px-4 py-3 text-right"><button @click="openModal('district', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button></td>
+                        <td class="px-4 py-3 text-right"><button @click="openModal('district', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button><button @click="remove('district', row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button></td>
                     </template>
                 </DataTable>
             </div>
@@ -107,7 +108,7 @@
                         <td class="px-4 py-3 text-sm font-mono">{{ row.code }}</td>
                         <td class="px-4 py-3 font-medium text-vueheading">{{ row.name }}</td>
                         <td class="px-4 py-3 text-sm">{{ row.postal_code || '-' }}</td>
-                        <td class="px-4 py-3 text-right"><button @click="openModal('village', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button></td>
+                        <td class="px-4 py-3 text-right"><button @click="openModal('village', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button><button @click="remove('village', row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button></td>
                     </template>
                 </DataTable>
             </div>
@@ -210,6 +211,7 @@ const form = reactive({ code: '', name: '', type: 'kabupaten', province_id: '', 
 
 const LEVEL_LABELS = { province: 'Provinsi', city: 'Kota/Kabupaten', district: 'Kecamatan', village: 'Desa/Kelurahan' };
 const levelLabel = computed(() => LEVEL_LABELS[level.value]);
+const levelLabelFor = (lvl) => LEVEL_LABELS[lvl];
 
 const get = async (url, setter, loadingSetter) => {
     loadingSetter.value = true;
@@ -289,6 +291,21 @@ function openModal(lvl, row = null) {
 function closeModal() {
     showModal.value = false;
     error.value = '';
+}
+
+async function remove(lvl, row) {
+    if (!confirm(`Yakin hapus ${levelLabelFor(lvl)} "${row.name}"?`)) return;
+    const endpoint = { province: '/address/provinces', city: '/address/cities', district: '/address/districts', village: '/address/villages' }[lvl];
+    try {
+        await api.delete(endpoint + '/' + row.id);
+        // refresh level yang terdampak
+        if (lvl === 'province') await loadProvinces();
+        else if (lvl === 'city') await onProvinceChange();
+        else if (lvl === 'district') await onCityChange();
+        else await onDistrictChange();
+    } catch (e) {
+        alert(e.response?.data?.error?.message || 'Gagal menghapus. Pastikan masih memiliki anak? Hapus dari level bawah dulu.');
+    }
 }
 
 async function submit() {

@@ -22,7 +22,7 @@
                     <td class="px-4 py-3 font-medium text-vueheading">{{ row.name }}</td>
                     <td class="px-4 py-3 text-sm">{{ villageName(row.village_id) }}</td>
                     <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded-full" :class="row.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'">{{ row.is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
-                    <td class="px-4 py-3 text-right"><button @click="openEdit(row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button></td>
+                    <td class="px-4 py-3 text-right"><button @click="openEdit(row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button><button @click="removeRow(row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button></td>
                 </template>
             </DataTable>
         </div>
@@ -123,6 +123,16 @@ function closeCreate() {
     showCreate.value = false;
     error.value = '';
     editingId.value = null;
+}
+
+async function removeRow(row) {
+    if (!confirm(`Yakin hapus jalan "${row.name}"?`)) return;
+    try {
+        await api.delete('/address/streets/' + row.id);
+        await load();
+    } catch (e) {
+        alert(e.response?.data?.error?.message || 'Gagal menghapus jalan.');
+    }
 }
 
 async function submit() {

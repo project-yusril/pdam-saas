@@ -10,6 +10,7 @@ use App\Models\Street;
 use App\Models\Village;
 use App\Support\ApiResponse;
 use App\Support\ListQueryParams;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -251,5 +252,66 @@ class AddressController extends Controller
         $village->update($data);
 
         return ApiResponse::success($village->fresh());
+    }
+
+    /** ── Soft-delete master alamat (hanya milik tenant, tidak boleh punya anak) ── */
+    private function authorizeOwnedOrFail(Request $request, Model $entity, string $label): void
+    {
+        $orgId = $request->user()->pdam_org_id;
+        if ($entity->pdam_org_id !== $orgId) {
+            abort(403, "{$label} bukan milik tenant Anda atau data global yang tidak boleh dihapus.");
+        }
+    }
+
+    public function destroyProvince(Request $request, Province $province): JsonResponse
+    {
+        $this->authorizeOwnedOrFail($request, $province, 'Provinsi');
+        if ($province->cities()->exists()) {
+            return ApiResponse::error('conflict', 'Provinsi masih memiliki kota. Hapus kota terlebih dahulu.', status: 409);
+        }
+        $province->delete();
+
+        return ApiResponse::message('Provinsi dihapus.');
+    }
+
+    public function destroyCity(Request $request, City $city): JsonResponse
+    {
+        $this->authorizeOwnedOrFail($request, $city, 'Kota/Kabupaten');
+        if ($city->districts()->exists()) {
+            return ApiResponse::error('conflict', 'Kota masih memiliki kecamatan. Hapus kecamatan terlebih dahulu.', status: 409);
+        }
+        $city->delete();
+
+        return ApiResponse::message('Kota/Kabupaten dihapus.');
+    }
+
+    public function destroyDistrict(Request $request, District $district): JsonResponse
+    {
+        $this->authorizeOwnedOrFail($request, $district, 'Kecamatan');
+        if ($district->villages()->exists()) {
+            return ApiResponse::error('conflict', 'Kecamatan masih memiliki desa/kelurahan. Hapus desa terlebih dahulu.', status: 409);
+        }
+        $district->delete();
+
+        return ApiResponse::message('Kecamatan dihapus.');
+    }
+
+    public function destroyVillage(Request $request, Village $village): JsonResponse
+    {
+        $this->authorizeOwnedOrFail($request, $village, 'Desa/Kelurahan');
+        if ($village->streets()->exists()) {
+            return ApiResponse::error('conflict', 'Desa/kelurahan masih memiliki jalan. Hapus jalan terlebih dahulu.', status: 409);
+        }
+        $village->delete();
+
+        return ApiResponse::message('Desa/Kelurahan dihapus.');
+    }
+
+    public function destroyStreet(Request $request, Street $street): JsonResponse
+    {
+        $this->authorizeOwnedOrFail($request, $street, 'Jalan');
+        $street->delete();
+
+        return ApiResponse::message('Jalan dihapus.');
     }
 }

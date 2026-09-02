@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /** Jalan/Blok. Bisa global (pdam_org_id null) atau lokal per tenant. Fase 1.1 */
 class Street extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['pdam_org_id', 'village_id', 'name', 'is_active'];
 
     protected function casts(): array

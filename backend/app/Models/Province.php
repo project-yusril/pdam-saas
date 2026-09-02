@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /** Provinsi (master alamat global). Fase 1.1 */
 class Province extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['pdam_org_id', 'code', 'name'];
 
     /** Data yang "milik" tenant: global (pdam_org_id null) + punya tenant tsb. */

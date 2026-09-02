@@ -5,10 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /** Kota/Kabupaten. Fase 1.1 */
 class City extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['pdam_org_id', 'province_id', 'code', 'name', 'type'];
 
     public function scopeForTenant($query, ?int $orgId)
