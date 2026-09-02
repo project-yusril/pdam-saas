@@ -1,5 +1,13 @@
 <template>
     <AppLayout page-title="Master Alamat" page-subtitle="Kelola Provinsi → Kota/Kab → Kecamatan → Desa/Kelurahan (data global, dipakai semua PDAM)">
+        <div class="bg-white rounded-xl border border-gray-200 px-5 py-3 mb-4 flex items-center justify-between">
+            <div class="text-sm text-vuetext">💡 Hapus = lembut (soft-delete). Data global tidak bisa dihapus tenant.</div>
+            <label class="flex items-center gap-2 text-sm text-vuetext cursor-pointer">
+                <input v-model="showDeleted" type="checkbox" @change="reloadAll" class="rounded border-gray-300" />
+                Tampilkan data terhapus
+            </label>
+        </div>
+
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <!-- Provinsi -->
             <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -20,8 +28,14 @@
                             <div class="text-xs text-gray-400">{{ row.cities?.count ?? row.cities_count ?? '' }}</div>
                         </td>
                         <td class="px-4 py-3 text-right">
-                            <button @click="openModal('province', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button>
-                            <button @click="remove('province', row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button>
+                            <template v-if="!trashed(row)">
+                                <button @click="openModal('province', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button>
+                                <button @click="remove('province', row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button>
+                            </template>
+                            <template v-else>
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 mr-2">terhapus</span>
+                                <button @click="restoreRow('province', row)" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Pulihkan</button>
+                            </template>
                         </td>
                     </template>
                 </DataTable>
@@ -52,7 +66,16 @@
                             <button class="font-medium text-vueheading hover:text-primary-600 text-left" @click="selectCity(row)">{{ row.name }}</button>
                         </td>
                         <td class="px-4 py-3 text-sm capitalize">{{ row.type }}</td>
-                        <td class="px-4 py-3 text-right"><button @click="openModal('city', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button><button @click="remove('city', row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button></td>
+                        <td class="px-4 py-3 text-right">
+                            <template v-if="!trashed(row)">
+                                <button @click="openModal('city', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button>
+                                <button @click="remove('city', row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button>
+                            </template>
+                            <template v-else>
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 mr-2">terhapus</span>
+                                <button @click="restoreRow('city', row)" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Pulihkan</button>
+                            </template>
+                        </td>
                     </template>
                 </DataTable>
             </div>
@@ -80,7 +103,16 @@
                         <td class="px-4 py-3">
                             <button class="font-medium text-vueheading hover:text-primary-600 text-left" @click="selectDistrict(row)">{{ row.name }}</button>
                         </td>
-                        <td class="px-4 py-3 text-right"><button @click="openModal('district', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button><button @click="remove('district', row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button></td>
+                        <td class="px-4 py-3 text-right">
+                            <template v-if="!trashed(row)">
+                                <button @click="openModal('district', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button>
+                                <button @click="remove('district', row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button>
+                            </template>
+                            <template v-else>
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 mr-2">terhapus</span>
+                                <button @click="restoreRow('district', row)" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Pulihkan</button>
+                            </template>
+                        </td>
                     </template>
                 </DataTable>
             </div>
@@ -108,7 +140,16 @@
                         <td class="px-4 py-3 text-sm font-mono">{{ row.code }}</td>
                         <td class="px-4 py-3 font-medium text-vueheading">{{ row.name }}</td>
                         <td class="px-4 py-3 text-sm">{{ row.postal_code || '-' }}</td>
-                        <td class="px-4 py-3 text-right"><button @click="openModal('village', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button><button @click="remove('village', row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button></td>
+                        <td class="px-4 py-3 text-right">
+                            <template v-if="!trashed(row)">
+                                <button @click="openModal('village', row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button>
+                                <button @click="remove('village', row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button>
+                            </template>
+                            <template v-else>
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 mr-2">terhapus</span>
+                                <button @click="restoreRow('village', row)" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Pulihkan</button>
+                            </template>
+                        </td>
                     </template>
                 </DataTable>
             </div>
@@ -207,6 +248,7 @@ const saving = ref(false);
 const error = ref('');
 const level = ref('province');
 const editId = ref(null);
+const showDeleted = ref(false);
 const form = reactive({ code: '', name: '', type: 'kabupaten', province_id: '', city_id: '', district_id: '', postal_code: '' });
 
 const LEVEL_LABELS = { province: 'Provinsi', city: 'Kota/Kabupaten', district: 'Kecamatan', village: 'Desa/Kelurahan' };
@@ -216,7 +258,11 @@ const levelLabelFor = (lvl) => LEVEL_LABELS[lvl];
 const get = async (url, setter, loadingSetter) => {
     loadingSetter.value = true;
     try {
-        const { data } = await api.get(url);
+        const params = new URLSearchParams();
+        if (showDeleted.value) params.set('with_trashed', '1');
+        const sep = url.includes('?') ? '&' : '?';
+        const qs = params.toString();
+        const { data } = await api.get(url + (qs ? sep + qs : ''));
         setter.value = data.data || [];
     } catch {
         setter.value = [];
@@ -224,8 +270,22 @@ const get = async (url, setter, loadingSetter) => {
     loadingSetter.value = false;
 };
 
+function trashed(row) {
+    return !!row.deleted_at;
+}
+
 async function loadProvinces() {
     await get('/address/provinces', provinces, loadingP);
+}
+
+async function reloadAll() {
+    await loadProvinces();
+    selProvinceId.value = '';
+    selCityId.value = '';
+    selDistrictId.value = '';
+    cities.value = [];
+    districts.value = [];
+    villages.value = [];
 }
 
 async function onProvinceChange() {
@@ -294,17 +354,32 @@ function closeModal() {
 }
 
 async function remove(lvl, row) {
-    if (!confirm(`Yakin hapus ${levelLabelFor(lvl)} "${row.name}"?`)) return;
+    const cascade = confirm(`Yakin hapus ${levelLabelFor(lvl)} "${row.name}" termasuk seluruh anaknya (bottom-up)?\n\nOK = hapus + anak · Cancel = batal`);
+    if (!cascade) return;
     const endpoint = { province: '/address/provinces', city: '/address/cities', district: '/address/districts', village: '/address/villages' }[lvl];
     try {
-        await api.delete(endpoint + '/' + row.id);
+        await api.delete(endpoint + '/' + row.id + '?cascade=1');
         // refresh level yang terdampak
         if (lvl === 'province') await loadProvinces();
         else if (lvl === 'city') await onProvinceChange();
         else if (lvl === 'district') await onCityChange();
         else await onDistrictChange();
     } catch (e) {
-        alert(e.response?.data?.error?.message || 'Gagal menghapus. Pastikan masih memiliki anak? Hapus dari level bawah dulu.');
+        alert(e.response?.data?.error?.message || 'Gagal menghapus.');
+    }
+}
+
+async function restoreRow(lvl, row) {
+    if (!confirm(`Yakin pulihkan ${levelLabelFor(lvl)} "${row.name}"?`)) return;
+    const endpoint = { province: '/address/provinces', city: '/address/cities', district: '/address/districts', village: '/address/villages' }[lvl];
+    try {
+        await api.post(endpoint + '/' + row.id + '/restore');
+        if (lvl === 'province') await loadProvinces();
+        else if (lvl === 'city') await onProvinceChange();
+        else if (lvl === 'district') await onCityChange();
+        else await onDistrictChange();
+    } catch (e) {
+        alert(e.response?.data?.error?.message || 'Gagal memulihkan.');
     }
 }
 

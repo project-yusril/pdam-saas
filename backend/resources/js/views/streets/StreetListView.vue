@@ -1,15 +1,19 @@
 <template>
     <AppLayout page-title="Jalan" page-subtitle="Master data jalan — tergabung ke rute baca meter per wilayah">
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <i class="pi pi-map text-primary-600 text-lg" />
-                    <h2 class="font-semibold text-vueheading">Daftar Jalan</h2>
+                <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                    <div class="flex items-center gap-2">
+                        <i class="pi pi-map text-primary-600 text-lg" />
+                        <h2 class="font-semibold text-vueheading">Daftar Jalan</h2>
+                        <label class="ms-4 flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
+                            <input v-model="showDeleted" type="checkbox" @change="load" class="rounded border-gray-300" />
+                            Tampilkan terhapus
+                        </label>
+                    </div>
+                    <button @click="openCreate" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700">
+                        <i class="pi pi-plus text-xs" /> Tambah Jalan
+                    </button>
                 </div>
-                <button @click="openCreate" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700">
-                    <i class="pi pi-plus text-xs" /> Tambah Jalan
-                </button>
-            </div>
 
             <DataTable :rows="rows" :loading="loading">
                 <template #columns>
@@ -22,7 +26,16 @@
                     <td class="px-4 py-3 font-medium text-vueheading">{{ row.name }}</td>
                     <td class="px-4 py-3 text-sm">{{ villageName(row.village_id) }}</td>
                     <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded-full" :class="row.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'">{{ row.is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
-                    <td class="px-4 py-3 text-right"><button @click="openEdit(row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button><button @click="removeRow(row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button></td>
+                    <td class="px-4 py-3 text-right">
+                        <template v-if="!trashed(row)">
+                            <button @click="openEdit(row)" class="text-gray-500 hover:text-primary-600 text-sm font-medium">Edit</button>
+                            <button @click="removeRow(row)" class="text-gray-500 hover:text-red-600 text-sm font-medium ms-3">Hapus</button>
+                        </template>
+                        <template v-else>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 mr-2">terhapus</span>
+                            <button @click="restoreRow(row)" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Pulihkan</button>
+                        </template>
+                    </td>
                 </template>
             </DataTable>
         </div>
@@ -79,6 +92,7 @@ const error = ref('');
 const editingId = ref(null);
 
 const form = reactive({ village_id: '', name: '' });
+const showDeleted = ref(false);
 
 async function loadAddress() {
     try {
@@ -90,12 +104,16 @@ async function loadAddress() {
 async function load() {
     loading.value = true;
     try {
-        const { data } = await api.get('/address/streets');
+        const { data } = await api.get('/address/streets' + (showDeleted.value ? '?with_trashed=1' : ''));
         rows.value = data.data || [];
     } catch {
         rows.value = [];
     }
     loading.value = false;
+}
+
+function trashed(row) {
+    return !!row.deleted_at;
 }
 
 function villageName(id) {
@@ -132,6 +150,16 @@ async function removeRow(row) {
         await load();
     } catch (e) {
         alert(e.response?.data?.error?.message || 'Gagal menghapus jalan.');
+    }
+}
+
+async function restoreRow(row) {
+    if (!confirm(`Yakin pulihkan jalan "${row.name}"?`)) return;
+    try {
+        await api.post('/address/streets/' + row.id + '/restore');
+        await load();
+    } catch (e) {
+        alert(e.response?.data?.error?.message || 'Gagal memulihkan jalan.');
     }
 }
 

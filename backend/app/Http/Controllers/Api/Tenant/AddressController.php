@@ -26,6 +26,9 @@ class AddressController extends Controller
         $params = ListQueryParams::fromRequest($request, ['code', 'name']);
 
         $query = Province::forTenant($request->user()->pdam_org_id);
+        if ($request->boolean('with_trashed')) {
+            $query->withTrashed();
+        }
         $params->apply($query, ['name', 'code']);
 
         $paginator = $query->paginate($params->perPage, ['*'], 'page', $params->page);
@@ -40,6 +43,9 @@ class AddressController extends Controller
         $params = ListQueryParams::fromRequest($request, ['name', 'type']);
 
         $query = City::forTenant($request->user()->pdam_org_id);
+        if ($request->boolean('with_trashed')) {
+            $query->withTrashed();
+        }
         if ($request->has('province_id')) {
             $query->where('province_id', $request->input('province_id'));
         }
@@ -57,6 +63,9 @@ class AddressController extends Controller
         $params = ListQueryParams::fromRequest($request, ['name']);
 
         $query = District::forTenant($request->user()->pdam_org_id);
+        if ($request->boolean('with_trashed')) {
+            $query->withTrashed();
+        }
         if ($request->has('city_id')) {
             $query->where('city_id', $request->input('city_id'));
         }
@@ -74,6 +83,9 @@ class AddressController extends Controller
         $params = ListQueryParams::fromRequest($request, ['name']);
 
         $query = Village::forTenant($request->user()->pdam_org_id);
+        if ($request->boolean('with_trashed')) {
+            $query->withTrashed();
+        }
         if ($request->has('district_id')) {
             $query->where('district_id', $request->input('district_id'));
         }
@@ -91,6 +103,9 @@ class AddressController extends Controller
         $params = ListQueryParams::fromRequest($request, ['name']);
 
         $query = Street::forTenant($request->user()->pdam_org_id)->where('is_active', true);
+        if ($request->boolean('with_trashed')) {
+            $query->withTrashed();
+        }
         if ($request->has('village_id')) {
             $query->where('village_id', $request->input('village_id'));
         }
@@ -254,7 +269,7 @@ class AddressController extends Controller
         return ApiResponse::success($village->fresh());
     }
 
-    /** ── Soft-delete master alamat (hanya milik tenant, tidak boleh punya anak) ── */
+    /** ── Soft-delete master alamat ────────────────────────────────────── */
     private function authorizeOwnedOrFail(Request $request, Model $entity, string $label): void
     {
         $orgId = $request->user()->pdam_org_id;
@@ -263,48 +278,82 @@ class AddressController extends Controller
         }
     }
 
+    /** Relasi anak per level (dipakai cascade/restore). */
+    protected function childRelation(Model $model): ?string
+    {
+        return match ($model::class) {
+            Province::class => 'cities',
+            City::class => 'districts',
+            District::class => 'villages',
+            Village::class => 'streets',
+            default => null,
+        };
+    }
+
+    /** Hapus lembut semua keturunan milik tenant (bottom-up). */
+    private function cascadeDelete(Model $model, int $orgId): void
+    {
+        $rel = $this->childRelation($model);
+        if (! $rel) {
+            return;
+        }
+        foreach ($model->$rel()->where('pdam_org_id', $orgId)->get() as $child) {
+            $this->cascadeDelete($child, $orgId);
+            $child->delete();
+        }
+    }
+
+    /** Pulihkan semua keturunan yang ikut terhapus (top-down). */
+    private function cascadeRestore(Model $model): void
+    {
+        $rel = $this->childRelation($model);
+        if (! $rel) {
+            $model->restore();
+
+            return;
+        }
+        foreach ($model->$rel()->withTrashed()->get() as $child) {
+            $this->cascadeRestore($child);
+        }
+        $model->restore();
+    }
+
+    /** destroy + ?cascade=1 → hapus induk dan seluruh anak milik tenant. */
+    private function destroyWithGuard(Request $request, Model $entity, string $label, ?string $childCount): JsonResponse
+    {
+        $this->authorizeOwnedOrFail($request, $entity, $label);
+        if ($request->boolean('cascade')) {
+            $orgId = $request->user()->pdam_org_id;
+            foreach ($entity->{ $childCount }()->where('pdam_org_id', $orgId)->get() as $child) {
+                $this->cascadeDelete($child, $orgId);
+                $child->delete();
+            }
+        } elseif ($entity->{ $childCount }()->exists()) {
+            return ApiResponse::error('conflict', "{$label} masih memiliki {$childCount}. Hapus dari level bawah dulu, atau pakai ?cascade=1.", status: 409);
+        }
+        $entity->delete();
+
+        return ApiResponse::message("{$label} dihapus.");
+    }
+
     public function destroyProvince(Request $request, Province $province): JsonResponse
     {
-        $this->authorizeOwnedOrFail($request, $province, 'Provinsi');
-        if ($province->cities()->exists()) {
-            return ApiResponse::error('conflict', 'Provinsi masih memiliki kota. Hapus kota terlebih dahulu.', status: 409);
-        }
-        $province->delete();
-
-        return ApiResponse::message('Provinsi dihapus.');
+        return $this->destroyWithGuard($request, $province, 'Provinsi', 'cities');
     }
 
     public function destroyCity(Request $request, City $city): JsonResponse
     {
-        $this->authorizeOwnedOrFail($request, $city, 'Kota/Kabupaten');
-        if ($city->districts()->exists()) {
-            return ApiResponse::error('conflict', 'Kota masih memiliki kecamatan. Hapus kecamatan terlebih dahulu.', status: 409);
-        }
-        $city->delete();
-
-        return ApiResponse::message('Kota/Kabupaten dihapus.');
+        return $this->destroyWithGuard($request, $city, 'Kota/Kabupaten', 'districts');
     }
 
     public function destroyDistrict(Request $request, District $district): JsonResponse
     {
-        $this->authorizeOwnedOrFail($request, $district, 'Kecamatan');
-        if ($district->villages()->exists()) {
-            return ApiResponse::error('conflict', 'Kecamatan masih memiliki desa/kelurahan. Hapus desa terlebih dahulu.', status: 409);
-        }
-        $district->delete();
-
-        return ApiResponse::message('Kecamatan dihapus.');
+        return $this->destroyWithGuard($request, $district, 'Kecamatan', 'villages');
     }
 
     public function destroyVillage(Request $request, Village $village): JsonResponse
     {
-        $this->authorizeOwnedOrFail($request, $village, 'Desa/Kelurahan');
-        if ($village->streets()->exists()) {
-            return ApiResponse::error('conflict', 'Desa/kelurahan masih memiliki jalan. Hapus jalan terlebih dahulu.', status: 409);
-        }
-        $village->delete();
-
-        return ApiResponse::message('Desa/Kelurahan dihapus.');
+        return $this->destroyWithGuard($request, $village, 'Desa/Kelurahan', 'streets');
     }
 
     public function destroyStreet(Request $request, Street $street): JsonResponse
@@ -313,5 +362,51 @@ class AddressController extends Controller
         $street->delete();
 
         return ApiResponse::message('Jalan dihapus.');
+    }
+
+    /** ── Restore (pulihkan data yang soft-deleted) ─────────────────────── */
+    public function restoreProvince(Request $request, int $id): JsonResponse
+    {
+        $model = Province::withTrashed()->findOrFail($id);
+        $this->authorizeOwnedOrFail($request, $model, 'Provinsi');
+        $this->cascadeRestore($model);
+
+        return ApiResponse::message('Provinsi dipulihkan.');
+    }
+
+    public function restoreCity(Request $request, int $id): JsonResponse
+    {
+        $model = City::withTrashed()->findOrFail($id);
+        $this->authorizeOwnedOrFail($request, $model, 'Kota/Kabupaten');
+        $this->cascadeRestore($model);
+
+        return ApiResponse::message('Kota/Kabupaten dipulihkan.');
+    }
+
+    public function restoreDistrict(Request $request, int $id): JsonResponse
+    {
+        $model = District::withTrashed()->findOrFail($id);
+        $this->authorizeOwnedOrFail($request, $model, 'Kecamatan');
+        $this->cascadeRestore($model);
+
+        return ApiResponse::message('Kecamatan dipulihkan.');
+    }
+
+    public function restoreVillage(Request $request, int $id): JsonResponse
+    {
+        $model = Village::withTrashed()->findOrFail($id);
+        $this->authorizeOwnedOrFail($request, $model, 'Desa/Kelurahan');
+        $this->cascadeRestore($model);
+
+        return ApiResponse::message('Desa/Kelurahan dipulihkan.');
+    }
+
+    public function restoreStreet(Request $request, int $id): JsonResponse
+    {
+        $model = Street::withTrashed()->findOrFail($id);
+        $this->authorizeOwnedOrFail($request, $model, 'Jalan');
+        $model->restore();
+
+        return ApiResponse::message('Jalan dipulihkan.');
     }
 }

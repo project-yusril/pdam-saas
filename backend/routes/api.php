@@ -168,6 +168,11 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
     Route::delete('address/districts/{district}', [AddressController::class, 'destroyDistrict']);
     Route::delete('address/villages/{village}', [AddressController::class, 'destroyVillage']);
     Route::delete('address/streets/{street}', [AddressController::class, 'destroyStreet']);
+    Route::post('address/provinces/{id}/restore', [AddressController::class, 'restoreProvince']);
+    Route::post('address/cities/{id}/restore', [AddressController::class, 'restoreCity']);
+    Route::post('address/districts/{id}/restore', [AddressController::class, 'restoreDistrict']);
+    Route::post('address/villages/{id}/restore', [AddressController::class, 'restoreVillage']);
+    Route::post('address/streets/{id}/restore', [AddressController::class, 'restoreStreet']);
 
     // ── MFA — Two-Factor Authentication (TOTP) ──────────────────────────
     Route::post('mfa/setup', [MfaController::class, 'setup']);
