@@ -144,4 +144,58 @@ class TenantIsolationTest extends TestCase
 
         $response->assertNotFound(); // GlobalScope blocks it
     }
+
+    public function test_tenant_cannot_see_other_tenant_private_street(): void
+    {
+        $village = $this->makeVillage();
+
+        // Jalan privat milik tenant 2.
+        \App\Models\Street::create([
+            'pdam_org_id' => $this->user2->pdam_org_id,
+            'village_id' => $village->id,
+            'name' => 'Jl. Privat B',
+            'is_active' => true,
+        ]);
+
+        // Jalan global (pdam_org_id null) — harus tetap terlihat oleh semua.
+        \App\Models\Street::create([
+            'pdam_org_id' => null,
+            'village_id' => $village->id,
+            'name' => 'Jl. Global',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->user1, 'sanctum')
+            ->getJson('/api/v1/address/streets?village_id=' . $village->id);
+
+        $response->assertOk();
+        $names = collect($response->json('data'))->pluck('name');
+
+        $this->assertTrue($names->contains('Jl. Global'));
+        $this->assertFalse($names->contains('Jl. Privat B'));
+    }
+
+    public function test_created_street_is_assigned_to_current_tenant(): void
+    {
+        $village = $this->makeVillage();
+
+        $response = $this->actingAs($this->user1, 'sanctum')
+            ->postJson('/api/v1/address/streets', [
+                'village_id' => $village->id,
+                'name' => 'Jl. Baru',
+            ]);
+
+        $response->assertCreated();
+        $street = $response->json('data');
+        $this->assertEquals($this->user1->pdam_org_id, $street['pdam_org_id']);
+    }
+
+    private function makeVillage(): \App\Models\Village
+    {
+        $province = \App\Models\Province::create(['code' => 'P-ISO', 'name' => 'Provinsi Iso']);
+        $city = \App\Models\City::create(['province_id' => $province->id, 'code' => 'C-ISO', 'name' => 'Kota Iso']);
+        $district = \App\Models\District::create(['city_id' => $city->id, 'code' => 'D-ISO', 'name' => 'Kec Iso']);
+
+        return \App\Models\Village::create(['district_id' => $district->id, 'code' => 'V-ISO', 'name' => 'Kampung Iso']);
+    }
 }

@@ -24,7 +24,7 @@ class AddressController extends Controller
     {
         $params = ListQueryParams::fromRequest($request, ['code', 'name']);
 
-        $query = Province::query();
+        $query = Province::forTenant($request->user()->pdam_org_id);
         $params->apply($query, ['name', 'code']);
 
         $paginator = $query->paginate($params->perPage, ['*'], 'page', $params->page);
@@ -38,7 +38,7 @@ class AddressController extends Controller
 
         $params = ListQueryParams::fromRequest($request, ['name', 'type']);
 
-        $query = City::query();
+        $query = City::forTenant($request->user()->pdam_org_id);
         if ($request->has('province_id')) {
             $query->where('province_id', $request->input('province_id'));
         }
@@ -55,7 +55,7 @@ class AddressController extends Controller
 
         $params = ListQueryParams::fromRequest($request, ['name']);
 
-        $query = District::query();
+        $query = District::forTenant($request->user()->pdam_org_id);
         if ($request->has('city_id')) {
             $query->where('city_id', $request->input('city_id'));
         }
@@ -72,7 +72,7 @@ class AddressController extends Controller
 
         $params = ListQueryParams::fromRequest($request, ['name']);
 
-        $query = Village::query();
+        $query = Village::forTenant($request->user()->pdam_org_id);
         if ($request->has('district_id')) {
             $query->where('district_id', $request->input('district_id'));
         }
@@ -89,7 +89,7 @@ class AddressController extends Controller
 
         $params = ListQueryParams::fromRequest($request, ['name']);
 
-        $query = Street::where('is_active', true);
+        $query = Street::forTenant($request->user()->pdam_org_id)->where('is_active', true);
         if ($request->has('village_id')) {
             $query->where('village_id', $request->input('village_id'));
         }
@@ -115,6 +115,7 @@ class AddressController extends Controller
         ]);
 
         $data['is_active'] = true;
+        $data['pdam_org_id'] = $request->user()->pdam_org_id;
 
         $street = Street::create($data);
 
@@ -142,6 +143,8 @@ class AddressController extends Controller
             'name' => ['required', 'string', 'max:255'],
         ]);
 
+        $data['pdam_org_id'] = $request->user()->pdam_org_id;
+
         $province = Province::create($data);
 
         return ApiResponse::success($province, status: 201);
@@ -168,6 +171,8 @@ class AddressController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'type' => ['nullable', 'string', Rule::in(['kota', 'kabupaten'])],
         ]);
+
+        $data['pdam_org_id'] = $request->user()->pdam_org_id;
 
         $city = City::create($data);
 
@@ -197,6 +202,8 @@ class AddressController extends Controller
             'name' => ['required', 'string', 'max:255'],
         ]);
 
+        $data['pdam_org_id'] = $request->user()->pdam_org_id;
+
         $district = District::create($data);
 
         return ApiResponse::success($district, status: 201);
@@ -224,6 +231,8 @@ class AddressController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'postal_code' => ['nullable', 'string', 'max:10'],
         ]);
+
+        $data['pdam_org_id'] = $request->user()->pdam_org_id;
 
         $village = Village::create($data);
 

@@ -9,7 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Kelurahan/Desa. Fase 1.1 */
 class Village extends Model
 {
-    protected $fillable = ['district_id', 'code', 'name', 'postal_code'];
+    protected $fillable = ['pdam_org_id', 'district_id', 'code', 'name', 'postal_code'];
+
+    public function scopeForTenant($query, ?int $orgId)
+    {
+        return $query->where(fn ($q) => $q->whereNull('pdam_org_id')->orWhere('pdam_org_id', $orgId));
+    }
 
     public function district(): BelongsTo
     {

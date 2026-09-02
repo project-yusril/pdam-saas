@@ -15,6 +15,11 @@ class Street extends Model
         return ['is_active' => 'boolean'];
     }
 
+    public function scopeForTenant($query, ?int $orgId)
+    {
+        return $query->where(fn ($q) => $q->whereNull('pdam_org_id')->orWhere('pdam_org_id', $orgId));
+    }
+
     public function village(): BelongsTo
     {
         return $this->belongsTo(Village::class);

@@ -8,7 +8,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Provinsi (master alamat global). Fase 1.1 */
 class Province extends Model
 {
-    protected $fillable = ['code', 'name'];
+    protected $fillable = ['pdam_org_id', 'code', 'name'];
+
+    /** Data yang "milik" tenant: global (pdam_org_id null) + punya tenant tsb. */
+    public function scopeForTenant($query, ?int $orgId)
+    {
+        return $query->where(fn ($q) => $q->whereNull('pdam_org_id')->orWhere('pdam_org_id', $orgId));
+    }
 
     public function cities(): HasMany
     {

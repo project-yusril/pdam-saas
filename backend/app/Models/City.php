@@ -9,7 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Kota/Kabupaten. Fase 1.1 */
 class City extends Model
 {
-    protected $fillable = ['province_id', 'code', 'name', 'type'];
+    protected $fillable = ['pdam_org_id', 'province_id', 'code', 'name', 'type'];
+
+    public function scopeForTenant($query, ?int $orgId)
+    {
+        return $query->where(fn ($q) => $q->whereNull('pdam_org_id')->orWhere('pdam_org_id', $orgId));
+    }
 
     public function province(): BelongsTo
     {

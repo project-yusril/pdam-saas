@@ -9,7 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Kecamatan. Fase 1.1 */
 class District extends Model
 {
-    protected $fillable = ['city_id', 'code', 'name'];
+    protected $fillable = ['pdam_org_id', 'city_id', 'code', 'name'];
+
+    public function scopeForTenant($query, ?int $orgId)
+    {
+        return $query->where(fn ($q) => $q->whereNull('pdam_org_id')->orWhere('pdam_org_id', $orgId));
+    }
 
     public function city(): BelongsTo
     {
