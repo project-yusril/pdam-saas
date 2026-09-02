@@ -56,9 +56,19 @@ echo ============================================================
 echo   Backend  : http://127.0.0.1:8000
 echo   Frontend : http://localhost:5173
 echo ============================================================
-echo   Tekan Ctrl+C untuk menghentikan backend.
+
+REM ---------- 5. Deteksi server yang sudah berjalan, lalu buka browser ----------
+netstat -ano | findstr ":8000 " | findstr "LISTENING" >nul 2>&1
+if %errorlevel% EQU 0 (
+    echo [INFO] Server Laravel sudah berjalan di port 8000.
+    echo        Tidak perlu menjalankan ulang. Membuka browser...
+    start "" "http://127.0.0.1:8000"
+    goto end
+)
+
+echo [INFO] Menjalankan server Laravel (Ctrl+C untuk berhenti)...
 echo.
+php artisan serve --host=0.0.0.0 --port=8000
 
-php artisan serve --host=127.0.0.1 --port=8000
-
+:end
 endlocal
