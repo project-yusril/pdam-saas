@@ -16,14 +16,27 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kode</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Rute</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wilayah</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Petugas Baca</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
                 </template>
                 <template #row="{ row }">
                     <td class="px-4 py-3 text-sm font-mono">{{ row.code }}</td>
                     <td class="px-4 py-3 font-medium text-vueheading">{{ row.name }}</td>
                     <td class="px-4 py-3 text-sm">{{ row.zone?.name || '-' }}</td>
-                    <td class="px-4 py-3 text-right">
-                        <router-link :to="'/meter-routes/' + row.id" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Kelola Jalan</router-link>
+                    <td class="px-4 py-3 text-sm">
+                        <span v-if="officerOf(row)" class="inline-flex items-center gap-1.5">
+                            <i class="pi pi-user text-primary-600 text-xs" /> {{ officerOf(row).name }}
+                        </span>
+                        <span v-else class="text-gray-300">— belum ditugaskan</span>
+                    </td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <button
+                            @click="openOfficer(row)"
+                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-primary-600 text-primary-600 hover:bg-primary-50 text-sm font-medium"
+                        >
+                            <i class="pi pi-user-plus text-xs" /> Petugas
+                        </button>
+                        <router-link :to="'/meter-routes/' + row.id" class="text-primary-600 hover:text-primary-800 text-sm font-medium ml-3">Kelola Jalan</router-link>
                         <ActionButtons :row="row" @edit="openEdit" @delete="removeRow" />
                     </td>
                 </template>
@@ -63,6 +76,38 @@
                 </form>
             </div>
         </div>
+
+        <!-- Modal Assign Petugas -->
+        <div v-if="showOfficer" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" @click.self="closeOfficer">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                    <h3 class="font-semibold text-vueheading flex items-center gap-2"><i class="pi pi-user-plus text-primary-600" /> Assign Petugas Baca Meter</h3>
+                    <button class="p-2 rounded-md hover:bg-gray-100 text-gray-400" @click="closeOfficer"><i class="pi pi-times" /></button>
+                </div>
+                <form class="p-6 space-y-4" @submit.prevent="submitOfficer">
+                    <div class="text-sm text-vuetext">
+                        <p class="font-medium text-vueheading">{{ officerRoute?.code }} — {{ officerRoute?.name }}</p>
+                        <p class="text-gray-400">Wilayah: {{ officerRoute?.zone?.name || '-' }}</p>
+                        <p v-if="officerOf(officerRoute)" class="mt-1 text-green-600">Petugas saat ini: {{ officerOf(officerRoute).name }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-vuetext mb-1">Pilih Petugas <span class="text-red-500">*</span></label>
+                        <select v-model="officerId" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                            <option value="" disabled>— Pilih Petugas Baca Meter —</option>
+                            <option v-for="o in officers" :key="o.id" :value="o.id">{{ o.name }} ({{ o.email }})</option>
+                        </select>
+                        <p class="text-xs text-gray-400 mt-1">Hanya menampilkan user berperan <code>meter_officer</code>.</p>
+                    </div>
+                    <div v-if="error" class="px-4 py-3 rounded-lg bg-red-50 text-red-600 text-sm">{{ error }}</div>
+                    <div class="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
+                        <button type="button" @click="closeOfficer" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">Batal</button>
+                        <button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700" :disabled="assigning">
+                            <i class="pi pi-user-plus text-xs mr-1" /> {{ assigning ? 'Menyimpan…' : 'Assign Petugas' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </AppLayout>
 </template>
 
@@ -82,6 +127,55 @@ const error = ref('');
 const editingId = ref(null);
 
 const form = reactive({ zone_id: '', code: '', name: '' });
+
+// Assign petugas baca meter → rute
+const officers = ref([]);
+const showOfficer = ref(false);
+const officerRoute = ref(null);
+const officerId = ref('');
+const assigning = ref(false);
+
+function officerOf(row) {
+    return (row?.assignments || []).find((a) => a.is_active)?.officer || null;
+}
+
+async function loadOfficers() {
+    try {
+        const { data } = await api.get('/users', { params: { role: 'meter_officer', per_page: 100, is_active: true } });
+        officers.value = data.data || [];
+    } catch {
+        officers.value = [];
+    }
+}
+
+async function openOfficer(row) {
+    officerRoute.value = row;
+    officerId.value = officerOf(row)?.id || '';
+    error.value = '';
+    showOfficer.value = true;
+    await loadOfficers();
+}
+
+function closeOfficer() {
+    showOfficer.value = false;
+    error.value = '';
+    officerRoute.value = null;
+}
+
+async function submitOfficer() {
+    if (!officerRoute.value || !officerId.value) return;
+    assigning.value = true;
+    error.value = '';
+    try {
+        await api.post('/meter-routes/' + officerRoute.value.id + '/officer', { officer_id: Number(officerId.value) });
+        closeOfficer();
+        await load();
+    } catch (e) {
+        error.value = e.response?.data?.message || 'Gagal assign petugas.';
+    } finally {
+        assigning.value = false;
+    }
+}
 
 async function load() {
     loading.value = true;

@@ -40,6 +40,10 @@ class UserController extends Controller
             $query->where('zone_id', $request->integer('zone_id'));
         }
 
+        if ($request->filled('role')) {
+            $query->whereHas('roles', fn ($q) => $q->where('code', $request->input('role')));
+        }
+
         return ApiResponse::paginated($query->paginate($perPage));
     }
 

@@ -27,7 +27,7 @@ class MeterRouteController extends Controller
             ->with([
                 'zone:id,code,name',
                 'streets:id,name',
-                'assignments' => fn ($q) => $q->where('is_active', true),
+                'assignments' => fn ($q) => $q->where('is_active', true)->with('officer:id,name'),
             ])
             ->orderBy('code');
 
@@ -61,6 +61,7 @@ class MeterRouteController extends Controller
     {
         return ApiResponse::success(
             $route->load('zone:id,code,name', 'streets:id,name', 'assignments')
+                ->load(['assignments' => fn ($q) => $q->with('officer:id,name')])
                 ->loadCount('streets', 'assignments')
         );
     }

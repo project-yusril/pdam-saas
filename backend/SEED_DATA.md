@@ -396,6 +396,10 @@ dapat dipertanggungjawabkan (foto + petugas).
 
 ### 9.2 Perubahan lain yang menyertai
 
+- **Assign Petugas → Rute** (halaman **Rute Baca Meter**, kolom *Petugas Baca*): tombol **Petugas**
+  membuka modal untuk menetapkan user berperan `meter_officer` ke rute
+  (`POST /api/v1/meter-routes/{route}/officer`, izin `mtr.route.assign`); daftar petugas difilter via
+  `GET /users?role=meter_officer`. Respons `GET /meter-routes` kini menyertakan petugas aktif.
 - **`CustomerListView.vue`** → tabel pelanggan kini **server-side pagination** (default 25/halaman,
   `Show X entries` + Previous/Next); footer menampilkan total benar (mis. `Showing 1 to 25 of 3.000 entries`).
 - **`DataTable.vue`** (shared) → fallback `from`/`to` pada mode server agar list yang tidak mengirim
