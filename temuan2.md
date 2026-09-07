@@ -258,7 +258,7 @@ Seluruh **39 dari 39 temuan audit sudah application-complete dan diverifikasi**.
 
 **Perbaikan:** buat contract test terpusat/OpenAPI-generated client; selaraskan nama endpoint dan hapus endpoint phantom.
 
-**Status perbaikan (15 Juli 2026):** selesai untuk endpoint yang tercantum pada temuan. Backend kini menyediakan update profile, change password, FCM token, detail bill portal, usage history, complaints, dan profile portal. `MobileContractTest` memverifikasi profile/password/FCM serta ownership detail bill. OpenAPI-generated client dan coverage seluruh endpoint mobile tetap menjadi peningkatan kualitas terpisah.
+**Status perbaikan (15 Juli 2026):** selesai untuk endpoint yang tercantum pada temuan. Backend kini menyediakan update profile, change password, FCM token, detail bill portal, usage history, complaints, dan profile portal. `MobileContractTest` memverifikasi profile/password/FCM serta ownership detail bill. **Follow-up 7 Sept:** `pdam:openapi` (spek OpenAPI 3.0 yang di-generate dari route registry — 293 path, bukan anotasi parsial) dan `pdam:mobile-coverage` (kontrak path endpoints.dart vs registry — menangkap gap nyata `portal/complaints/{id}` yang kini diimplementasi `CustomerPortalController::complaint`) keduanya aktif di CI; codegen *client* Dart dari spek tetap enhancement berikutnya (H-10 lanjut). Duplikat konstan `ocrMeterReading`/`notificationsList*` dibuang; flutter analyze 0 issue.
 
 ### [X] H-11 - Debug Mobile Tidak Bisa Mengakses Backend dari Android
 
@@ -544,6 +544,7 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 | Load test | ✅ k6 parameterized (PROFILE/BASE_URL/kredensial env, tolak hardcode), runner `ops/load/run_load_test.sh`, capacity baseline ke `docs/CAPACITY_BASELINE.md` |
 | Ops scripts | ✅ `ops/tls/*`, `ops/backup/*`, `ops/mysql/*`, `ops/load/*`, `ops/runbooks/*` lolos `bash -n`; dipakai CI |
 | CI | ✅ root `.github/workflows/ci.yml` (6 job: backend-sqlite, mysql-production-gates, frontend, mobile, ml, security); `.gitleaks.toml` diganti allowlist path-scoped (tanpa regex global `12345678`) |
+| API/OpenAPI/mobile (H-10) | ✅ CI tooling: `pdam:openapi` (293 path dari registry → docs/openapi.json), `pdam:mobile-coverage` (gate path endpoints.dart; gap nyata `portal/complaints/{id}` kini ditangani `CustomerPortalController::complaint`); Flutter analyze 0 issue + 44/44. Codegen Dart = lanjutan manual.
 | Kept-open canonical | 6 gate §13 § status tooling per gate di bawah |
 
 ## 10. Prioritas Perbaikan

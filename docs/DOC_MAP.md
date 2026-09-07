@@ -26,14 +26,15 @@ authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 
 | Metrik | Nilai | Sumber |
 |---|---|---|
-| Baris route registry | **387** (368 method endpoint API `/api/v1` + 19 web) | `php artisan route:list` + `COUNTS.json` |
-| URI API unik | **292** | `route:list --json` |
+| Baris route registry | **388 method rows** (369 API `/api/v1` + 19 web) | `php artisan pdam:openapi`/counts + `COUNTS.json` |
+| URI API unik | **293** | `route:list --json` |
+| OpenAPI kanonik (drift CI) | **293 path/369 method** di `docs/openapi.json` | `php artisan pdam:openapi --out=../docs/openapi.json` && CI `git diff --exit-code` |
 | Models | **136** | `COUNTS.json` |
 | Migrations | **65** | `COUNTS.json` (SQL 000004–000010 + `2026_09_06` orders/triggers) |
 | Seeder classes | **28** (production path: 4 — kernel+permission/module/role) | `COUNTS.json`, `SEED_DATA.md` |
 | Tabel (statis dari migration) | **167** | `COUNTS.json` |
-| Command artisan `pdam:*` | **19** | `COUNTS.json` |
-| Test backend (SQLite) | **109/109** (768 assertions) | `php artisan test` |
+| Command artisan `pdam:*` | **21** (baru: openapi, mobile-coverage, audit-db-privileges, queue/integrations-health, ml export, counts; 21 total) | `COUNTS.json` |
+| Test backend (SQLite) | **110/110** (781 assertions) (7 Sep) | `php artisan test` |
 | Test frontend Vitest | **7 files / 13 tests** + `npm run build` OK | `npm run test -- --run` |
 | Test Flutter | **44** + analyze info-only | `flutter test` |
 | Test Python (ml) | **29 test methods** — dieksekusi CI `ml` (xgboost tak tersedia di runner Win-ARM64 lokal) | `test_*.py` + workflow |

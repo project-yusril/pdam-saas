@@ -19,7 +19,9 @@ use Illuminate\Support\Facades\Route;
  */
 class GenerateOpenApi extends Command
 {
-    protected $signature = 'pdam:openapi {--json : cetak spek ke stdout}';
+    protected $signature = 'pdam:openapi
+                            {--json : cetak spek ke stdout}
+                            {--out= : path tujuan (default storage/api-docs + docs/openapi.json)}';
 
     protected $description = 'Generate OpenAPI 3.0 dari route registry (368 endpoint API)';
 
@@ -36,13 +38,31 @@ class GenerateOpenApi extends Command
             return self::SUCCESS;
         }
 
-        $out = storage_path('api-docs/api-docs.generated.json');
-        file_put_contents($out, json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
-        $this->info('Ditulis: '.$out);
+        foreach ($this->targets() as $out) {
+            $dir = dirname($out);
+            if (! is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            file_put_contents($out, json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+            $this->line('Ditulis: '.str_replace(base_path().DIRECTORY_SEPARATOR, '', $out));
+        }
         $this->line(sprintf('  paths  : %d', count($spec['paths'])));
         $this->line(sprintf('  methods: %d', array_sum(array_map('count', $spec['paths']))));
 
         return self::SUCCESS;
+    }
+
+    /** @return array<int,string> */
+    private function targets(): array
+    {
+        if ($opt = $this->option('out')) {
+            return [(string) $opt];
+        }
+
+        return [
+            storage_path('api-docs/api-docs.generated.json'),
+            dirname(base_path()).'/docs/openapi.json',
+        ];
     }
 
     private function build(): array

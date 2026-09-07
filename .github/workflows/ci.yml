@@ -28,6 +28,10 @@ jobs:
         with: { working-directory: backend }
       - name: Lint (Pint)
         run: composer lint
+      - name: OpenAPI spec drift (registry-generated; docs/openapi.json = kanonik mobile/client; H-10)
+        run: php artisan pdam:openapi --out=../docs/openapi.json && git diff --exit-code ../docs/openapi.json
+      - name: mobile endpoint coverage contract (endpoints.dart vs API route registry)
+        run: php artisan pdam:mobile-coverage
       - name: Route/config/view/event caches
         run: |
           cp .env.ci .env

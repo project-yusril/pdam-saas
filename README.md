@@ -346,11 +346,12 @@ production-ready. Detail gap per area ada di `temuan2.md`.
 
 ## API
 
-Snapshot route registry terkini: **387 baris route** (368 method endpoint `/api/v1` + 19 web; 292 URI
+Snapshot route registry: **388 baris route** (369 method endpoint `/api/v1` + 19 web; 293 URI
 API unik) — angka kanonis ada di [`docs/COUNTS.json`](docs/COUNTS.json), regenerasi lewat
-`php artisan pdam:counts --write`. API tenant memakai prefix `/api/v1`. Swagger/OpenAPI dan Postman
-masih referensi parsial yang wajib divalidasi terhadap registry sebelum dipakai; inventaris lengkap
-selalui `route:list` (OpenAPI penuh direkomendasikan sebagai task terpisah, lihat temuan2 L/H).
+`php artisan pdam:counts --write`. Spek kontrak endpoint dari registry: `php artisan pdam:openapi`
+→ **`docs/openapi.json`** (293 path; CI `pdam:openapi --json` diff-gate, H-10). Swagger anotasi & Postman
+tetap referensi tambahan; kontrak `mobile/lib/core/network/endpoints.dart` dipaksa sama oleh
+CI `php artisan pdam:mobile-coverage`. API tenant memakai prefix `/api/v1`.
 
 Autentikasi web memakai Sanctum stateful/session dengan cookie `HttpOnly` dan CSRF; response login web
 tidak mengirim token dan auth tidak disimpan di `localStorage`. Mobile mengirim `device_name` saat login
@@ -373,10 +374,11 @@ bash -n ops/**/*.sh                 # syntax ops; CI menjalankan drill ops/backu
 ```
 
 Status verifikasi 7 September 2026 (lokal Windows; CI menjalankan semuanya — termasuk MySQL):
-backend SQLite **109/109, 768 assertions** (termasuk seeder-isolation ProductionSeederIsolationTest,
-material stock-out, native export XLSX/PDF, command `pdam:counts`); frontend Vitest **7 file /
-13 tests** (helper workbench, resources config, errors, auth flow, router, contract) +
-`npm run build` lulus; Flutter **44/44** + analyze bersihin (1 info); ML **29 tests** (pytest
+backend SQLite **110/110, 781 assertions** (termasuk seeder-isolation ProductionSeederIsolationTest,
+material stock-out, native export XLSX/PDF/DOCX, command `pdam:counts`, `pdam:openapi` & `pdam:mobile-coverage`
+H-10 kontrak endpoint mobile); frontend Vitest **7 file / 13 tests** (helper workbench, resources config,
+errors, auth flow, router, contract) + `npm run build` lulus; Flutter **44/44** + analyze **0 issue**
+(duplikat konstan endpoints.dart dibersihkan); ML **29 tests** (pytest
 di CI; runner Win-ARM64 lokal tanpa wheel xgboost → compile-all saja); `php artisan pdam:counts`
 sinkron dengan `docs/COUNTS.json`. CI root [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
 memiliki job: `backend-sqlite`, `mysql-production-gates` (migrate+seed MySQL 8.4, provisioning
@@ -386,8 +388,8 @@ Enam gate §13 `temuan2.md` tetap terbuka sampai bukti riil (TLS, pentest vendor
 produksi, ML data asli) — tooling-nya sudah ada di `ops/`.
 
 Export generik mendukung `csv`, `html`, **`xlsx`** (PhpSpreadsheet riil; formula dinetralkan, sel angka
-bertipe number) dan **`pdf`** (dompdf + kop surat PDAM) — format biner dikirim sebagai base64. DOC surat
-masih roadmap (lihat `temuan2.md`).
+bertipe number), **`pdf`** (dompdf + kop surat PDAM), dan **`docx`** (PhpWord WordprocessingML asli) —
+format biner dikirim sebagai base64.
 
 ## Security
 
