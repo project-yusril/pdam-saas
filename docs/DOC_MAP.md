@@ -34,7 +34,7 @@ authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 | Seeder classes | **28** (production path: 4 — kernel+permission/module/role) | `COUNTS.json`, `SEED_DATA.md` |
 | Tabel (statis dari migration) | **167** | `COUNTS.json` |
 | Command artisan `pdam:*` | **21** (baru: openapi, mobile-coverage, audit-db-privileges, queue/integrations-health, ml export, counts; 21 total) | `COUNTS.json` |
-| Test backend (SQLite) | **110/110** (781 assertions) (7 Sep) | `php artisan test` |
+| Test backend (SQLite) | **117/117** (812 assertions) (7 Sep; +Tier3/ops/sim contracts) | `php artisan test` |
 | Test frontend Vitest | **7 files / 13 tests** + `npm run build` OK | `npm run test -- --run` |
 | Test Flutter | **46** + analyze **0 issue** | `flutter test` |
 | Test Python (ml) | **32 test methods** (29 sebelumnya + 3 contract simulator tier-3) — dieksekusi CI `ml` (xgboost tak tersedia di runner Win-ARM64 lokal) | `test_*.py` + workflow |

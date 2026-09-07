@@ -71,8 +71,8 @@ python -m compileall -q src scripts
 python -m pytest tests -q   # atau unittest discover -s tests -v
 ```
 
-Expected audit snapshot (7 Sep 2026), not a substitute for release output: SQLite backend **109/109
-and 768 assertions**; route registry **387 rows (368 API + 19 web)**; Vitest **13** + build; Flutter**44/44**;
+Expected audit snapshot (7 Sep 2026), not a substitute for release output: SQLite backend **117/117
+and 812 assertions**; route registry **388 rows (369 API + 19 web)**; Vitest **13** + build; Flutter**44/44**;
 ML **29** tests (CI); `php artisan pdam:counts` sinkron vs `docs/COUNTS.json`. Live numbers always come from
 `../docs/COUNTS.json` — regenerate with `php artisan pdam:counts --write`.
 

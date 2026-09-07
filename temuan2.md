@@ -510,7 +510,7 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 
 | Perintah | Hasil |
 |---|---|
-| `php artisan test` (SQLite) | **PASS 7 Sept 2026**: 109/109, 768 assertions (15 Jul: 89/89, 664) |
+| `php artisan test` (SQLite) | **PASS 7 Sept 2026**: 117/117, 812 assertions (15 Jul: 89/89, 664) |
 | `php artisan test` (MySQL 8.4.9) | **PASS**: 89 discovered, 88 passed, 1 intentionally SQLite-only skipped, 756 assertions, zero failures |
 | `php artisan route:list --json` | **PASS (7 Sep 2026)**: 387 rows — 368 method endpoint `/api/v1` + 19 web; 292 URI API unik. Kanonis: `docs/COUNTS.json` |
 | `php artisan route:cache` | **PASS** |
@@ -542,8 +542,8 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 | UI web modul | ✅ halaman workbench generik (`/modules/:code`) search+pagination+create+aksi status; KPI dashboard object; helper teruji Vitest |
 | Worker/scheduler | ✅ `supervisord.production.conf` (2 worker + scheduler + `pdam:queue-health`) + eventlistener protokol benarmelalui `ops/supervisor/crash_alert.py` |
 | Load test | ✅ k6 parameterized (PROFILE/BASE_URL/kredensial env, tolak hardcode), runner `ops/load/run_load_test.sh`, capacity baseline ke `docs/CAPACITY_BASELINE.md` |
-| Ops scripts | ✅ `ops/tls/*`, `ops/backup/*`, `ops/mysql/*`, `ops/load/*`, `ops/runbooks/*` lolos `bash -n`; dipakai CI |
-| CI | ✅ root `.github/workflows/ci.yml` (6 job: backend-sqlite, mysql-production-gates, frontend, mobile, ml, security); `.gitleaks.toml` diganti allowlist path-scoped (tanpa regex global `12345678`) |
+| Ops scripts | ✅ `ops/tls/*`, `ops/backup/*`, `ops/mysql/*`, `ops/load/*`, `ops/simulators/telemetry_simulator.py` (tier-3), `ops/alerting/prometheus-rules.example.yml`, `ops/logrotate/pdam.conf`, `ops/runbooks/*` lolos `bash -n`; dipakai CI |
+| CI | ✅ root `.github/workflows/ci.yml` (6 job; backend-sqlite juga: YAML-workflows lint + openapi drift + `pdam:mobile-coverage`); nightly `.github/workflows/nightly-ops.yml` (schedule/manual k6+simulator — gated `vars.LOAD_ENABLED`); `.gitleaks.toml` diganti allowlist path-scoped (tanpa regex global `12345678`) |
 | API/OpenAPI/mobile (H-10) | ✅ CI tooling: `pdam:openapi` (293 path dari registry → docs/openapi.json), `pdam:mobile-coverage` (gate path endpoints.dart; gap nyata `portal/complaints/{id}` kini ditangani `CustomerPortalController::complaint`); Flutter analyze 0 issue + 44/44. Codegen Dart = lanjutan manual.
 | Kept-open canonical | 6 gate §13 § status tooling per gate di bawah |
 

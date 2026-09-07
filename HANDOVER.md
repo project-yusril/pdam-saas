@@ -192,8 +192,8 @@ SSL: Certbot + Let's Encrypt. Konfig: `docker/nginx.production.conf`. Verifikasi
   service authentication ML, BI/export identifier hardening, MFA, encrypted fields, rate limiting,
   privacy purge dual-control, kontrak OCR KTP multipart, seeder production-safe (kernel routing + DemoGuard
   blokade mutlak), reserve/stock-out material+idempotensi, dan kontrak export XLSX/PDF native yang jujur.
-- Snapshot 7 September 2026 (lengkap di `docs/COUNTS.json`/`docs/DOC_MAP.md`): backend SQLite **109/109
-  (768 assertions)**; frontend Vitest **7 file/13 tests** + build lulus (workbench, API errors, auth flow,
+- Snapshot 7 September 2026 (lengkap di `docs/COUNTS.json`/`docs/DOC_MAP.md`): backend SQLite **117/117
+  (812 assertions)**; frontend Vitest **7 file/13 tests** + build lulus (workbench, API errors, auth flow,
   resources config, router); Flutter 44/44 (analyze **0 issue**, 46 test total); ML **32** test (CI); route registry: **369** API
   endpoint method rows. CI `mysql-production-gates` sudah menjalankan migration+seed, privileges drill,
   backup→restore drill sebagai bukti otomatis.

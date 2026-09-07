@@ -9,8 +9,8 @@ kredensial demo dimiliki [`SEED_DATA.md`](SEED_DATA.md); deployment production d
 [`DEPLOY.md`](DEPLOY.md); status verifikasi dimiliki [`../temuan2.md`](../temuan2.md).
 
 > **Sumber status saat ini:** [`../temuan2.md`](../temuan2.md), termasuk enam gate persetujuan production canonical.
-> Verifikasi 7 September 2026: backend SQLite **109/109 (768 assertions)**; route registry **387 rows —
-> 368 method endpoint `/api/v1` (292 URI unik) + 19 web** (kanonis di [`../docs/COUNTS.json`](../docs/COUNTS.json), check
+> Verifikasi 7 September 2026: backend SQLite **117/117 (812 assertions)**; route registry **388 rows —
+> 369 method endpoint `/api/v1` (293 URI unik) + 19 web** (kanonis di [`../docs/COUNTS.json`](../docs/COUNTS.json), check
 > `php artisan pdam:counts`); Vitest 7 file/**13 test** + build lulus; Flutter **44/44** + analyze; ML
 > **29 test** (pytest; `test_calibration.py` gate §13 #6 — jalan di CI). Seeder kini router: production
 > hanya `ProductionKernelSeeder` dan `DemoGuard` memblokir **mutlak** fixture demo/akun `12345678`
