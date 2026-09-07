@@ -256,6 +256,7 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
         Route::get('consumption-chart', [CustomerPortalController::class, 'consumptionChart']);
         Route::get('usage-history', [CustomerPortalController::class, 'consumptionChart']);
         Route::get('complaints', [CustomerPortalController::class, 'complaints']);
+        Route::get('complaints/{complaint}', [CustomerPortalController::class, 'complaint']);
         Route::post('complaints', [CustomerPortalController::class, 'createComplaint']);
         Route::get('profile', [CustomerPortalController::class, 'profile']);
         Route::put('profile', [CustomerPortalController::class, 'updateProfile']);

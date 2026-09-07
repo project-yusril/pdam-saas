@@ -111,6 +111,19 @@ class CustomerPortalController extends Controller
         return ApiResponse::success($complaint, status: 201);
     }
 
+    /** Detail pengaduan milik customer — 404 bila milik lain (bukan 403 agar tak bocor keberadaan). */
+    public function complaint(Request $request, Complaint $complaint): JsonResponse
+    {
+        $customer = $this->resolveCustomer($request);
+        if (! $customer) {
+            return ApiResponse::error('NOT_A_CUSTOMER', 'Akun ini bukan pelanggan.', null, 403);
+        }
+
+        abort_unless($complaint->customer_id === $customer->id, 404);
+
+        return ApiResponse::success($complaint);
+    }
+
     public function profile(Request $request): JsonResponse
     {
         $customer = $this->resolveCustomer($request);

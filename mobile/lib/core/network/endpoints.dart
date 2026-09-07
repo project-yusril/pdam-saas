@@ -35,7 +35,7 @@ class Endpoints {
   static const String meterReadings = '/meter-readings';
   static const String meterReadingSubmit = '/meter-readings';
   static const String meterReadingHistory = '/meter-readings/route-progress';
-  static const String meterOcrRecognize = '/meter-readings/parse';
+  static const String meterReadingOcr = '/meter-readings/parse';
 
   // ── Survey & Pemasangan (SRV) ──────────────────────────────────
   static const String surveyTasks = '/prospects';
@@ -45,13 +45,6 @@ class Endpoints {
 
   // ── OCR ────────────────────────────────────────────────────────
   static const String ocrKtpUpload = '/prospects/upload-ktp';
-  static const String ocrMeterReading = '/meter-readings/parse';
-
-  // ── Notifikasi (via portal) ────────────────────────────────────
-  static const String notificationsList = '/portal/notifications';
-  static String notificationsMarkRead(int id) =>
-      '/portal/notifications/${_id(id)}/read';
-  static const String notificationsMarkAll = '/portal/notifications/read-all';
 
   // ── Offline Sync ───────────────────────────────────────────────
   static const String syncUpload = '/sync/upload';

@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import '../constants.dart';
 import '../errors/exceptions.dart';
 import '../security/obfuscation_config.dart';
-import 'certificate_pinning.dart';
 import 'base_url_policy.dart';
+import 'certificate_pinning.dart';
 
 abstract interface class ApiTransport {
   Future<Response<T>> get<T>(String path,
