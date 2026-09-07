@@ -68,3 +68,5 @@ ml/output/
 **/.DS_Store
 **/Thumbs.db
 *.log
+
+.phpunit-temp/

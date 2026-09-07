@@ -52,5 +52,8 @@ class PdamOpsCommandsTest extends TestCase
         $this->assertGreaterThanOrEqual(290, count($spec['paths']), 'spek harus mencakup hampir semua route /api/v1');
         $this->assertArrayHasKey('/login', $spec['paths']);
         $this->assertArrayHasKey('post', $spec['paths']['/login']);
+
+        @unlink($out);
+        @rmdir(dirname($out));
     }
 }
