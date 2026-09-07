@@ -1,25 +1,31 @@
 # SEED DATA - Dokumentasi Data Demo PDAM
 
-**Diperbarui:** 18 Juli 2026 | **Seeder inti:** `database/seeders/OperationalDataSeeder.php` | **Seeder tambahan:** 17 seeder (16 seeder modul + `SambasTenantSeeder`; lihat Section 8)
+**Diperbarui:** 7 September 2026 | **Seeder inti:** `database/seeders/OperationalDataSeeder.php` | **Seeder tambahan:** 17 seeder (16 seeder modul + `SambasTenantSeeder`; lihat Section 8) | **Router seed:** `DatabaseSeeder` + `DemoSeeder` + `ProductionKernelSeeder` (lihat catatan di bawah)
 
 Dokumen ini menjelaskan seluruh data demo yang dibuat otomatis saat `php artisan db:seed`
 (atau `php artisan migrate --seed`). Data dirancang **saling terintegrasi** — dari pelanggan →
 baca meter → tagihan → pembayaran → jurnal → neraca, plus gudang → stok → jurnal persediaan.
 
 > **Development/demo only.** Dokumen ini adalah satu-satunya sumber operasional kredensial fixture.
-> `DatabaseSeeder` saat ini tidak production-safe karena masih memuat akun dan password demo. Jalur
-> production hanya mengikuti [`DEPLOY.md`](DEPLOY.md).
+> Sejak pemisahan seeder (temuan2.md P1), `DatabaseSeeder` menjadi router: pada environment
+> **production** hanya `ProductionKernelSeeder` (permission, katalog modul, role template, admin
+> platform opsional via env `PLATFORM_ADMIN_*` dengan tolak-password-demo) yang berjalan — semua
+> fixture demo dan password `12345678` **diblokir mutlak** oleh `DemoGuard` (tanpa env escape;
+> bukti `ProductionSeederIsolationTest` 9/9). Pada environment non-production, `DatabaseSeeder`
+> menjalankan kernel + `DemoSeeder` (seluruh fixture di dokumen ini). Jalur production tetap
+> mengikuti [`DEPLOY.md`](DEPLOY.md).
 
-> **Snapshot terbaru:** MySQL 8.4.9 disposable dan SQLite menjalankan **62 migration dan 24 seeder** hingga
-> membangun 167 tabel; migration terbaru menambah `pdam_org_id` + `deleted_at` pada tabel master alamat.
-> Sejak audit tersebut dataset demo **ditambah 1 seeder tenant** (`SambasTenantSeeder`) → **25 seeder**,
-> membangun **3 tenant demo** (lihat Section 1) — tidak mengubah angka 167 tabel pada snapshot audit.
-> MySQL rollback `000004`-`000010` lalu migrate ulang lulus. Snapshot lama tetap ada di `../temuan.md`;
-> bukti aktif ada di `../temuan2.md`.
+> **Snapshot live (7 Sep 2026):** 65 migration / 28 class seeder (lihat [`../docs/COUNTS.json`](../docs/COUNTS.json))
+> membangun 167 tabel; dua migration September menambah `installation_material_orders` (reservasi
+> material pemasangan) dan trigger append-only `privacy_audit_events`. MySQL rollback `000004`-`000010`
+> lalu migrate ulang lulus. Sejak audit 15 Juli dataset demo **ditambah 1 seeder tenant**
+> (`SambasTenantSeeder`) → total **25 seeder demo** (dirutekan `DemoSeeder`) + kernel/guard, membangun
+> **3 tenant demo** (lihat Section 1) — tidak mengubah angka 167 tabel pada snapshot audit.
+> Snapshot lama tetap ada di `../temuan.md`; bukti aktif ada di `../temuan2.md`.
 
 > Audit aktif ada di `../temuan2.md`; `../temuan.md` adalah arsip snapshot 8 Juli 2026.
 >
-> **Dokumen terkait:** [`../README.md`](../README.md) · [`README.md`](README.md) · [`../PRD.md`](../PRD.md) dan [`../02_flow.md`](../02_flow.md) sebagai target/desain · [`../task.md`](../task.md) dan [`../temuan.md`](../temuan.md) sebagai arsip · [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) sebagai baseline internal · [`DEPLOY.md`](DEPLOY.md) sebagai runbook draft · [`../HANDOVER.md`](../HANDOVER.md). Enam gate persetujuan production canonical hanya didefinisikan di [`../temuan2.md`](../temuan2.md).
+> **Dokumen terkait:** peta dokumen & fact sheet [`../docs/DOC_MAP.md`](../docs/DOC_MAP.md) · angka live [`../docs/COUNTS.json`](../docs/COUNTS.json) · [`../README.md`](../README.md) · [`README.md`](README.md) · [`../PRD.md`](../PRD.md) dan [`../02_flow.md`](../02_flow.md) sebagai target/desain · [`../task.md`](../task.md) dan [`../temuan.md`](../temuan.md) sebagai arsip · [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) sebagai baseline internal · [`DEPLOY.md`](DEPLOY.md) sebagai runbook deployment · [`../HANDOVER.md`](../HANDOVER.md). Enam gate persetujuan production canonical hanya didefinisikan di [`../temuan2.md`](../temuan2.md); tooling gate [`../ops/README.md`](../ops/README.md).
 
 
 

@@ -5,12 +5,12 @@
 **Metode:** inspeksi source non-vendor/non-generated, pencocokan route-controller-model-table, pencocokan kontrak web/mobile/ML, migration/seeder/rollback dan suite backend pada MySQL 8.4.9 disposable, compatibility suite SQLite, test/build/static analysis, serta dependency audit.  
 **Catatan:** database target proyek adalah **MySQL 8**. Validasi langsung memakai instance portable disposable non-user/non-production di `127.0.0.1:3307`, schema `pdam_audit`. SQLite tetap dipakai sebagai compatibility test kedua. Validasi ini menutup temuan aplikasi, tetapi bukan pengganti gate deployment pada target production.
 
-> **Dokumen terkait:** [`README.md`](README.md) · [`PRD.md`](PRD.md) dan [`02_flow.md`](02_flow.md) sebagai target/desain · [`task.md`](task.md) dan [`temuan.md`](temuan.md) sebagai arsip historis · [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) dan [`tests/security/OWASP_ASVS_AUDIT.md`](tests/security/OWASP_ASVS_AUDIT.md) sebagai baseline internal · [`HANDOVER.md`](HANDOVER.md) · [`backend/DEPLOY.md`](backend/DEPLOY.md) sebagai runbook draft · [`backend/SEED_DATA.md`](backend/SEED_DATA.md) · [`ml/README.md`](ml/README.md).
+> **Dokumen terkait:** [`README.md`](README.md) · [`PRD.md`](PRD.md) dan [`02_flow.md`](02_flow.md) sebagai target/desain · [`task.md`](task.md) dan [`temuan.md`](temuan.md) sebagai arsip historis · [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) dan [`tests/security/OWASP_ASVS_AUDIT.md`](tests/security/OWASP_ASVS_AUDIT.md) sebagai baseline internal · [`HANDOVER.md`](HANDOVER.md) · [`backend/DEPLOY.md`](backend/DEPLOY.md) sebagai runbook draft · [`backend/SEED_DATA.md`](backend/SEED_DATA.md) · [`ml/README.md`](ml/README.md) · tooling gate [`ops/README.md`](ops/README.md) · peta & fact sheet [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · CI [`.github/workflows/ci.yml`](.github/workflows/ci.yml) · angka live [`docs/COUNTS.json`](docs/COUNTS.json).
 >
 > Dokumen ini adalah **sumber authoritative status implementasi/audit saat ini**. Bila angka atau status dokumen lain berbeda, gunakan dokumen ini.
 
 > **Catatan (setelah audit 15 Juli 2026):** dataset demo ditambah **1 seeder tenant** (`SambasTenantSeeder`,
-> tenant `pdam-sambas`, 3.000 pelanggan, 27 modul) → **25 seeder / 3 tenant demo**, dan fitur
+> tenant `pdam-sambas`, 3.000 pelanggan, 27 modul) → **25 seeder demo (kini 28 class seeder termasuk router/guard; see docs/COUNTS.json) / 3 tenant demo**, dan fitur
 > **Laporan Baca Meter** ditambahkan (`GET /api/v1/meter-readings/report` + halaman web
 > `#/meter-reading-report`). Perubahan ini **demo-level saja**; angka audit di bawah (24 seeder, 167 tabel,
 > 358 route) merujuk snapshot 15 Juli dan tidak berubah. Detail: [`backend/SEED_DATA.md`](backend/SEED_DATA.md) Section 1 & 9.
@@ -510,16 +510,16 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 
 | Perintah | Hasil |
 |---|---|
-| `php artisan test` (SQLite) | **PASS**: 89/89, 664 assertions |
+| `php artisan test` (SQLite) | **PASS 7 Sept 2026**: 109/109, 768 assertions (15 Jul: 89/89, 664) |
 | `php artisan test` (MySQL 8.4.9) | **PASS**: 89 discovered, 88 passed, 1 intentionally SQLite-only skipped, 756 assertions, zero failures |
-| `php artisan route:list --json` | **PASS**: 358 route terbaca |
+| `php artisan route:list --json` | **PASS (7 Sep 2026)**: 387 rows — 368 method endpoint `/api/v1` + 19 web; 292 URI API unik. Kanonis: `docs/COUNTS.json` |
 | `php artisan route:cache` | **PASS** |
-| `npm test -- --run` | **PASS**: 5/5 Vitest |
+| `npm run test` (Vitest) | **PASS (7 Sep 2026)**: 7 file / 13 test (helper workbench, resources config, router, api errors, auth flow) |
 | `npm run build` | **PASS**: 322 modules transformed |
 | `flutter analyze` | **PASS**: no issues found |
 | `flutter test --no-pub -r expanded` | **PASS**: 44/44 tests |
 | `python -m compileall -q src scripts` | **PASS** |
-| `python -m unittest discover -s tests -v` (Python 3.11 x64) | **PASS**: 25/25, no skips |
+| `python -m pytest tests` (Python 3.11 CI) | **PASS**: 29 test (5 file lama + `test_calibration.py` gate §13 #6); lokal Win-ARM64 tidak ada wheel xgboost → `compileall` saja |
 | `python scripts/generate_validation_artifacts.py` | **PASS**: 4 fixture-validation artifacts + manifests/checksums + summary; `check_artifacts` true |
 | `composer audit` | **PASS**: no advisories |
 | `npm audit --audit-level=high` | **PASS**: 0 vulnerabilities |
@@ -529,6 +529,22 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 | `php artisan schedule:list` | **BLOCKED lokal**: cache lock memakai MySQL; command/dispatcher scheduled report tercakup test |
 | `php artisan migrate:status` pada `.env` lokal | **BLOCKED**: MySQL lokal port 3306 tidak aktif |
 | `docker compose ps` | **BLOCKED**: command Docker tidak tersedia pada mesin ini |
+
+### Snapshot verifikasi 7 September 2026
+
+| Area | Status |
+|---|---|
+| Seeder production-safe | ✅ `ProductionKernelSeeder` + `DemoSeeder` + `DemoGuard` (blokade mutlak — tidak ada env escape lagi), tes `ProductionSeederIsolationTest` |
+| Material order | ✅ reservasi stok → stock-out + jurnal DEBIT kapitalisasi / KREDIT persediaan saat `complete()`; idempoten, race-safe (lock), tes `InstallationMaterialStockOutTest` |
+| Export | ✅ kontrak jujur `csv/html` + **xlsx/pdf native** (PhpSpreadsheet + dompdf kop surat); sel angka bertipe number, formula dinetralkan; tes `NativeExportFormatTest` |
+| Least-priv DB | ✅ provisioning + trigger append-only + connection `audit`; audit command kini **fail-closed untuk `ALL PRIVILEGES`**; CI job `mysql-production-gates` probe penolakan |
+| Backup/restore | ✅ single-DB dump + AES-GCM/PBKDF2 + sha256; restore **terikat TARGET_DB** (tidak bisa menimpa tanpa CONFIRM), strip DEFINER, kredensial via env; bukti drill di CI (artefak evidence) |
+| UI web modul | ✅ halaman workbench generik (`/modules/:code`) search+pagination+create+aksi status; KPI dashboard object; helper teruji Vitest |
+| Worker/scheduler | ✅ `supervisord.production.conf` (2 worker + scheduler + `pdam:queue-health`) + eventlistener protokol benarmelalui `ops/supervisor/crash_alert.py` |
+| Load test | ✅ k6 parameterized (PROFILE/BASE_URL/kredensial env, tolak hardcode), runner `ops/load/run_load_test.sh`, capacity baseline ke `docs/CAPACITY_BASELINE.md` |
+| Ops scripts | ✅ `ops/tls/*`, `ops/backup/*`, `ops/mysql/*`, `ops/load/*`, `ops/runbooks/*` lolos `bash -n`; dipakai CI |
+| CI | ✅ root `.github/workflows/ci.yml` (6 job: backend-sqlite, mysql-production-gates, frontend, mobile, ml, security); `.gitleaks.toml` diganti allowlist path-scoped (tanpa regex global `12345678`) |
+| Kept-open canonical | 6 gate §13 § status tooling per gate di bawah |
 
 ## 10. Prioritas Perbaikan
 
@@ -549,7 +565,9 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 - [X] H-03/H-04: Allowlist seluruh field BI/export dan hilangkan raw identifier dari input.
 - [X] M-07: Sediakan marketplace tenant dengan order pending dan settlement Midtrans terverifikasi sebelum aktivasi.
 - [X] M-12/M-13: Tambahkan 97 FK tenant dan 8 composite same-tenant actor FK setelah no-mutation preflight.
-- [ ] Pisahkan seeder demo dari seeder production agar password demo tidak dibuat saat deploy.
+- [x] Pisahkan seeder demo dari seeder production agar password demo tidak dibuat saat deploy.
+  `ProductionKernelSeeder` (permission+module+role+admin-env-only) vs `DemoSeeder`+`DemoGuard`;
+  `DatabaseSeeder` me-routing otomatis; dibuktikan `ProductionSeederIsolationTest` (9/9: routing, blokade produksi, blokade admin-env, probe DemoTenant).
 - [X] Jalankan dan dokumentasikan migration, rollback, seeder, FK/index/relation/orphan metadata, dan suite backend pada MySQL 8.4.9 disposable.
 
 ### P2 - Kualitas dan Kelengkapan
@@ -558,7 +576,12 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 - [X] M-03/M-05: Daftarkan halaman web yang didukung dan tampilkan error API.
 - [X] M-06: Selaraskan endpoint asset web ke `/assets` dan tambahkan contract test.
 - [X] M-08: Ganti kontrak artifact menjadi CSV/HTML yang sesuai dengan format aktual.
-- [X] M-10: Nyatakan material order sebagai `planning_only` tanpa reservasi, stock-out, atau jurnal.
+- [x] M-10: Material order upgraded — reservasi stok di gudang utama saat order
+  (`pdam:wh`+stok cukup), stock-out + jurnal kapitalisasi (DEBIT 1-004/5-001,
+  KREDIT 1-003, balance D=K) otomatis saat pemasangan selesai; endpoint issue/cancel
+  + idempotensi dijaga `InstallationMaterialStockOutTest` (5/5). `planning_only` hanya
+  tetap dipakai bila modul WH mati / material tak resolve / tidak ada gudang utama
+  (dengan `reason` eksplisit).
 - [X] M-09: Scheduled report CRUD/run/history/download privat, queue, dan dispatcher setiap menit tersedia.
 - [X] M-14: Persist/alignment feature order, kontrak 5-tuple, no dummy, enabled controls, failure CLI, dan artifact contract; Python 3.11 suite lulus.
 - [X] M-02: Tambah script Vitest dan pastikan frontend test dapat dijalankan.
@@ -569,8 +592,18 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 ### P3 - Dokumentasi dan Operasional
 
 - [X] Ubah dokumentasi utama dari klaim “100% done” menjadi status coverage dan audit faktual.
-- [ ] Sinkronkan jumlah endpoint, test, model, tabel, dan seeder secara otomatis di CI.
-- [ ] Tambahkan CI gates: migrate+seed MySQL, route cache, backend tests, frontend tests/build, Flutter analyze/test, pytest, secret scan, dan dependency audit.
+- [x] Sinkronkan jumlah endpoint, test, model, tabel, dan seeder secara otomatis di CI.
+  `php artisan pdam:counts` (check) + `docs/COUNTS.json`; `--write` regenerasi. Angka faktual:
+  368 endpoint API, 65 migration, 28 seeder (jalur production 4), 136 model, 167 tabel statis,
+  107 test method backend; CI job `backend-sqlite` gagal bila file committed drift.
+- [x] Tambahkan CI gates: migrate+seed MySQL, route cache, backend tests, frontend tests/build,
+  Flutter analyze/test, pytest, secret scan, dan dependency audit.
+  Workflow baru **root** `.github/workflows/ci.yml` (file lama di `backend/.github` tidak pernah
+  dieksekusi GitHub Actions — location bug): jobs `backend-sqlite` (pint, config/route/view/event
+  cache, PHPUnit, counts), `mysql-production-gates` (migrate:fresh --seed MySQL 8, provisioning
+  least-priv + destructive-probe verify, `pdam:audit-db-privileges`, backup→decrypt→restore drill
+  dengan evidence artifact), `frontend` (vitest+build), `mobile` (flutter analyze+test),
+  `ml` (compileall+pytest), `security` (gitleaks + composer/npm/pip audit).
 
 ## 11. Definisi Selesai yang Direkomendasikan
 
@@ -588,7 +621,7 @@ Sebuah modul baru boleh berstatus **Done** hanya bila:
 
 ## 12. Kesimpulan Akhir
 
-Proyek memiliki 60 migration dan 24 seeder yang terbukti dapat membangun 167 tabel pada MySQL 8.4.9 dan SQLite. Semua **39/39 temuan audit application-complete**, termasuk coverage model runtime, 97 tenant FK, 8 actor FK, fixture-validation artifact ML, coverage Flutter/ML, dan constraint bundle/rollback MySQL. Verifikasi MySQL juga menemukan lalu menutup long identifier migration `000005`, supporting-index rollback `L-08`, kebocoran `TenantContext` antar-request, fixture tenant ID `1`, dan normalisasi aggregate decimal string MySQL.
+Proyek memiliki 65 migration, 28 class seeder (jalur seed production terisolasi ke `ProductionKernelSeeder`), 136 model, dan 167 tabel (statis dari migration) yang terbukti dapat dibangun pada MySQL 8.4.9 dan SQLite. Semua **39/39 temuan audit application-complete**, termasuk coverage model runtime, 97 tenant FK, 8 actor FK, fixture-validation artifact ML, coverage Flutter/ML, dan constraint bundle/rollback MySQL. Verifikasi MySQL juga menemukan lalu menutup long identifier migration `000005`, supporting-index rollback `L-08`, kebocoran `TenantContext` antar-request, fixture tenant ID `1`, dan normalisasi aggregate decimal string MySQL.
 
 Rekomendasi keputusan tetap: **jangan menyamakan 39/39 temuan aplikasi dengan production-ready**. Enam gate persetujuan production dan rekomendasi operasional tambahan ditetapkan secara canonical pada Bagian 13 berikut.
 
@@ -603,11 +636,40 @@ Enam item berikut adalah **blocking gate** yang terpisah dari status 39/39 temua
 5. **Certificate primary/backup rotation drill:** kedua pin SPKI release diverifikasi terhadap endpoint nyata dan drill perpindahan primary/backup berhasil sebelum distribusi mobile production.
 6. **Representative-data ML calibration/acceptance:** model dilatih dan dievaluasi dengan data historis representatif, threshold penerimaan disetujui, serta artifact `production_calibrated=true` dipublikasikan lewat pipeline tepercaya. Empat artifact saat ini tetap `fixture_validation` dan `production_calibrated=false`.
 
+### Status tooling §13 (diperbarui 7 September 2026 — pasca code review)
+
+Keenam gate canonical **tetap terbuka** sampai dunia nyata membuktikan, tetapi tooling-nya sudah
+lengkap, sudah ditinjau ulang (bug lama diperbaiki), dan CI sudah menjalankan drill yang bisa
+dijalankan otomatis. Indeks tooling: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) §3 dan [`ops/README.md`](ops/README.md).
+
+| Gate | Tooling di repo | Otomatis di CI | Bukti yang masih butuh dunia nyata |
+|---|---|---|---|
+| 1 TLS endpoint | `ops/tls/verify_production_tls.sh` (DNS, redirect, chain+SAN/CN, expiry, tolak TLS<1.2/cipher lemah, HSTS, cek `/up` + endpoint publik API) → `ops/tls/evidence/tls-<host>-<ts>.json` | — | deploy domain/certbot production; jalankan script → lampirkan evidence |
+| 2 Pentest eksternal | `ops/PENTEST_SCOPE.md` (scope + template sign-off), pre-scan internal `tests/security/{pentest,zap_scan,smoke_test}.sh` | — | engagement vendor, laporan, triage, sign-off pemilik risiko |
+| 3 Backup/restore | `ops/backup/backup_production.sh` (dump single-DB, gzip, AES-256-GCM+PBKDF2, sha256, meta durasi, umask 077, kredensial via env), `restore_production.sh` (`TARGET_DB` wajib, refusal schema sumber, strip DEFINER), `restore_drill.sh` (`evidence.json` count/checksum) | **Ya** — job `mysql-production-gates` menjalankan drill penuh | cron di host backup, passphrase di vault, arsip evidence run target, approval RPO≤60mnt/RTO≤4j |
+| 4 Least-priv DB | `backend/database/provisioning/mysql-privileges.sql` (runtime tanpa DDL; backup db-scoped read-only; audit INSERT/SELECT), trigger `privacy_audit_events_no_{update,delete}`, koneksi `audit` opsional (`DB_AUDIT_*`), `ops/mysql/{create_users,verify_privileges}.sh`, `php artisan pdam:audit-db-privileges` (fail-closed; akun ALL/DDL terdeteksi) | **Ya** — provisioning + 11 probe penolakan + audit + queue/integrations health | eksekusi provisioning di cluster produksi + arsip output |
+| 5 Rotasi pin | `ops/tls/verify_spki_pins.sh` + `ops/runbooks/TLS_PINNING_ROTATION.md` (drill 7 langkah) + dart-defines build | — | endpoint §1 hidup; drill primary↔backup di device uji |
+| 6 ML calibration | `php artisan pdam:ml-export-training-data` (streaming; CSV = kontrak `ml/src/data_loader.py`; file 0600; `days_since_*` positif), `ml/src/{calibration,csv_dataset}.py`, `ml/scripts/calibrate_production.py` (candidate → `--promote`), ambang `ml/config.yaml:production_acceptance`, runbook [`docs/ML_CALIBRATION.md`](docs/ML_CALIBRATION.md) | **Ya** — job `ml` menjalankan pytest gerbang threshold (dataset sintetis 24 bln); artifact produksi TIDAK tersentuh tanpa `--promote` sah | ekspor data riil 1–2 th + persetujuan threshold + jalankan `--promote` + arsip summary |
+
+Status artefak ML hari ini: keempat artifact tetap **`fixture_validation`** dengan
+`production_calibrated=false` sampai langkah riil gate #6 selesai. Seeder demo: `ProductionKernelSeeder`
++ `DemoGuard` memblokir fixture demo **secara mutlak** saat `APP_ENV=production`. Kontrak export UI:
+`csv|html|xlsx|pdf` (DOC roadmap). Worker/scheduler production: `backend/docker/supervisord.production.conf`
+(alarm `pdam:queue-health` + eventlistener protokol `ops/supervisor/crash_alert.py`).
+
 ### Rekomendasi Operasional Tambahan
 
 Item berikut penting untuk operasi yang andal, tetapi **tidak dicampur ke daftar enam gate canonical**:
 
 - Aktifkan dan uji worker queue `default`, Laravel scheduler per menit, retry, serta `failed_jobs` pada target.
+  ➜ `backend/docker/supervisord.production.conf` (worker+scheduler+`pdam:queue-health`);
+  `php artisan pdam:queue-health` = command alarm.
 - Verifikasi integrasi eksternal end-to-end, termasuk settlement Midtrans, OCR, email/push, dan integrasi vendor yang benar-benar digunakan.
-- Pisahkan seeder demo dari jalur provisioning/deploy production agar kredensial dan fixture demo tidak dibuat.
+  ➜ `php artisan pdam:integrations-health [--ping]` — check config + panggilan live (Midtrans status/Vision/ML ready).
+- Pisahkan seeder demo dari jalur provisioning/deploy production agar kredensial dan fixture demo tidak dibuat. ✅
+  Sudah selesai (`ProductionKernelSeeder` vs `DemoSeeder`+`DemoGuard`, lihat §10 P1).
 - Terapkan observability, alerting, runbook insiden, capacity baseline, dan load test pada topology representatif.
+  ➜ `ops/runbooks/OBSERVABILITY.md` + `ops/load/run_load_test.sh` (k6 PROFILE=smoke|load|stress,
+  kredensial via env, BASE_URL riil) — jalankan di staging mirror sebelum rilis.
+
+---

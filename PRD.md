@@ -11,11 +11,13 @@
 > aktual ada di [`temuan2.md`](temuan2.md); `task.md` adalah catatan implementasi historis. Data demo ada
 > di [`backend/SEED_DATA.md`](backend/SEED_DATA.md).
 >
-> **Catatan implementasi 15 Juli 2026:** seluruh 39/39 temuan audit aplikasi sudah selesai dan diverifikasi,
-> termasuk 60 migration/24 seeder serta rollback/suite pada MySQL 8.4.9 disposable, tenant/actor FK,
-> mobile 44/44, dan ML Python 3.11 25/25 dengan fixture-validation artifacts. Ini tidak menjadikan produk
+> **Catatan implementasi (15 Juli 2026 — arsip snapshot):** 39/39 temuan audit aplikasi selesai, termasuk
+> 60 migration/24 seeder + rollback/suite pada MySQL 8.4.9 disposable, tenant/actor FK, mobile 44/44, ML
+> Python 3.11 25/25 fixture-validation. **Snapshot terkini (7 Sep 2026):** 65 migration/28 seeder/109 test/
+> 368 endpoint (angka live: [`docs/COUNTS.json`](docs/COUNTS.json)); peta & status di
+> [`temuan2.md`](temuan2.md) & [`docs/DOC_MAP.md`](docs/DOC_MAP.md). Ini tidak menjadikan produk
 > production-ready: TLS/external/operational deployment gates dan model ML production-calibrated dari data
-> historis representatif tetap mengikuti `temuan2.md`.
+> historis representatif tetap menunggu bukti environment nyata (`temuan2.md` §13).
 
 
 ---

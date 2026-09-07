@@ -8,17 +8,27 @@ Dokumen ini adalah sumber utama setup backend dan mekanisme autentikasi. Detail 
 kredensial demo dimiliki [`SEED_DATA.md`](SEED_DATA.md); deployment production dimiliki
 [`DEPLOY.md`](DEPLOY.md); status verifikasi dimiliki [`../temuan2.md`](../temuan2.md).
 
-> **Sumber status saat ini:** [`../temuan2.md`](../temuan2.md), termasuk enam gate persetujuan production canonical. Verifikasi 15 Juli 2026: backend SQLite **89/89 (664
-> assertions)**, MySQL **88 passed + 1 intentionally SQLite-only skipped (756 assertions)**, frontend
-> **5/5 Vitest**, production build 322 modules, 358 route, dan route cache lulus. MySQL 8.4.9 juga lulus
-> 60 migration + 24 seeder, rollback/migrate ulang, dan audit FK/index/orphan. **Ditambah 2 migration
-> master alamat (`pdam_org_id` + `soft-deletes`) → total 62 migration; 91 test, 669 assertions.**
+> **Sumber status saat ini:** [`../temuan2.md`](../temuan2.md), termasuk enam gate persetujuan production canonical.
+> Verifikasi 7 September 2026: backend SQLite **109/109 (768 assertions)**; route registry **387 rows —
+> 368 method endpoint `/api/v1` (292 URI unik) + 19 web** (kanonis di [`../docs/COUNTS.json`](../docs/COUNTS.json), check
+> `php artisan pdam:counts`); Vitest 7 file/**13 test** + build lulus; Flutter **44/44** + analyze; ML
+> **29 test** (pytest; `test_calibration.py` gate §13 #6 — jalan di CI). Seeder kini router: production
+> hanya `ProductionKernelSeeder` dan `DemoGuard` memblokir **mutlak** fixture demo/akun `12345678`
+> (tanpa env escape; bukti `ProductionSeederIsolationTest`). Export menerima `csv|html|xlsx|pdf` native.
+> CI lintas komponen + drill MySQL (privilege, backup/restore, audit command) di
+> [`.github/workflows/ci.yml`](../.github/workflows/ci.yml); peta dokumen/fact sheet [`../docs/DOC_MAP.md`](../docs/DOC_MAP.md);
+> tooling & runbook gate [`../ops/README.md`](../ops/README.md). Snapshot MySQL lama 89/89–15 Juli tetap tercatat di
+> [`../temuan2.md`](../temuan2.md) §9.
 >
-> **Dataset demo kini ditambah 1 seeder tenant (`SambasTenantSeeder`, `pdam-sambas`) → 25 seeder dan
-> 3 tenant demo (Canada, Brazil, Sambas).** Angka audit 15 Juli (24 seeder, 167 tabel) tidak berubah
-> karena `SambasTenantSeeder` memakai tabel yang sudah ada — detail di [`SEED_DATA.md`](SEED_DATA.md).
+> **Batasan klaim:** dokumen ini memverifikasi kontrol source dan test internal, bukan bukti pentest
+> eksternal atau deployment production. Enam gate canonical production tetap didefinisikan di
+> [`../temuan2.md`](../temuan2.md).
 >
-> Dokumen terkait: [`../README.md`](../README.md) · [`../PRD.md`](../PRD.md) dan [`../02_flow.md`](../02_flow.md) sebagai target/desain · [`../task.md`](../task.md) dan [`../temuan.md`](../temuan.md) sebagai arsip · [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) sebagai baseline internal · [`DEPLOY.md`](DEPLOY.md) sebagai runbook draft · [`SEED_DATA.md`](SEED_DATA.md) · [`../ml/README.md`](../ml/README.md).
+> Dokumen terkait: [`../README.md`](../README.md) · [`../PRD.md`](../PRD.md) dan [`../02_flow.md`](../02_flow.md) sebagai
+> target/desain · [`../task.md`](../task.md) dan [`../temuan.md`](../temuan.md) sebagai arsip ·
+> [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) sebagai baseline internal · [`../tests/security/OWASP_ASVS_AUDIT.md`](../tests/security/OWASP_ASVS_AUDIT.md)
+> assessment internal · [`DEPLOY.md`](DEPLOY.md) sebagai runbook deployment · [`SEED_DATA.md`](SEED_DATA.md) ·
+> [`../ml/README.md`](../ml/README.md) · keputusan bisnis [`../docs/BUSINESS_DECISIONS.md`](../docs/BUSINESS_DECISIONS.md).
 
 ---
 
@@ -70,7 +80,12 @@ php artisan serve
 | ------------------------------------------ | ---------------------------------------------------------- |
 | `php artisan migrate`                      | Jalankan migrasi yang belum jalan                          |
 | `php artisan migrate:fresh`                | Drop semua tabel + migrasi ulang (DATA HILANG)             |
-| `php artisan migrate:fresh --seed`         | Migrasi ulang + jalankan semua seeder                      |
+| `php artisan migrate:fresh --seed`         | Migrasi ulang + semua seeder (development/staging; di production otomatis hanya kernel) |
+| `php artisan pdam:counts [--write]`          | Drift-check / regenerasi inventaris → `../docs/COUNTS.json` |
+| `php artisan pdam:audit-db-privileges`       | Bukti least-privilege akun DB + trigger append-only |
+| `php artisan pdam:queue-health [--max-...]`  | Alarm backlog/failed_jobs worker |
+| `php artisan pdam:integrations-health [--ping]` | Status Midtrans/FCM/OCR/ML/email |
+| `php artisan pdam:ml-export-training-data`   | Ekspor CSV dataset latih ML (gate §13 #6) |
 | `php artisan db:seed`                      | Jalankan semua seeder (`DatabaseSeeder`)                   |
 | `php artisan db:seed --class=ModuleSeeder` | Jalankan satu seeder spesifik                              |
 | `php artisan route:list --path=api`        | Lihat daftar route API                                     |
@@ -85,7 +100,10 @@ php artisan serve
 
 ## 4. Daftar Seeder
 
-Dijalankan berurutan oleh `DatabaseSeeder` (`database/seeders/DatabaseSeeder.php`):
+Dijalankan berurutan oleh `DatabaseSeeder` (`database/seeders/DatabaseSeeder.php`). Pada environment
+non-production router memanggil `ProductionKernelSeeder` (Permission → Module → RoleTemplate →
+admin platform via env) lalu `DemoSeeder` (seluruh fixture demo di bawah, `PlatformAdminSeeder` paling
+akhir); pada production hanya kernel yang berjalan dan semua seeder demo diblokir:
 
 **Platform & fondasi:**
 
@@ -124,8 +142,9 @@ Dijalankan berurutan oleh `DatabaseSeeder` (`database/seeders/DatabaseSeeder.php
 
 > Semua seeder **idempotent** & **tenant-aware** (data enterprise hanya untuk tenant yang modulnya
 > aktif — Canada & SAMBAS full 27 modul, Brazil hanya modul aktif). Snapshot MySQL 8.4.9 dan SQLite terbaru
-> menghasilkan **167 tabel dari 60 migration**; lima migration terbaru hanya menambah constraint, dan
-> `SambasTenantSeeder` memakai tabel yang sudah ada.
+> menghasilkan **167 tabel dari 60 migration**; snapshot terkini **65 migration / 28 class seeder**
+> (lihat `../docs/COUNTS.json`): `DatabaseSeeder`+`DemoSeeder`+`ProductionKernelSeeder`+`DemoGuard`;
+> material order & trigger privacy-audit adalah dua migration September.
 >
 > **Tenant:** `DemoTenantSeeder` membuat Canada & Brazil; `SambasTenantSeeder` membuat tenant ke-3
 > (`pdam-sambas`, 3.000 pelanggan) — kredensial & akun tambahan (7 petugas baca per rute) ada di
@@ -137,10 +156,11 @@ Dijalankan berurutan oleh `DatabaseSeeder` (`database/seeders/DatabaseSeeder.php
 
 > Detail per seeder ada di `SEED_DATA.md` Section 8.
 
-> **Produksi:** `DatabaseSeeder` saat ini masih memuat fixture demo dan tidak boleh dijalankan. Gunakan
-> migration-only `php artisan migrate --force`, lalu provisioning tenant melalui workflow Super-Admin.
-> Ketentuan lengkap ada di [`DEPLOY.md`](DEPLOY.md); pemisahan seeder production tetap dicatat di
-> [`../temuan2.md`](../temuan2.md).
+> **Produksi:** Jalur seed production telah dipisahkan (temuan2.md P1): `DatabaseSeeder` pada
+> `APP_ENV=production` hanya menjalankan `ProductionKernelSeeder` (permission, katalog modul, role
+> template, admin platform opsional via env `PLATFORM_ADMIN_*`) — seluruh fixture demo dan password
+> `12345678` diblokir `DemoGuard` dan diuji oleh `ProductionSeederIsolationTest`. Provisioning tenant
+> produksi lewat workflow Super-Admin, bukan seeder. Ketentuan lengkap ada di [`DEPLOY.md`](DEPLOY.md).
 
 
 ---

@@ -345,15 +345,15 @@
 
 ---
 
-## STATUS AUDIT TERKINI
+## STATUS AUDIT TERKINI (arsip — angka konsisten pada tanggal dokumen ini)
 
 | Status | Count | Keterangan |
 |--------|-------|------------|
 | ✅ | 39/39 temuan audit | Application-complete dan diverifikasi |
-| ✅ | MySQL 8.4.9 audit | 60 migration + 24 seeder, rollback/migrate, metadata constraints, dan suite backend lulus |
+| ✅ | MySQL 8.4.9 audit (arsip) | 60 migration + 24 seeder, rollback/migrate, metadata constraints, dan suite backend lulus — angka terkini di `docs/COUNTS.json` (65 migration/28 seeder/109 test) |
 | 🚧 | Gate production | TLS/pins, external pentest, operational deployment, dan data ML representatif tetap terbuka di luar temuan |
 
-Prioritas berikutnya: tutup **enam gate persetujuan production canonical** yang didefinisikan tepat di `temuan2.md`. Queue/scheduler, integrasi eksternal, pemisahan seeder demo, serta observability/load tetap rekomendasi operasional tambahan, bukan tambahan gate canonical.
+Prioritas berikutnya: tutup **enam gate persetujuan production canonical** di `temuan2.md`. Catatan integrasi: seeder demo kini **sudah terpisah** (`ProductionKernelSeeder` + `DemoGuard` absolut, bukti CI), queue/scheduler, observability/load, dan tooling observasi sudah di `ops/` — detail faktual snapshot 7 Sep 2026 ada di `docs/DOC_MAP.md`/`temuan2.md`.
 
 ---
 

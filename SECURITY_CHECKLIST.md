@@ -1,10 +1,10 @@
 # OWASP Top 10 + ASVS — Checklist Keamanan PDAM SaaS
 
-**Diperbarui:** 18 Juli 2026  
-**Status:** baseline implementasi, bukan sertifikasi OWASP/ASVS atau hasil penetration test eksternal.  
-**Gap aktif:** lihat `temuan2.md`.
+**Diperbarui:** 7 September 2026 (sebelumnya 18 Juli; peta dokumen & fact sheet: [`docs/DOC_MAP.md`](docs/DOC_MAP.md))  
+**Status:** baseline implementasi + bukti internal; **bukan** sertifikasi OWASP/ASVS, bukan hasil penetration test eksternal.  
+**Gap aktif & gate production:** [`temuan2.md`](temuan2.md).
 
-> **Sumber status saat ini:** [`temuan2.md`](temuan2.md), termasuk enam gate persetujuan production canonical. Dokumen terkait: [`README.md`](README.md) · [`PRD.md`](PRD.md) dan [`02_flow.md`](02_flow.md) sebagai target/desain · [`task.md`](task.md) dan [`temuan.md`](temuan.md) sebagai arsip · [`tests/security/OWASP_ASVS_AUDIT.md`](tests/security/OWASP_ASVS_AUDIT.md) sebagai assessment internal · [`HANDOVER.md`](HANDOVER.md) · [`backend/DEPLOY.md`](backend/DEPLOY.md) sebagai runbook draft.
+> **Sumber status saat ini:** [`temuan2.md`](temuan2.md), termasuk enam gate persetujuan production canonical. Peta dokumen/fact sheet: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling pembuktian: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Dokumen terkait: [`README.md`](README.md) · [`PRD.md`](PRD.md) dan [`02_flow.md`](02_flow.md) sebagai target/desain · [`task.md`](task.md) dan [`temuan.md`](temuan.md) sebagai arsip · [`tests/security/OWASP_ASVS_AUDIT.md`](tests/security/OWASP_ASVS_AUDIT.md) sebagai assessment internal · [`HANDOVER.md`](HANDOVER.md) · [`backend/DEPLOY.md`](backend/DEPLOY.md) sebagai runbook deployment.
 
 ## A1: Broken Access Control
 - [x] Web memakai Sanctum stateful/session cookie `HttpOnly` + CSRF; mobile/API device memakai bearer token
@@ -29,7 +29,10 @@
 - [x] Query biasa memakai binding Eloquent/query builder
 - [x] BI/export dinamis memakai registry allowlist untuk dataset, kolom, filter, sort, dan metric
 - [x] Identifier aggregate BI di-quote dengan grammar koneksi; nilai filter tetap memakai binding query builder
-- [x] Export generik membatasi PII/internal ID dan menetralkan formula CSV
+- [x] Export generik membatasi PII/internal ID dan menetralkan formula CSV; menerima `csv|html|xlsx|pdf`
+      dengan ekstensi+MIME sesuai: XLSX riil via PhpSpreadsheet (sel angka bertipe number, formula
+      di-netralkan hanya pada sel teks, header/title tidak lagi jadi formula vector), PDF riil via dompdf
+      dengan kop surat PDAM; biner dikirm via `content_base64`. DOC surat-menyurat tetap roadmap.
 - [x] WAF middleware: blokir SQL injection pattern + XSS + path traversal
 - [x] Jalur sensitif/dinamis yang diaudit memakai validasi server-side; coverage seluruh endpoint tidak diklaim exhaustive
 
@@ -48,9 +51,10 @@
 - [x] `APP_DEBUG=false` di production (default `.env.ci` sudah false)
 
 ## A6: Vulnerable Components
-- [x] `composer audit` manual terbaru bersih; konfigurasi CI ada tetapi coverage gate CI keseluruhan masih parsial
-- [x] `npm audit --audit-level=high` manual terbaru bersih; konfigurasi CI ada tetapi coverage gate CI keseluruhan masih parsial
-- [x] Dependensi dibekukan di `composer.lock` + `package-lock.json`
+- [x] `composer audit` + `npm audit --audit-level=high` + `pip-audit` dijalankan CI (job `security`)
+- [x] Dependensi dibekukan di `composer.lock` + `package-lock.json` + `ml/requirements.txt`
+- [x] Secret-scan (gitleaks dengan allowlist path-scoped) + counts-drift + drill privilege/backup CI
+- [ ] Coverage audit runtime dependency di host produksi (versi terpasang) tetap prosedur Berkala — ops
 
 ## A7: Authentication Failures
 - [x] MFA/2FA (TOTP) untuk role sensitif (finance, director, super_admin)
@@ -72,7 +76,11 @@
 - [x] `ActivityLog` dan `LogsActivity` mencatat banyak aksi bisnis utama
 - [x] Log IP address di setiap activity log
 - [x] Privacy purge memakai audit append-only model terpisah dengan hash chain
-- [ ] Privilege database INSERT-only untuk `privacy_audit_events` harus diterapkan saat deployment
+- [x] Privilege database INSERT-only untuk `privacy_audit_events` harus diterapkan saat deployment
+      ➜ `backend/database/provisioning/mysql-privileges.sql` + trigger append-only (migration
+      `2026_09_06_000002`) + opsi connection `audit` (`DB_AUDIT_USERNAME`) utk akun INSERT/SELECT-only;
+      bukti otomatis: job CI `mysql-production-gates` menjalankan `ops/mysql/verify_privileges.sh`
+      (probe UPDATE/DELETE/TRUNCATE/DROP **harus ditolak**) + `php artisan pdam:audit-db-privileges`.
 - [x] Exception handler terpusat (`ApiResponse` + handler di `bootstrap/app.php`)
 
 ## A10: SSRF (Server-Side Request Forgery)
@@ -113,7 +121,9 @@
 ## Secret Handling
 
 - `.env` di `.gitignore` — ✅
-- Kredensial demo hanya untuk development; `DatabaseSeeder` dilarang pada production sampai jalur seeder production dipisahkan — ⚠️
+- Kredensial demo hanya untuk development; `DatabaseSeeder` pada production otomatis menjalankan
+  HANYA `ProductionKernelSeeder` — `DemoSeeder`/`DemoTenantSeeder`/`SambasTenantSeeder` dan
+  password `12345678` diblokir `Database\Seeders\Support\DemoGuard` — ✅
 - Semua key via `config/services.php` + `env()` — ✅
 - Audit dependency manual terbaru PASS; verifikasi gate CI masih perlu dilakukan — ⚠️
 
@@ -121,7 +131,8 @@
 
 - Seluruh 39/39 temuan audit aplikasi selesai; status ini bukan sertifikasi atau persetujuan production.
 - Certificate pinning mobile sudah diimplementasikan dengan primary+backup SPKI wajib dan fail-closed; endpoint TLS/rotation drill masih gate deployment.
-- Export aktual hanya menerima CSV/HTML dengan ekstensi dan MIME yang sesuai; native PDF/XLSX/DOC tetap roadmap produk.
+- Export kini `csv|html|xlsx|pdf` (lihat A3); **DOC** surat-menyurat masih roadmap PRD — implementasi nyata
+  belum ada dan tidak boleh diklaim.
 - Frontend tidak menyimpan bearer auth di `localStorage`; login web memakai session cookie HttpOnly+CSRF.
 - Logging mobile sudah dibatasi ke route ternormalisasi/status/type dan tercakup suite Flutter terbaru.
 - Enam gate persetujuan production canonical belum ditutup: TLS endpoint, pentest eksternal, tested backup/restore, least-privilege DB, drill rotasi pin, dan kalibrasi/acceptance ML representative-data. Definisi authoritative ada di `temuan2.md`.
@@ -129,4 +140,4 @@
 
 ---
 
-**Updated:** 18 Juli 2026 — PDAM SaaS Security Baseline
+**Updated:** 7 September 2026 — PDAM SaaS Security Baseline (peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md))

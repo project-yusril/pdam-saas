@@ -2,39 +2,42 @@
 
 Sistem Manajemen PDAM Multi-Tenant berbasis Laravel + Vue 3.
 
-> **Versi:** 3.4 | **Status:** Dalam hardening, belum production-ready | **Diperbarui:** 18 Juli 2026
+> **Versi:** 3.5 | **Status:** Tooling gate §13 + CI self-drill selesai; bukti environment produksi & decision PRD §23 masih terbuka | **Diperbarui:** 7 September 2026
 
 >
-> **Sumber status saat ini:** [`temuan2.md`](temuan2.md), termasuk enam gate persetujuan production canonical.
+> **Sumber status saat ini:** [`temuan2.md`](temuan2.md), termasuk enam gate persetujuan production canonical. **Peta dokumentasi + fact sheet angka live:** [`docs/DOC_MAP.md`](docs/DOC_MAP.md). Inventaris tergenerasi: [`docs/COUNTS.json`](docs/COUNTS.json) (`php artisan pdam:counts`).
 
 ## Documentation Map
 
 | Kebutuhan | Sumber utama |
 |-----------|--------------|
 | Mulai proyek, pilihan URL, dan arsitektur ringkas | Dokumen ini |
+| Peta dokumen + fact sheet angka verifikasi | [`docs/DOC_MAP.md`](docs/DOC_MAP.md) |
 | Setup backend dan mekanisme login web/mobile/platform | [`backend/README.md`](backend/README.md) |
 | Data fixture dan seluruh kredensial demo | [`backend/SEED_DATA.md`](backend/SEED_DATA.md) |
 | Deployment dan bootstrap database production | [`backend/DEPLOY.md`](backend/DEPLOY.md) |
 | Status implementasi, bukti audit, dan gate production | [`temuan2.md`](temuan2.md) |
+| Tooling operasional gate (TLS, backup/restore drill, least-priv, load test, pin) | [`ops/README.md`](ops/README.md) + `ops/runbooks/*` |
+| CI gates lintas komponen + drill MySQL | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (job `mysql-production-gates`) |
+| Keputusan bisnis PRD §23 dan knobnya | [`docs/BUSINESS_DECISIONS.md`](docs/BUSINESS_DECISIONS.md) (`backend/config/business.php`) |
+| Kalibrasi ML production + gerbang threshold | [`docs/ML_CALIBRATION.md`](docs/ML_CALIBRATION.md), [`ml/README.md`](ml/README.md) |
+| Capacity baseline load test | [`docs/CAPACITY_BASELINE.md`](docs/CAPACITY_BASELINE.md) (`ops/load/run_load_test.sh`) |
 | Target produk dan alur bisnis | [`PRD.md`](PRD.md), [`02_flow.md`](02_flow.md) |
 | Baseline dan assessment keamanan | [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md), [`tests/security/OWASP_ASVS_AUDIT.md`](tests/security/OWASP_ASVS_AUDIT.md) |
 | Serah terima pengembangan | [`HANDOVER.md`](HANDOVER.md) |
-| Layanan ML | [`ml/README.md`](ml/README.md) |
 | Catatan historis, bukan panduan aktif | [`task.md`](task.md), [`temuan.md`](temuan.md) |
 
-Jika informasi bertentangan, gunakan pemilik topik pada tabel di atas. `temuan2.md` selalu menang untuk
-status verifikasi dan kesiapan production. Laravel route registry (`php artisan route:list --path=api`)
-adalah sumber endpoint aktual; Swagger/OpenAPI dan Postman saat ini referensi parsial yang wajib divalidasi
-terhadap registry sebelum digunakan.
+Jika informasi bertentangan, gunakan pemilik topik pada tabel [Dokumentasi Peta] di atas (penengah: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) §1). `temuan2.md` selalu menang untuk status verifikasi dan kesiapan production. Laravel route registry (`php artisan route:list --path=api`) adalah sumber endpoint aktual; Swagger/OpenAPI dan Postman saat ini referensi parsial yang wajib divalidasi terhadap registry sebelum digunakan.
 
 
 ## Requirements
 
 - PHP 8.3+
-- MySQL 8.0+
+- MySQL **8.4.x** (target production; CI memakai `mysql:8.4`)
 - Redis 7+
 - Node.js 20+
 - Composer 2.x
+- Flutter stable (mobile) · Python 3.11 (ML)
 
 ## Quick Start (Docker)
 
@@ -104,11 +107,13 @@ tenant terverifikasi **balance**. Detail lengkap di [`backend/SEED_DATA.md`](bac
 Daftar kredensial lengkap dan workflow reset/non-destruktif hanya dipelihara di
 [`backend/SEED_DATA.md`](backend/SEED_DATA.md). Kredensial ini dilarang pada production.
 
-**Snapshot database terbaru:** MySQL 8.4.9 disposable dan SQLite sama-sama lulus **62 migration + 24
-seeder** dan menghasilkan 167 tabel; dataset demo kini ditambah `SambasTenantSeeder` → **25 seeder** dan
-**3 tenant demo** (tidak mengubah angka 167 tabel pada snapshot audit). Migration terbaru menambah `pdam_org_id`
-+ `deleted_at` pada tabel master alamat. MySQL rollback `000004`-`000010` lalu migrate ulang juga lulus. Detail
-metadata FK/index dan batasan audit ada di `temuan2.md`; snapshot 8 Juli di `temuan.md` tetap arsip historis.
+**Snapshot database terbaru:** MySQL 8.4.9 disposable dan SQLite sama-sama lulus membangun 167 tabel;
+jalur seed sekarang router: pada **production hanya `ProductionKernelSeeder`** yang berjalan — seluruh
+fixture demo dan password `12345678` **diblokir mutlak** oleh `DemoGuard` (lihat
+[`docs/COUNTS.json`](docs/COUNTS.json): 65 migration / 28 class seeder (4 jalur production) / 136 model
+/ 167 tabel — dan bukti [`ProductionSeederIsolationTest`](backend/tests/Feature/ProductionSeederIsolationTest.php)).
+Tenant **pdam-sambas** (3.000 pelanggan via `SEED_CUSTOMER_COUNT`; simulasi 1 tahun penuh) dan
+metadata FK/rollback ada di [`temuan2.md`](temuan2.md); snapshot 8 Juli di [`temuan.md`](temuan.md) tetap arsip.
 
 
 ## Demo Credentials (Akun & Role Demo)
@@ -273,7 +278,7 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 | Dashboard role | `/dashboard/director`, `/dashboard/finance`, `/dashboard/technical`, `/dashboard/warehouse` | Tenant | Dashboard khusus role; kegagalan API ditampilkan melalui banner global. |
 | Laporan keuangan | `/finance/general-ledger`, `/finance/trial-balance`, `/finance/income-statement`, `/finance/balance-sheet`, `/finance/cash-flow` | Tenant | Buku Jurnal, Neraca Saldo, Laba Rugi, Neraca, Arus Kas; di-backend oleh `AccountingReportController` (`permission:core.report.view`). |
 | Alur Bisnis | `/flows`, `/flows/:key` (mis. `/flows/pemasangan-baru`) | Tenant | Halaman diagram alur per proses: Pemasangan Baru, Baca Meter, Penagihan & Pembayaran, Pengaduan, Lifecycle, Gudang & Pengadaan, Keuangan & Akuntansi. Di-render dari `resources/js/config/flows.js` (sumber `02_flow.md`). |
-| Halaman modul (generik) | `/modules/:code` (mis. `/modules/WH`, `/modules/METX`, `/modules/CHEM`) | Tenant | Halaman daftar generik per modul: menampilkan DataTable dari endpoint list asli modul, atau kartu KPI untuk endpoint dashboard (IoT/Produksi/DMA/NRW). |
+| Halaman modul (workbench generik) | `/modules/:code` (mis. `/modules/WH`, `/modules/METX`, `/modules/CHEM`, `/modules/BILL+`, `/modules/INT`) | Tenant | Workbench data-driven dari `resources/js/config/resources.js`: list+search+pagination server-side, modal create (validasi field + file untuk DMS), aksi row (approve/purchase/receive/issue/cancel/toggle) sesuai endpoint asli; kartu KPI untuk IoT/Produksi/DMA/NRW. Menguipkan 14 modul tanpa halaman khusus. |
 | Panel super admin | `/platform` | Super admin | Sidebar cerah + topbar. Kelola tenant, dashboard SaaS (MRR/ARR). |
 | Marketplace platform | `/platform/modules` | Super admin | Katalog dan pengelolaan commerce/manual platform tetap tersedia terpisah dari checkout tenant. |
 
@@ -341,32 +346,48 @@ production-ready. Detail gap per area ada di `temuan2.md`.
 
 ## API
 
-Registry snapshot 15 Juli memuat 358 route. API tenant menggunakan prefix `/api/v1`; angka aktual harus
-dihitung ulang melalui `php artisan route:list --path=api`. Swagger/OpenAPI dan Postman belum mencakup
-seluruh registry dan tidak boleh dipakai sendiri sebagai kontrak final.
+Snapshot route registry terkini: **387 baris route** (368 method endpoint `/api/v1` + 19 web; 292 URI
+API unik) — angka kanonis ada di [`docs/COUNTS.json`](docs/COUNTS.json), regenerasi lewat
+`php artisan pdam:counts --write`. API tenant memakai prefix `/api/v1`. Swagger/OpenAPI dan Postman
+masih referensi parsial yang wajib divalidasi terhadap registry sebelum dipakai; inventaris lengkap
+selalui `route:list` (OpenAPI penuh direkomendasikan sebagai task terpisah, lihat temuan2 L/H).
 
 Autentikasi web memakai Sanctum stateful/session dengan cookie `HttpOnly` dan CSRF; response login web
 tidak mengirim token dan auth tidak disimpan di `localStorage`. Mobile mengirim `device_name` saat login
 dan memakai `Authorization: Bearer {token}` Sanctum per perangkat.
 
+Export `POST /api/v1/export` kini berformat **csv | html | xlsx | pdf** (XLSX riil PhpSpreadsheet, PDF
+riil dompdf dengan kop surat PDAM; payload base64 utk format biner) — scheduled report menerima keempat
+format yang sama. DOC surat-menyurat tetap roadmap.
+
 ## Testing
 
 ```bash
-php artisan test                    # Unit + integration tests
+php artisan test                    # Unit + integration tests (SQLite in-memory)
+php artisan pdam:counts             # drift-check angka inventaris vs docs/COUNTS.json
 npm test -- --run                   # Vitest frontend
 npm run build                       # Build production Vue
 cd ../mobile && flutter analyze && flutter test --no-pub
-cd ../ml && python -m unittest discover -s tests -v
+cd ../ml && python -m pytest        # atau unittest discover -s tests
+bash -n ops/**/*.sh                 # syntax ops; CI menjalankan drill ops/backup & ops/mysql
 ```
 
-Status verifikasi 15 Juli 2026: backend SQLite **89/89, 664 assertions**; MySQL **88 passed, 1 intentionally
-SQLite-only skipped, 756 assertions, zero failures**; **358 routes** dan route cache PASS. Frontend **5/5**
-dan build **322 modules** PASS. Flutter analyze no issues + **44/44** PASS. Python 3.11 compile + **25/25**
-PASS tanpa skip; empat fixture-validation artifact lolos checksum/manifest/smoke. Composer/npm audit PASS.
-Seluruh temuan audit **39/39 application-complete**, tetapi enam gate persetujuan production di `temuan2.md` tetap terbuka.
+Status verifikasi 7 September 2026 (lokal Windows; CI menjalankan semuanya — termasuk MySQL):
+backend SQLite **109/109, 768 assertions** (termasuk seeder-isolation ProductionSeederIsolationTest,
+material stock-out, native export XLSX/PDF, command `pdam:counts`); frontend Vitest **7 file /
+13 tests** (helper workbench, resources config, errors, auth flow, router, contract) +
+`npm run build` lulus; Flutter **44/44** + analyze bersihin (1 info); ML **29 tests** (pytest
+di CI; runner Win-ARM64 lokal tanpa wheel xgboost → compile-all saja); `php artisan pdam:counts`
+sinkron dengan `docs/COUNTS.json`. CI root [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+memiliki job: `backend-sqlite`, `mysql-production-gates` (migrate+seed MySQL 8.4, provisioning
+least-priv + destructive-probe verify, audit privilege dari sisi app, backup→decrypt→restore drill
+dengan evidence artifact), `frontend`, `mobile`, `ml`, `security` (gitleaks + composer/npm/pip audit).
+Enam gate §13 `temuan2.md` tetap terbuka sampai bukti riil (TLS, pentest vendor, drill di host
+produksi, ML data asli) — tooling-nya sudah ada di `ops/`.
 
-Export generik saat ini mendukung artifact `csv` dan `html` melalui `POST /api/v1/export`. Native
-PDF/XLSX/DOC tetap requirement roadmap dan tidak diklaim tersedia.
+Export generik mendukung `csv`, `html`, **`xlsx`** (PhpSpreadsheet riil; formula dinetralkan, sel angka
+bertipe number) dan **`pdf`** (dompdf + kop surat PDAM) — format biner dikirim sebagai base64. DOC surat
+masih roadmap (lihat `temuan2.md`).
 
 ## Security
 
@@ -381,36 +402,53 @@ PDF/XLSX/DOC tetap requirement roadmap dan tidak diklaim tersedia.
 - [x] BI/export dinamis memakai allowlist identifier, permission dataset, dan entitlement modul sumber
 - [x] Release mobile mewajibkan primary+backup SPKI SHA-256 pin dan fail-closed pada konfigurasi invalid
 - [x] Web auth memakai cookie session HttpOnly+CSRF tanpa bearer token di localStorage
-- [ ] Enam gate persetujuan production canonical pada `temuan2.md` belum ditutup
+- [x] Seeder demo **diblokir mutlak** pada APP_ENV=production (`DemoGuard`; lihat `backend/SEED_DATA.md`)
+- [x] Least-privilege DB + trigger append-only privacy_audit_events; bukti otomatis CI `mysql-production-gates` + `php artisan pdam:audit-db-privileges` (runbook: `ops/runbooks/DB_PRIVILEGES.md`)
+- [x] Backup AES-GCM + end-to-end restore drill otomatis di CI (`ops/backup/`; runbook `ops/runbooks/BACKUP_RESTORE.md`)
+- [ ] Enam gate persetujuan production canonical pada [`temuan2.md`](temuan2.md) §13 belum ditutup sampai bukti environment nyata (tooling tersedia di [`ops/README.md`](ops/README.md))
 
 Detail baseline internal: `SECURITY_CHECKLIST.md`. Checklist tersebut bukan sertifikasi.
 
 ## Deploy Production
 
+Runbook authoritative: [`backend/DEPLOY.md`](backend/DEPLOY.md) + tooling [`ops/README.md`](ops/README.md)
+(+ [`docs/DOC_MAP.md`](docs/DOC_MAP.md) untuk peta angka/flag).
+
 ```bash
 # Build frontend assets
 npm run build
 
-# Set production env
-APP_ENV=production
-APP_DEBUG=false
+# Bootstrap production (migration + kernel-only seeding; demo TIDAK mungkin jalan)
+php artisan migrate --force
+php artisan db:seed --class=ProductionKernelSeeder --force   # PLATFORM_ADMIN_* env utk admin awal (opsional)
+php artisan storage:link
+php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache
 
+# Least-privilege DB + append-only privacy_audit_events (lihat ops/mysql + DEPLOY)
+bash ops/mysql/create_users.sh ... && bash ops/mysql/verify_privileges.sh
+php artisan pdam:audit-db-privileges
+
+# Backup terenkripsi + drill restore (cron host backup; RPO/RTO ke evidence)
+bash ops/backup/backup_production.sh
+bash ops/backup/restore_drill.sh
+
+# Verifikasi pra-rilis
+php artisan pdam:health-check
+php artisan pdam:queue-health            # alarm worker/failed_jobs (liat supervisord.production.conf)
+php artisan pdam:integrations-health     # + --ping utk Midtrans/Vision/ML nyata
+../ops/tls/verify_production_tls.sh api.pdam.go.id pdam.go.id
 # Build Flutter release: dua pin SPKI SHA-256 wajib, tanpa prefix sha256/
 flutter build apk --release \
   --dart-define=CERT_SPKI_SHA256_PRIMARY="$CERT_SPKI_SHA256_PRIMARY" \
   --dart-define=CERT_SPKI_SHA256_BACKUP="$CERT_SPKI_SHA256_BACKUP"
-
-# Optimize
-php artisan optimize
-
-# Nginx config: see docker/nginx.conf
-# SSL: certbot + Let's Encrypt
-# Supervisor: docker/supervisord.conf
+../ops/tls/verify_spki_pins.sh api.pdam.go.id
 ```
 
 Queue worker wajib memproses queue `default` dan cron wajib menjalankan `php artisan schedule:run`
-setiap menit agar scheduled report didispatch. Verifikasi endpoint TLS production terhadap kedua pin dan
-lakukan drill rotasi primary/backup sebelum rilis mobile; detail ada di `backend/DEPLOY.md`.
+setiap menit (file terkelola: `backend/docker/supervisord.production.conf` — worker 2 proc, scheduler
+loop, alarm `pdam:queue-health`, event-listener `ops/supervisor/crash_alert.py`). Verifikasi endpoint TLS
+production terhadap kedua pin dan lakukan drill rotasi primary/backup sebelum rilis mobile; detail runbook
+ada di `ops/runbooks/`.
 
 ## License
 

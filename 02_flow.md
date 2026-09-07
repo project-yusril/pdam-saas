@@ -257,13 +257,17 @@ Jalur B (ke kantor):🧑‍💼 customer_service 💻 input atas nama calon
 ```
 
 ### TAHAP 6 — Penyediaan Material
-> **Status saat ini:** API instalasi hanya `mode=planning_only`, baik WH aktif maupun tidak. Flag canonical adalah `stock_reserved=false`, `stock_issued=false`, dan `accounting_posted=false`. Diagram berikut adalah **target stock/journal flow**, belum implementasi transaksi instalasi aktual.
+> **Status saat ini (7 Sep 2026):** diimplementasikan penuh di `InstallationService::orderMaterials/complete` —
+> order = reservasi stok di gudang utama (`mode=reserved`, `stock_reserved=true`), dan saat pemasangan selesai
+> (`complete()`) stok di-stock-out + jurnal kapitalisasi (`DEBIT Aset Jaringan` / `KREDIT Persediaan`,
+> `accounting_posted=true`). `planning_only` hanya muncul ketika modul WH nonaktif, material tak terselesaikan,
+> atau tidak ada gudang utama (payload menyertakan `reason` eksplisit). Bukti: `backend/tests/Feature/InstallationMaterialStockOutTest`.
 
 ```
-🧑‍🔧 technical_head 💻 → buat Order Material untuk lokasi pemasangan
- 🧑‍💼 warehouse_head 💻 → cek stok 3-level (detail di 2.5):
+🧑🔧 technical_head 💻 → buat Order Material untuk lokasi pemasangan
+ 🧑💼 warehouse_head 💻 → cek stok 3-level (detail di 2.5):
    CEK 1 buffer wilayah sendiri cukup? ├ YA → keluarkan
-                                        └ TIDAK ↓
+                                         └ TIDAK ↓
    CEK 2 lateral transfer wilayah lain layak? ├ YA → transfer lateral
                                                └ TIDAK ↓
    CEK 3 transfer dari Gudang Utama → buffer wilayah
