@@ -33,6 +33,9 @@ Dari sisi aplikasi tersedia artisan evidence-command:
 (gate endpoint `endpoints.dart` ↔ registry), `tools/generate_openapi_surface.dart` (surface Dart utk test).
 CI `workflow ci.yml (job mysql-production-gates)` menjalankan drill privilege
 + backup/restore otomatis di setiap PR.
+Nightly `.github/workflows/nightly-ops.yml`: k6 capacity + telemetri simulator Tier-3
+(hanya jalan bila repo-var `LOAD_ENABLED=true` + `LOAD_BASE_URL` staging diset;
+jangan arahkan ke production). Rule contoh & rotasi log: `ops/alerting`, `ops/logrotate`.
 
 ## Urutan eksekusi saat production pertama kali berdiri
 1. Deploy DB + `ops/mysql/create_users.sh` → jalankan migrate sebagai
