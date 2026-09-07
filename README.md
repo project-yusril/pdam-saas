@@ -23,6 +23,7 @@ Sistem Manajemen PDAM Multi-Tenant berbasis Laravel + Vue 3.
 | Status implementasi, bukti audit, dan gate production | [`temuan2.md`](temuan2.md) |
 | Tooling operasional gate (TLS, backup/restore drill, least-priv, load test, pin) | [`ops/README.md`](ops/README.md) + `ops/runbooks/*` |
 | CI gates lintas komponen + drill MySQL | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (job `mysql-production-gates`) |
+| Nightly k6 capacity + simulator Tier-3 | [`.github/workflows/nightly-ops.yml`](.github/workflows/nightly-ops.yml) (gerbang `vars.LOAD_ENABLED=true`) |
 | Keputusan bisnis PRD §23 dan knobnya | [`docs/BUSINESS_DECISIONS.md`](docs/BUSINESS_DECISIONS.md) (`backend/config/business.php`) |
 | Kalibrasi ML production + gerbang threshold | [`docs/ML_CALIBRATION.md`](docs/ML_CALIBRATION.md), [`ml/README.md`](ml/README.md) |
 | Capacity baseline load test | [`docs/CAPACITY_BASELINE.md`](docs/CAPACITY_BASELINE.md) (`ops/load/run_load_test.sh`) |
