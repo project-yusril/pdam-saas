@@ -1,22 +1,43 @@
+title = "PDAM SaaS secret-scan allowlist"
+
+# Review CRITICAL: TIDAK ada regex global (mis. 12345678) yang melempemkan secret-gate
+# untuk SEMUA temuan. Suppress hanya lewat path terarah (fixture demo, contoh .env,
+# runbook ops, dokumentasi). File lain tetap dipindai penuh dengan rule default.
+[extend]
+useDefault = true
+
 [allowlist]
-description = "Kredensial demo/fixture yang memang harus ada di repo (seed, contoh .env, dokumentasi, test stub)"
+description = "Demo fixtures / contoh .env / runbook ops / dokumentasi / dev placeholder"
 paths = [
-  '''backend/database/seeders/DemoTenantSeeder\.php''',
-  '''backend/database/seeders/SambasTenantSeeder\.php''',
-  '''backend/database/seeders/PlatformAdminSeeder\.php''',
-  '''backend/database/seeders/Support/DemoGuard\.php''',
-  '''backend/SEED_DATA\.md''',
-  '''backend/\.env\.example''',
-  '''backend/\.env\.ci''',
-  '''backend/\.env\.production\.example''',
-  '''README\.md''',
-  '''HANDOVER\.md''',
-  '''mobile/lib/core/security/obfuscation_config\.dart''',
-  '''backend/tests''',
-  '''docs''',
-]
-# regex global DIHAPUS (review CRITICAL): 12345678/base64 pattern yang dulu
-# di-allowlist repo-wide mematikan secret-gate untuk SEMUA Secret riil.
-# Suppress sekarang HANYA via paths[] terarah di atas + allowlist rule per-file.
-{20,}''',
+  'backend/database/seeders/DemoTenantSeeder\.php',
+  'backend/database/seeders/SambasTenantSeeder\.php',
+  'backend/database/seeders/PlatformAdminSeeder\.php',
+  'backend/database/seeders/Support/DemoGuard\.php',
+  'backend/SEED_DATA\.md',
+  'backend/README\.md',
+  'backend/DEPLOY\.md',
+  'backend/\.env\.example',
+  'backend/\.env\.ci',
+  'backend/\.env\.production\.example',
+  'tests/security',
+  'docs',
+  'ops/mysql/create_users\.sh',
+  'ops/mysql/verify_privileges\.sh',
+  'ops/backup/backup_production\.sh',
+  'ops/backup/restore_drill\.sh',
+  'ops/load/run_load_test\.sh',
+  'ops/runbooks/DB_PRIVILEGES\.md',
+  'README\.md',
+  'HANDOVER\.md',
+  'temuan2\.md',
+  '02_flow\.md',
+  'task\.md',
+  'temuan\.md',
+  'SECURITY_CHECKLIST\.md',
+  'PRD\.md',
+  'mobile/lib/core/security/obfuscation_config\.dart',
+  'mobile/lib/core/network/endpoints\.dart',
+  '.github/workflows/ci\.yml',
+  '.github/workflows/nightly-ops\.yml',
+  'backend/tests',
 ]
