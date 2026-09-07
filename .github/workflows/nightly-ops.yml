@@ -1,0 +1,49 @@
+name: Nightly load test (k6 capacity staging)
+
+# Nonaktif sampai repo variable `LOAD_ENABLED=true` + `LOAD_BASE_URL` staging
+# diset (jangan指向 production). Manual: Actions → Run workflow (pilih profile).
+on:
+  schedule:
+    - cron: '0 20 * * *' # 03:00 WIB
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'profil k6'
+        required: false
+        default: 'load'
+        type: choice
+        options: ['smoke', 'load', 'stress']
+
+permissions: { contents: read }
+
+jobs:
+  k6:
+    name: k6 PROFILE=${{ inputs.profile || 'load' }}
+    if: vars.LOAD_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: ${{ vars.LOAD_BASE_URL }}
+      PROFILE: ${{ inputs.profile || 'load' }}
+      PDAM_CODE: ${{ vars.LOAD_PDAM_CODE }}
+      LOGIN_EMAIL: ${{ secrets.LOAD_LOGIN_EMAIL }}
+      LOGIN_PASSWORD: ${{ secrets.LOAD_LOGIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      - name: run ops/load/run_load_test.sh
+        run: bash ops/load/run_load_test.sh
+      - name: simulasikan tier-3 telemetry selama beban (ops/simulators)
+        continue-on-error: true
+        run: |
+          export PDAM_API="$BASE_URL" PDAM_TOKEN="${{ secrets.LOAD_SIM_TOKEN }}"
+          python ops/simulators/telemetry_simulator.py --mode all --cycles 60 --interval 2 &
+      - name: artefak hasil
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-nightly
+          path: k6-*.json
+          if-no-files-found: ignore
+          retention-days: 45
+      - name: catatan kapasitas → update docs/CAPACITY_BASELINE.md manual
+        run: echo "Tarik summary k6 & isi docs/CAPACITY_BASELINE.md; lihat ops/runbooks/OBSERVABILITY.md"

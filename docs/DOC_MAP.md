@@ -38,7 +38,7 @@ authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 | Test frontend Vitest | **7 files / 13 tests** + `npm run build` OK | `npm run test -- --run` |
 | Test Flutter | **46** + analyze **0 issue** | `flutter test` |
 | Test Python (ml) | **32 test methods** (29 sebelumnya + 3 contract simulator tier-3) — dieksekusi CI `ml` (xgboost tak tersedia di runner Win-ARM64 lokal) | `test_*.py` + workflow |
-| CI root | `.github/workflows/ci.yml`: `backend-sqlite`, `mysql-production-gates`, `frontend`, `mobile`, `ml`, `security` | file itu sendiri (workflow lama `backend/.github` mati — sudah dihapus) |
+| CI root | `.github/workflows/ci.yml`: `backend-sqlite` (pint, PHPUnit, counts-drift, openapi drift, mobile-coverage, YAML validation), `mysql-production-gates`, `frontend`, `mobile`, `ml`, `security`. Nightly ops: `.github/workflows/nightly-ops.yml` (k6 + simulator tier-3) — hanya jalan bila `LOAD_ENABLED=true` vars repo |
 
 ## 3. Status enam gate canonical (§13 temuan2 — selalu cek di sana untuk angka final)
 

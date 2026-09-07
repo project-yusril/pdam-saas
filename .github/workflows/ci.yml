@@ -28,6 +28,24 @@ jobs:
         with: { working-directory: backend }
       - name: Lint (Pint)
         run: composer lint
+      - name: YAML valid (semua workflow)
+        run: |
+          pip3 install --quiet pyyaml
+          python - <<'EOF'
+          import glob, os, sys, yaml
+          root = os.path.abspath(os.path.join('.', os.pardir))
+          bad = []
+          for pat in ('.github/workflows/*.yml', 'ml/*.yml'):
+              for f in sorted(glob.glob(os.path.join(root, pat))):
+                  try:
+                      yaml.safe_load(open(f, encoding='utf-8'))
+                  except Exception as e:
+                      bad.append(f'{f}: {e}')
+          if bad:
+              print('\n'.join(bad)); sys.exit(1)
+          print('YAML workflows OK')
+          EOF
+        working-directory: .
       - name: OpenAPI spec drift (registry-generated; docs/openapi.json = kanonik mobile/client; H-10)
         run: php artisan pdam:openapi --out=../docs/openapi.json && git diff --exit-code ../docs/openapi.json
       - name: mobile endpoint coverage contract (endpoints.dart vs API route registry)
