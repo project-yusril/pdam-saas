@@ -9,6 +9,21 @@ class PrivacyAuditEvent extends Model
 {
     public const UPDATED_AT = null;
 
+    /**
+     * Produksi (gate least-privilege): bila DB_AUDIT_USERNAME diset, seluruh
+     * akses event ini memakai connection `audit` milik akun pdam_audit yang
+     * hanya memegang INSERT+SELECT pada tabel ini. Tanpa env tsb (dev/test)
+     * connection default dipakai — trigger MySQL tetap menegakkan append-only.
+     */
+    public function getConnectionName()
+    {
+        if ($this->connection === null && filled(env('DB_AUDIT_USERNAME'))) {
+            return 'audit';
+        }
+
+        return $this->connection;
+    }
+
     protected $fillable = [
         'pdam_org_id',
         'privacy_purge_request_id',

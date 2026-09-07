@@ -23,6 +23,7 @@ use App\Services\JournalService;
 use App\Services\StockService;
 use App\Services\TenantProvisioningService;
 use App\Support\TenantContext;
+use Database\Seeders\Support\DemoGuard;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -43,15 +44,20 @@ use Illuminate\Support\Str;
 class SambasTenantSeeder extends Seeder
 {
     public const CODE = 'pdam-sambas';
+
     public const NAME = 'PDAM Kabupaten Sambas';
+
     public const CITY = 'Sambas';
+
     public const PROVINCE = 'Kalimantan Barat';
+
     public const DEFAULT_PASSWORD = '12345678';
 
     /** Jumlah pelanggan (bisa dioverride via env SEED_CUSTOMER_COUNT). */
     protected int $customerCount;
 
     private JournalService $journal;
+
     private StockService $stock;
 
     private const ACCOUNTS = [
@@ -121,17 +127,26 @@ class SambasTenantSeeder extends Seeder
     private function paymentBucket(int $i): int
     {
         $mod = $i % 100;
-        if ($mod < 70) { return 0; }
-        if ($mod < 80) { return 1; }
-        if ($mod < 90) { return 2; }
-        if ($mod < 95) { return 3; }
+        if ($mod < 70) {
+            return 0;
+        }
+        if ($mod < 80) {
+            return 1;
+        }
+        if ($mod < 90) {
+            return 2;
+        }
+        if ($mod < 95) {
+            return 3;
+        }
 
         return 4;
     }
 
-
     public function run(): void
     {
+        DemoGuard::assertNonProduction('SambasTenantSeeder');
+
         $this->customerCount = max(1, (int) (env('SEED_CUSTOMER_COUNT', 3000)));
 
         $this->journal = app(JournalService::class);
@@ -173,7 +188,7 @@ class SambasTenantSeeder extends Seeder
 
         TenantContext::clear();
 
-        $this->command?->info("[SAMBAS] Selesai: {$this->customerCount} pelanggan, ".count($zones)." zona, 27 modul aktif.");
+        $this->command?->info("[SAMBAS] Selesai: {$this->customerCount} pelanggan, ".count($zones).' zona, 27 modul aktif.');
     }
 
     private function provision(): PdamOrganization
@@ -232,7 +247,6 @@ class SambasTenantSeeder extends Seeder
             }
         }
     }
-
 
     private function seedMasterFinance(): void
     {
@@ -409,7 +423,6 @@ class SambasTenantSeeder extends Seeder
         return $warehouses;
     }
 
-
     private function seedSuppliers(): void
     {
         $rows = [
@@ -582,7 +595,6 @@ class SambasTenantSeeder extends Seeder
         return $periods;
     }
 
-
     private function seedCustomersAndBilling(array $zones, array $routes, array $warehouses): void
     {
         $orgId = TenantContext::id();
@@ -626,145 +638,145 @@ class SambasTenantSeeder extends Seeder
             }
 
             for ($i = 0; $i < $this->customerCount; $i++) {
-            $zoneIdx = $i % count($zones);
-            $zone = $zones[$zoneIdx];
-            $route = $routes[$zoneIdx];
-            $readerId = $readerByRoute[$route->id] ?? null;
+                $zoneIdx = $i % count($zones);
+                $zone = $zones[$zoneIdx];
+                $route = $routes[$zoneIdx];
+                $readerId = $readerByRoute[$route->id] ?? null;
 
-            [$tariffCode, $tariff] = $this->pickTariff($tariffs, $i);
-            $usageBase = $this->baseUsage($tariff->group_type, $i);
-            $cfg = $tariffConfigs[$tariff->id] ?? $tariffConfigs[array_key_first($tariffConfigs)];
+                [$tariffCode, $tariff] = $this->pickTariff($tariffs, $i);
+                $usageBase = $this->baseUsage($tariff->group_type, $i);
+                $cfg = $tariffConfigs[$tariff->id] ?? $tariffConfigs[array_key_first($tariffConfigs)];
 
-            $customerName = $this->customerName($i, $tariff->group_type);
-            $streetId = $streetIds[$i % max(1, count($streetIds))];
-            $customerNumber = sprintf('SMBS-%05d', $i + 1);
-            $serial = 'MTR-'.str_pad((string) ($i + 1), 6, '0', STR_PAD_LEFT);
-            $installDate = '2025-09-01';
+                $customerName = $this->customerName($i, $tariff->group_type);
+                $streetId = $streetIds[$i % max(1, count($streetIds))];
+                $customerNumber = sprintf('SMBS-%05d', $i + 1);
+                $serial = 'MTR-'.str_pad((string) ($i + 1), 6, '0', STR_PAD_LEFT);
+                $installDate = '2025-09-01';
 
-            $customer = Customer::create([
-                'pdam_org_id' => $orgId,
-                'customer_number' => $customerNumber,
-                'full_name' => $customerName,
-                'phone' => '08125'.str_pad((string) (670000 + $i), 6, '0', STR_PAD_LEFT),
-                'zone_id' => $zone->id,
-                'street_id' => $streetId,
-                'address_detail' => 'No. '.(($i % 120) + 1).', RT 0'.(($i % 8) + 1).'/RW 0'.(($i % 5) + 1),
-                'latitude' => round(1.35 + (($i % 100) / 1000), 7),
-                'longitude' => round(109.30 + (($i % 100) / 800), 7),
-                'tariff_category_id' => $tariff->id,
-                'meter_serial_number' => $serial,
-                'meter_route_id' => $route->id,
-                'installation_date' => $installDate,
-                'initial_reading' => 0,
-                'status' => 'active',
-            ]);
-
-            Meter::create([
-                'pdam_org_id' => $orgId, 'serial_number' => $serial, 'brand' => 'Amico', 'model' => 'B-Meter 1/2"',
-                'diameter' => '0.5', 'install_year' => 2025, 'install_date' => $installDate, 'condition' => 'baik',
-                'status' => 'terpasang', 'tamper_status' => 'normal', 'customer_id' => $customer->id,
-            ]);
-
-            $previousReading = 0;
-            $previousReadingId = null;
-            $bucket = $this->paymentBucket($i);
-
-            foreach ($periods as $pIdx => $period) {
-                $usage = max(1, (int) round($usageBase * (0.75 + (($i * 7 + $pIdx * 13) % 10) / 20)));
-                $currentReading = $previousReading + $usage;
-
-                // ── Baca meter (foto + petugas) — langsung insert ──
-                $readingId = DB::table('meter_readings')->insertGetId([
-                    'pdam_org_id' => $orgId, 'customer_id' => $customer->id, 'period' => $period,
-                    'reading_value' => $currentReading, 'reading_date' => $period.'-20',
-                    'photo_house_url' => 'storage/meter_photos/sambas/'.$period.'/house-'.$customerNumber.'.jpg',
-                    'photo_meter_url' => 'storage/meter_photos/sambas/'.$period.'/meter-'.$customerNumber.'.jpg',
-                    'reading_type' => ($i % 23 === 0) ? 'manual_corrected' : ($i % 41 === 0 ? 'estimated' : 'ocr_confirmed'),
-                    'unreadable_reason' => ($i % 41 === 0) ? 'Meter berdebu / angka sulit dibaca' : null,
-                    'is_flagged' => ($i % 17 === 0) ? 1 : 0,
-                    'flag_reason' => ($i % 17 === 0) ? 'Deviasi konsumsi di atas 30% dari rata-rata' : null,
-                    'is_rollover' => 0,
-                    'read_by' => $readerId, 'verified_by' => $verifier?->id ?? $readerId,
-                    'verified_at' => $period.'-22 10:00:00',
-                    'created_at' => $now, 'updated_at' => $now,
+                $customer = Customer::create([
+                    'pdam_org_id' => $orgId,
+                    'customer_number' => $customerNumber,
+                    'full_name' => $customerName,
+                    'phone' => '08125'.str_pad((string) (670000 + $i), 6, '0', STR_PAD_LEFT),
+                    'zone_id' => $zone->id,
+                    'street_id' => $streetId,
+                    'address_detail' => 'No. '.(($i % 120) + 1).', RT 0'.(($i % 8) + 1).'/RW 0'.(($i % 5) + 1),
+                    'latitude' => round(1.35 + (($i % 100) / 1000), 7),
+                    'longitude' => round(109.30 + (($i % 100) / 800), 7),
+                    'tariff_category_id' => $tariff->id,
+                    'meter_serial_number' => $serial,
+                    'meter_route_id' => $route->id,
+                    'installation_date' => $installDate,
+                    'initial_reading' => 0,
+                    'status' => 'active',
                 ]);
 
-                // ── Hitung pemakaian & tarif bertingkat (cache) ──
-                $consumption = $currentReading - $previousReading;
-                if ($consumption < 0) {
-                    $consumption = ($currentReading + 100000) - $previousReading;
-                }
-                $calc = $this->calcTariff($cfg, $consumption);
-
-                // ── Tagihan ──
-                $billCounter[$period] = ($billCounter[$period] ?? 0) + 1;
-                $billNumber = sprintf('INV-%d-%s-%05d', $orgId, str_replace('-', '', $period), $billCounter[$period]);
-                $dueDate = $this->buildDueDate($period, $dueDay);
-                $billId = DB::table('bills')->insertGetId([
-                    'pdam_org_id' => $orgId, 'customer_id' => $customer->id, 'bill_number' => $billNumber,
-                    'period' => $period, 'previous_reading_id' => $previousReadingId, 'current_reading_id' => $readingId,
-                    'previous_reading' => $previousReading, 'current_reading' => $currentReading,
-                    'consumption' => $consumption, 'water_charge' => $calc['water_charge'],
-                    'abonemen' => $cfg['abonemen'], 'meter_maintenance_fee' => $cfg['meter_fee'], 'admin_fee' => $cfg['admin_fee'],
-                    'penalty' => 0, 'amount_due' => $calc['total'], 'status' => 'unpaid', 'due_date' => $dueDate,
-                    'created_at' => $now, 'updated_at' => $now,
+                Meter::create([
+                    'pdam_org_id' => $orgId, 'serial_number' => $serial, 'brand' => 'Amico', 'model' => 'B-Meter 1/2"',
+                    'diameter' => '0.5', 'install_year' => 2025, 'install_date' => $installDate, 'condition' => 'baik',
+                    'status' => 'terpasang', 'tamper_status' => 'normal', 'customer_id' => $customer->id,
                 ]);
 
-                // rincian item tagihan
-                foreach ($calc['components'] as $comp) {
-                    DB::table('bill_items')->insert([
-                        'pdam_org_id' => $orgId, 'bill_id' => $billId, 'component' => $comp['component'],
-                        'label' => $comp['label'], 'quantity' => $comp['quantity'],
-                        'unit_price' => $comp['unit_price'], 'amount' => $comp['amount'],
+                $previousReading = 0;
+                $previousReadingId = null;
+                $bucket = $this->paymentBucket($i);
+
+                foreach ($periods as $pIdx => $period) {
+                    $usage = max(1, (int) round($usageBase * (0.75 + (($i * 7 + $pIdx * 13) % 10) / 20)));
+                    $currentReading = $previousReading + $usage;
+
+                    // ── Baca meter (foto + petugas) — langsung insert ──
+                    $readingId = DB::table('meter_readings')->insertGetId([
+                        'pdam_org_id' => $orgId, 'customer_id' => $customer->id, 'period' => $period,
+                        'reading_value' => $currentReading, 'reading_date' => $period.'-20',
+                        'photo_house_url' => 'storage/meter_photos/sambas/'.$period.'/house-'.$customerNumber.'.jpg',
+                        'photo_meter_url' => 'storage/meter_photos/sambas/'.$period.'/meter-'.$customerNumber.'.jpg',
+                        'reading_type' => ($i % 23 === 0) ? 'manual_corrected' : ($i % 41 === 0 ? 'estimated' : 'ocr_confirmed'),
+                        'unreadable_reason' => ($i % 41 === 0) ? 'Meter berdebu / angka sulit dibaca' : null,
+                        'is_flagged' => ($i % 17 === 0) ? 1 : 0,
+                        'flag_reason' => ($i % 17 === 0) ? 'Deviasi konsumsi di atas 30% dari rata-rata' : null,
+                        'is_rollover' => 0,
+                        'read_by' => $readerId, 'verified_by' => $verifier?->id ?? $readerId,
+                        'verified_at' => $period.'-22 10:00:00',
                         'created_at' => $now, 'updated_at' => $now,
                     ]);
-                }
 
-                // Jurnal tagihan: DEBIT Piutang | KREDIT Pendapatan Air
-                $entryId = $this->insertJournal($orgId, "Tagihan {$period} - {$customerNumber}", [
-                    ['account_id' => $coaIds['1-002'], 'type' => 'DEBIT', 'amount' => $calc['total'], 'memo' => 'Piutang pelanggan'],
-                    ['account_id' => $coaIds['4-001'], 'type' => 'KREDIT', 'amount' => $calc['total'], 'memo' => 'Pendapatan air'],
-                ], 'BILL', $billId, $period.'-20', $jeCounter);
-                DB::table('bills')->where('id', $billId)->update(['journal_entry_id' => $entryId]);
+                    // ── Hitung pemakaian & tarif bertingkat (cache) ──
+                    $consumption = $currentReading - $previousReading;
+                    if ($consumption < 0) {
+                        $consumption = ($currentReading + 100000) - $previousReading;
+                    }
+                    $calc = $this->calcTariff($cfg, $consumption);
 
-                // ── Pembayaran ──
-                if ($this->shouldPay($pIdx, $total, $bucket)) {
-                    $paymentNumber = 'PAY-'.$orgId.'-'.strtoupper(uniqid());
-                    $paymentId = DB::table('payments')->insertGetId([
-                        'pdam_org_id' => $orgId, 'payment_type' => 'monthly_bill', 'bill_id' => $billId,
-                        'customer_id' => $customer->id, 'payment_number' => $paymentNumber,
-                        'amount' => $calc['total'], 'payment_method' => 'tunai', 'channel' => 'cash',
-                        'midtrans_order_id' => 'ORD-'.uniqid(), 'status' => 'success', 'paid_at' => $now,
-                        'received_by' => null, 'created_at' => $now, 'updated_at' => $now,
+                    // ── Tagihan ──
+                    $billCounter[$period] = ($billCounter[$period] ?? 0) + 1;
+                    $billNumber = sprintf('INV-%d-%s-%05d', $orgId, str_replace('-', '', $period), $billCounter[$period]);
+                    $dueDate = $this->buildDueDate($period, $dueDay);
+                    $billId = DB::table('bills')->insertGetId([
+                        'pdam_org_id' => $orgId, 'customer_id' => $customer->id, 'bill_number' => $billNumber,
+                        'period' => $period, 'previous_reading_id' => $previousReadingId, 'current_reading_id' => $readingId,
+                        'previous_reading' => $previousReading, 'current_reading' => $currentReading,
+                        'consumption' => $consumption, 'water_charge' => $calc['water_charge'],
+                        'abonemen' => $cfg['abonemen'], 'meter_maintenance_fee' => $cfg['meter_fee'], 'admin_fee' => $cfg['admin_fee'],
+                        'penalty' => 0, 'amount_due' => $calc['total'], 'status' => 'unpaid', 'due_date' => $dueDate,
+                        'created_at' => $now, 'updated_at' => $now,
                     ]);
-                    $payEntryId = $this->insertJournal($orgId, "Pembayaran tagihan {$billNumber}", [
-                        ['account_id' => $coaIds['1-001'], 'type' => 'DEBIT', 'amount' => $calc['total'], 'memo' => 'Kas/Bank'],
-                        ['account_id' => $coaIds['1-002'], 'type' => 'KREDIT', 'amount' => $calc['total'], 'memo' => 'Pelunasan piutang'],
-                    ], 'PAYMENT', $paymentId, $now->toDateString(), $jeCounter);
-                    DB::table('bills')->where('id', $billId)->update(['status' => 'paid']);
-                    DB::table('payments')->where('id', $paymentId)->update(['journal_entry_id' => $payEntryId]);
-                }
 
-                // Pelanggan putus (bucket 4): >6 bulan tidak bayar.
-                if ($bucket === 4 && $pIdx === $total - 7) {
-                    if (! DB::table('customers')->where('id', $customer->id)->where('status', 'isolir')->exists()) {
-                        DB::table('customers')->where('id', $customer->id)->update(['status' => 'isolir']);
-                        DB::table('customer_status_history')->insert([
-                            'pdam_org_id' => $orgId, 'customer_id' => $customer->id,
-                            'from_status' => 'active', 'to_status' => 'isolir',
-                            'reason' => 'Tunggakan lebih dari 6 bulan tidak dibayar.',
-                            'changed_by' => $verifier?->id ?? null, 'created_at' => $now,
+                    // rincian item tagihan
+                    foreach ($calc['components'] as $comp) {
+                        DB::table('bill_items')->insert([
+                            'pdam_org_id' => $orgId, 'bill_id' => $billId, 'component' => $comp['component'],
+                            'label' => $comp['label'], 'quantity' => $comp['quantity'],
+                            'unit_price' => $comp['unit_price'], 'amount' => $comp['amount'],
+                            'created_at' => $now, 'updated_at' => $now,
                         ]);
                     }
+
+                    // Jurnal tagihan: DEBIT Piutang | KREDIT Pendapatan Air
+                    $entryId = $this->insertJournal($orgId, "Tagihan {$period} - {$customerNumber}", [
+                        ['account_id' => $coaIds['1-002'], 'type' => 'DEBIT', 'amount' => $calc['total'], 'memo' => 'Piutang pelanggan'],
+                        ['account_id' => $coaIds['4-001'], 'type' => 'KREDIT', 'amount' => $calc['total'], 'memo' => 'Pendapatan air'],
+                    ], 'BILL', $billId, $period.'-20', $jeCounter);
+                    DB::table('bills')->where('id', $billId)->update(['journal_entry_id' => $entryId]);
+
+                    // ── Pembayaran ──
+                    if ($this->shouldPay($pIdx, $total, $bucket)) {
+                        $paymentNumber = 'PAY-'.$orgId.'-'.strtoupper(uniqid());
+                        $paymentId = DB::table('payments')->insertGetId([
+                            'pdam_org_id' => $orgId, 'payment_type' => 'monthly_bill', 'bill_id' => $billId,
+                            'customer_id' => $customer->id, 'payment_number' => $paymentNumber,
+                            'amount' => $calc['total'], 'payment_method' => 'tunai', 'channel' => 'cash',
+                            'midtrans_order_id' => 'ORD-'.uniqid(), 'status' => 'success', 'paid_at' => $now,
+                            'received_by' => null, 'created_at' => $now, 'updated_at' => $now,
+                        ]);
+                        $payEntryId = $this->insertJournal($orgId, "Pembayaran tagihan {$billNumber}", [
+                            ['account_id' => $coaIds['1-001'], 'type' => 'DEBIT', 'amount' => $calc['total'], 'memo' => 'Kas/Bank'],
+                            ['account_id' => $coaIds['1-002'], 'type' => 'KREDIT', 'amount' => $calc['total'], 'memo' => 'Pelunasan piutang'],
+                        ], 'PAYMENT', $paymentId, $now->toDateString(), $jeCounter);
+                        DB::table('bills')->where('id', $billId)->update(['status' => 'paid']);
+                        DB::table('payments')->where('id', $paymentId)->update(['journal_entry_id' => $payEntryId]);
+                    }
+
+                    // Pelanggan putus (bucket 4): >6 bulan tidak bayar.
+                    if ($bucket === 4 && $pIdx === $total - 7) {
+                        if (! DB::table('customers')->where('id', $customer->id)->where('status', 'isolir')->exists()) {
+                            DB::table('customers')->where('id', $customer->id)->update(['status' => 'isolir']);
+                            DB::table('customer_status_history')->insert([
+                                'pdam_org_id' => $orgId, 'customer_id' => $customer->id,
+                                'from_status' => 'active', 'to_status' => 'isolir',
+                                'reason' => 'Tunggakan lebih dari 6 bulan tidak dibayar.',
+                                'changed_by' => $verifier?->id ?? null, 'created_at' => $now,
+                            ]);
+                        }
+                    }
+
+                    $previousReading = $currentReading;
+                    $previousReadingId = $readingId;
                 }
 
-                $previousReading = $currentReading;
-                $previousReadingId = $readingId;
-            }
-
-            if (($i % 50) === 0) {
-                $bar?->advance(50);
-            }
+                if (($i % 50) === 0) {
+                    $bar?->advance(50);
+                }
             }
         });
 
@@ -870,14 +882,23 @@ class SambasTenantSeeder extends Seeder
     private function pickTariff($tariffs, int $i): array
     {
         $m = $i % 100;
-        if ($m < 58) { $code = ['2A1', '2A2', '2A3', '2D', '2B'][$i % 5]; }
-        elseif ($m < 66) { $code = ['3A', '3B'][$i % 2]; }
-        elseif ($m < 74) { $code = ['4A', '4B', '4C'][$i % 3]; }
-        elseif ($m < 80) { $code = ['1A', '1B', '1C'][$i % 3]; }
-        elseif ($m < 83) { $code = '2F'; }
-        elseif ($m < 88) { $code = '3C'; }
-        elseif ($m < 93) { $code = ['4B', '4C'][$i % 2]; }
-        else { $code = ['5A', '5B'][$i % 2]; }
+        if ($m < 58) {
+            $code = ['2A1', '2A2', '2A3', '2D', '2B'][$i % 5];
+        } elseif ($m < 66) {
+            $code = ['3A', '3B'][$i % 2];
+        } elseif ($m < 74) {
+            $code = ['4A', '4B', '4C'][$i % 3];
+        } elseif ($m < 80) {
+            $code = ['1A', '1B', '1C'][$i % 3];
+        } elseif ($m < 83) {
+            $code = '2F';
+        } elseif ($m < 88) {
+            $code = '3C';
+        } elseif ($m < 93) {
+            $code = ['4B', '4C'][$i % 2];
+        } else {
+            $code = ['5A', '5B'][$i % 2];
+        }
 
         $tariff = $tariffs[$code] ?? $tariffs['2A2'];
 
@@ -934,7 +955,6 @@ class SambasTenantSeeder extends Seeder
             ]);
         }
     }
-
 
     private function seedWarehouseOperations(array $warehouses, array $materials): void
     {
@@ -1078,7 +1098,6 @@ class SambasTenantSeeder extends Seeder
         $this->seedSurvey($orgId, $zones);
         $this->seedNotifications($orgId, $cust);
     }
-
 
     private function seedMeterExtended(int $orgId): void
     {
@@ -1271,7 +1290,6 @@ class SambasTenantSeeder extends Seeder
             'next_run_date' => now()->addMonth()->startOfMonth()->toDateString(), 'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
         ]);
     }
-
 
     private function seedChemicals(int $orgId, $mainWarehouse): void
     {
@@ -1552,7 +1570,6 @@ class SambasTenantSeeder extends Seeder
         ]);
     }
 
-
     private function seedSmartUtility(int $orgId, $zone, $cust, $meter): void
     {
         if (DB::table('dma_zones')->where('pdam_org_id', $orgId)->exists()) {
@@ -1586,9 +1603,14 @@ class SambasTenantSeeder extends Seeder
                 'created_at' => now(), 'updated_at' => now(),
             ]);
         }
-        $systemInput = 145000; $billed = 118000; $unbilledMetered = 3000; $unbilledUnmetered = 2500;
+        $systemInput = 145000;
+        $billed = 118000;
+        $unbilledMetered = 3000;
+        $unbilledUnmetered = 2500;
         $authorised = $billed + $unbilledMetered + $unbilledUnmetered;
-        $losses = $systemInput - $authorised; $apparent = 9000; $real = $losses - $apparent;
+        $losses = $systemInput - $authorised;
+        $apparent = 9000;
+        $real = $losses - $apparent;
         DB::table('nrw_balances')->insert([
             'pdam_org_id' => $orgId, 'dma_zone_id' => $dmaId, 'period' => date('Y-m'),
             'system_input_m3' => $systemInput, 'billed_metered_m3' => $billed, 'unbilled_metered_m3' => $unbilledMetered,

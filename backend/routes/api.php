@@ -331,7 +331,7 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
     Route::post('prospects/{prospect}/pay-installation', [ProspectController::class, 'payInstallation'])
         ->middleware('permission:srv.prospect.pay');
 
-    // ── Fase 2.6: Penjadwalan & Aktivasi Pemasangan ───────────────────
+    // ── Fase 2.6: Penjadwalan & Aktivasi Pemasangan ──────────────────────
     Route::post('prospects/{prospect}/order-materials', [InstallationController::class, 'orderMaterials'])
         ->middleware('permission:srv.installation.schedule');
     Route::post('prospects/{prospect}/schedule-installation', [InstallationController::class, 'schedule'])
@@ -340,6 +340,14 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
         ->middleware('permission:srv.installation.complete');
     Route::post('prospects/{prospect}/activate', [InstallationController::class, 'activate'])
         ->middleware('permission:srv.installation.activate');
+
+    // Material order pemasangan: daftar, stock-out manual, cancel (P1/M-10)
+    Route::get('prospects/{prospect}/material-orders', [InstallationController::class, 'materialOrders'])
+        ->middleware('permission:srv.installation.schedule');
+    Route::post('material-orders/{order}/issue', [InstallationController::class, 'issueMaterials'])
+        ->middleware('permission:wh.material.update');
+    Route::post('material-orders/{order}/cancel', [InstallationController::class, 'cancelMaterials'])
+        ->middleware('permission:srv.installation.schedule');
 
     // ── Fase 2.6: Lifecycle Pelanggan (isolir/sambung/balik nama) ─────
     Route::post('customers/{customer}/disconnect', [CustomerLifecycleController::class, 'disconnect'])
@@ -381,10 +389,10 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
         ->middleware('permission:mtr.reading.verify');
 
     // Dashboard progress baca per rute
-Route::get('meter-readings/route-progress', [MeterReadingController::class, 'routeProgress'])
-->middleware('permission:mtr.dashboard.view');
-Route::get('meter-readings/report', [MeterReadingController::class, 'report'])
-->middleware('permission:mtr.reading.view');
+    Route::get('meter-readings/route-progress', [MeterReadingController::class, 'routeProgress'])
+        ->middleware('permission:mtr.dashboard.view');
+    Route::get('meter-readings/report', [MeterReadingController::class, 'report'])
+        ->middleware('permission:mtr.reading.view');
 
     // ── Fase 6: Meter Analytics (METX) ────────────────────────────────
     // Gated modul METX (add-on berbayar) + permission granular.

@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\PdamOrganization;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\TenantProvisioningService;
+use Database\Seeders\Support\DemoGuard;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -20,7 +22,7 @@ use Illuminate\Support\Facades\Hash;
  */
 class DemoTenantSeeder extends Seeder
 {
-    public const DEFAULT_PASSWORD = '12345678';
+    public const DEFAULT_PASSWORD = DemoGuard::DEMO_PASSWORD;
 
     /** Daftar tenant demo: [code, name, city, province]. */
     public const TENANTS = [
@@ -30,12 +32,14 @@ class DemoTenantSeeder extends Seeder
 
     public function run(): void
     {
+        DemoGuard::assertNonProduction('DemoTenantSeeder');
+
         /** @var TenantProvisioningService $svc */
         $svc = app(TenantProvisioningService::class);
 
         foreach (self::TENANTS as [$code, $name, $city, $province]) {
             // Provision tenant + admin_tenant@gmail.com (idempotent lewat cek existing)
-            $org = \App\Models\PdamOrganization::where('code', $code)->first();
+            $org = PdamOrganization::where('code', $code)->first();
             if (! $org) {
                 $org = $svc->provision(
                     orgData: [
@@ -45,7 +49,7 @@ class DemoTenantSeeder extends Seeder
                         'province' => $province,
                     ],
                     adminData: [
-                        'name' => 'Admin ' . $name,
+                        'name' => 'Admin '.$name,
                         'email' => 'admin_tenant@gmail.com',
                         'password' => self::DEFAULT_PASSWORD,
                     ],
@@ -58,7 +62,7 @@ class DemoTenantSeeder extends Seeder
                 ->get();
 
             foreach ($roles as $role) {
-                $email = $role->code . '@gmail.com';
+                $email = $role->code.'@gmail.com';
 
                 $user = User::withoutGlobalScopes()
                     ->where('pdam_org_id', $org->id)
@@ -67,7 +71,7 @@ class DemoTenantSeeder extends Seeder
 
                 if (! $user) {
                     $user = new User([
-                        'name' => $this->roleDisplayName($role->code) . ' — ' . $name,
+                        'name' => $this->roleDisplayName($role->code).' — '.$name,
                         'email' => $email,
                         'password' => Hash::make(self::DEFAULT_PASSWORD),
                         'is_tenant_admin' => $role->code === 'admin_tenant',
