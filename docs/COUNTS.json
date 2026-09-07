@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-09-07T13:05:05+00:00",
+    "generated_at": "2026-09-07T14:46:18+00:00",
     "api_endpoints": 369,
     "web_endpoints": 19,
     "migrations": 65,
@@ -7,7 +7,7 @@
     "seeder_production_path": 4,
     "models": 136,
     "tables_static": 167,
-    "backend_test_methods": 110,
+    "backend_test_methods": 113,
     "frontend_test_files": 6,
     "console_commands": 21
 }

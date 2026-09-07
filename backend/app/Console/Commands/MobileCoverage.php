@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
  */
 class MobileCoverage extends Command
 {
-    protected $signature = 'pdam:mobile-coverage';
+    protected $signature = 'pdam:mobile-coverage {--source= : override path berkas endpoints.dart (default: mobile/lib) untuk test/smoke lain}';
 
     protected $description = 'Validasi coverage endpoint mobile (endpoints.dart) vs route registry';
 
@@ -27,7 +27,9 @@ class MobileCoverage extends Command
 
     public function handle(): int
     {
-        $dart = base_path('../mobile/lib/core/network/endpoints.dart');
+        $dart = ($src = $this->option('source'))
+            ? (string) $src
+            : base_path('../mobile/lib/core/network/endpoints.dart');
         if (! is_file($dart)) {
             $this->error('endpoints.dart tidak ditemukan: '.$dart);
 
