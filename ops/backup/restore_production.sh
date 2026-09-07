@@ -45,7 +45,7 @@ trap 'unset PDAM_RESTORE_PASS MYSQL_PWD; PASS=""' EXIT
 # pasca-migration trigger menyertakan DEFINER pembuat). Stream SQL diarahkan ke
 # $TARGET_DB sebagai default database (mysql < db argumen) — BUKAN USE dari dump.
 echo "Memulai restore $BACKUP_FILE → $TARGET_DB ..."
-if ! { openssl enc -d -aes-256-gcm -pass env:PDAM_RESTORE_PASS -pbkdf2:iter=200000 -in "$BACKUP_FILE" \
+if ! { openssl enc -d -aes-256-gcm -pass env:PDAM_RESTORE_PASS -pbkdf2 -iter 200000 -in "$BACKUP_FILE" \
       | gunzip \
       | sed -E 's/DEFINER[[:space:]]*=[[:space:]]*[^ ]+//g' \
       | mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_RESTORE_USER" "$TARGET_DB"; }; then

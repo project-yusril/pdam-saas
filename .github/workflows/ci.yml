@@ -58,6 +58,8 @@ jobs:
           php artisan view:cache
           php artisan event:cache
           php artisan optimize:clear
+      - name: Build frontend assets (vite manifest untuk route / + ExampleTest)
+        run: npm ci && npm run build
       - name: PHPUnit (SQLite in-memory)
         run: php artisan test
       - name: Inventory counts sinkron (temuan2.md P3)

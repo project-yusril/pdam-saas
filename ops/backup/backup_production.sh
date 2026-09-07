@@ -43,7 +43,7 @@ START=$(date +%s)
 mysqldump --single-transaction --quick --routines --triggers --set-gtid-purged=OFF \
   -h "$DB_HOST" -P "$DB_PORT" -u "$DB_BACKUP_USER" "$DB_NAME" \
   | gzip -6 \
-  | openssl enc -aes-256-gcm -pass env:PDAM_BACKUP_PASS -pbkdf2:iter=200000 -salt > "$TMP"
+  | openssl enc -aes-256-gcm -pass env:PDAM_BACKUP_PASS -pbkdf2 -iter 200000 -salt > "$TMP"
 END=$(date +%s)
 unset MYSQL_PWD PDAM_BACKUP_PASS
 
