@@ -19,7 +19,9 @@ use Illuminate\Support\Facades\Route;
  */
 class MobileCoverage extends Command
 {
-    protected $signature = 'pdam:mobile-coverage {--source= : override path berkas endpoints.dart (default: mobile/lib) untuk test/smoke lain}';
+    protected $signature = 'pdam:mobile-coverage
+                            {--source= : override path berkas endpoints.dart (default: mobile/lib) untuk test/smoke lain}
+                            {--report : tampilkan pula daftar route API yang TIDAK dirujuk mobile (gap info)}';
 
     protected $description = 'Validasi coverage endpoint mobile (endpoints.dart) vs route registry';
 
@@ -53,8 +55,15 @@ class MobileCoverage extends Command
         $registry = $this->normalizeList(array_unique($registry));
 
         $broken = [];
+        $matchedRegistry = [];
         foreach ($client as $path) {
             if ($this->matched($path, $registry)) {
+                foreach ($registry as $r) {
+                    if ($this->isSame($path, $r)) {
+                        $matchedRegistry[$r] = true;
+                    }
+                }
+
                 continue;
             }
             $broken[] = $path;
@@ -69,9 +78,30 @@ class MobileCoverage extends Command
             count($client),
             count($registry),
         ));
-        $this->line('Catatan: ini cek eksistensi path (bukan verifikasi method + skema per-endpoint; task H-10 lanjutan).');
+
+        if ($this->option('report')) {
+            $unused = array_values(array_diff($registry, array_keys($matchedRegistry)));
+            sort($unused);
+            $this->line('');
+            $this->line(sprintf('GAP (route API tidak dirujuk mobile %d/%d):', count($unused), count($registry)));
+            foreach ($unused as $u) {
+                $this->line('  '.$u);
+            }
+            $this->line('');
+            $this->line('Catatan: banyak route web/report memang tidak untuk aplikasi lapangan mobile; gap ini untuk tinjauan, bukan kegagalan.');
+        }
+
+        $this->line('Catatan utama: ini cek eksistensi path (bukan verifikasi method + skema per-endpoint).');
 
         return $broken === [] ? self::SUCCESS : self::FAILURE;
+    }
+
+    private function isSame(string $path, string $registryPath): bool
+    {
+        $needle = 'api/v1'.$path;
+        $rx = '#^'.preg_replace('#\{p\}#', '[^/]+', preg_quote($registryPath, '#')).'$#';
+
+        return (bool) preg_match($rx, $needle);
     }
 
     private function normalizeList(array $paths): array

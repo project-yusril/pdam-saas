@@ -49,3 +49,6 @@ CI `workflow ci.yml (job mysql-production-gates)` menjalankan drill privilege
    production_calibrated=true + evidence.
 8. `pdam:audit-db-privileges` + `pdam:queue-health` + `pdam:integrations-health`
    lulus → tandai checklist temuan2 §13 + SECURITY_CHECKLIST sebagai closed.
+
+
+<!-- gap ops (pdam:mobile-coverage --report) tidak ada lagi silent gap: 261/293 jalur API memang bukan untuk aplikasi mobile; tinjau manual -->

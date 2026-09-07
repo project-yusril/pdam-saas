@@ -77,8 +77,10 @@ class GenerateOpenApi extends Command
             if (! str_starts_with($uri, 'api/')) {
                 continue;
             }
-            // Buka path template OpenAPI: {param} dari {param?}
-            $openapiPath = '/'.preg_replace('#\{([^}?]+)\?\}#', '{$1}', substr($uri, strlen('api/')));
+            // Path OpenAPI: uri 'api/v1/login' → '/login' (server path = /api/v1)
+            $afterApi = (string) substr($uri, strlen('api/'));
+            $afterApi = preg_replace('#^v\d+/?#', '', $afterApi);
+            $openapiPath = '/'.preg_replace('#\{([^}?]+)\?\}#', '{$1}', $afterApi);
             $openapiPath = preg_replace_callback('#\{([^}]+)\}#', fn ($m) => '{'.ltrim($m[1], ':').'}', $openapiPath);
 
             $methods = array_values(array_filter($route->methods(), fn ($m) => in_array($m, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'], true)));
