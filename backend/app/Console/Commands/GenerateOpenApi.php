@@ -144,7 +144,7 @@ class GenerateOpenApi extends Command
             'openapi' => '3.0.0',
             'info' => [
                 'title' => 'PDAM SaaS API',
-                'version' => '1.0.0-registry-'.now()->format('YmdHis'),
+                'version' => '1.0.0',
                 'description' => 'Spek **di-generate** dari route registry Laravel (`php artisan pdam:openapi`). '
                     .'Skema operation generik `ApiResponse`; kontrak JSON per-endpoint menyusul (task H-10). '
                     .'Response standar: `{success:bool, data, meta}`; error: `{success:false, error:{code,message,details}}`. '
