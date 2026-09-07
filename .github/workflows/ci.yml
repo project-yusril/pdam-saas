@@ -188,7 +188,6 @@ jobs:
         working-directory: mobile
       - run: flutter test
         working-directory: mobile
-        working-directory: mobile
 
   ml:
     name: ML Python 3.11 (pytest + calibration)
