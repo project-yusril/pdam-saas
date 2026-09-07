@@ -95,11 +95,13 @@ class IntegrationsHealth extends Command
 
         $hasFail = false;
         $this->table(['integrasi', 'status', 'detail'], array_map(function ($r) use (&$hasFail) {
-            if ($r[1] === 'fail') {
+            $status = is_array($r[1]) ? $r[1][0] : $r[1];
+            $detail = is_array($r[1]) ? ($r[1][1] ?? '') : '';
+            if ($status === 'fail') {
                 $hasFail = true;
             }
 
-            return [$r[0], strtoupper($r[1]), $r[2]];
+            return [$r[0], strtoupper($status), $detail];
         }, $rows));
 
         if ($isProd && $hasFail) {
