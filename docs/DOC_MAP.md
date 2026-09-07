@@ -36,8 +36,8 @@ authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 | Command artisan `pdam:*` | **21** (baru: openapi, mobile-coverage, audit-db-privileges, queue/integrations-health, ml export, counts; 21 total) | `COUNTS.json` |
 | Test backend (SQLite) | **110/110** (781 assertions) (7 Sep) | `php artisan test` |
 | Test frontend Vitest | **7 files / 13 tests** + `npm run build` OK | `npm run test -- --run` |
-| Test Flutter | **44** + analyze info-only | `flutter test` |
-| Test Python (ml) | **29 test methods** — dieksekusi CI `ml` (xgboost tak tersedia di runner Win-ARM64 lokal) | `test_*.py` + workflow |
+| Test Flutter | **46** + analyze **0 issue** | `flutter test` |
+| Test Python (ml) | **32 test methods** (29 sebelumnya + 3 contract simulator tier-3) — dieksekusi CI `ml` (xgboost tak tersedia di runner Win-ARM64 lokal) | `test_*.py` + workflow |
 | CI root | `.github/workflows/ci.yml`: `backend-sqlite`, `mysql-production-gates`, `frontend`, `mobile`, `ml`, `security` | file itu sendiri (workflow lama `backend/.github` mati — sudah dihapus) |
 
 ## 3. Status enam gate canonical (§13 temuan2 — selalu cek di sana untuk angka final)

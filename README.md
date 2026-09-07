@@ -378,7 +378,7 @@ backend SQLite **110/110, 781 assertions** (termasuk seeder-isolation Production
 material stock-out, native export XLSX/PDF/DOCX, command `pdam:counts`, `pdam:openapi` & `pdam:mobile-coverage`
 H-10 kontrak endpoint mobile); frontend Vitest **7 file / 13 tests** (helper workbench, resources config,
 errors, auth flow, router, contract) + `npm run build` lulus; Flutter **44/44** + analyze **0 issue**
-(duplikat konstan endpoints.dart dibersihkan); ML **29 tests** (pytest
+(duplikat konstan endpoints.dart dibersihkan); ML **32 tests** (pytest; inc. `test_telemetry_simulator` contract
 di CI; runner Win-ARM64 lokal tanpa wheel xgboost → compile-all saja); `php artisan pdam:counts`
 sinkron dengan `docs/COUNTS.json`. CI root [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
 memiliki job: `backend-sqlite`, `mysql-production-gates` (migrate+seed MySQL 8.4, provisioning

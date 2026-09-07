@@ -55,9 +55,9 @@ selesai di `temuan2.md`.
 | 20 | CC | API+UI (workbench) | Call center |
 | 21 | BI | Security query + schedule diuji | Allowlist/entitlement report builder; CRUD/run/history/download privat dan dispatcher terjadwal tersedia |
 | 22 | INT | API+UI (workbench) | Integrasi dan API key |
-| 23 | IOT | Schema/API parsial | Membutuhkan hardware dan integration test |
-| 24 | PROD | Schema/API parsial | Membutuhkan SCADA |
-| 25 | DIST | Schema/API parsial | Membutuhkan telemetri |
+| 23 | IOT | Schema/API + simulator | API `iot/ingest`+dashboard lulus contract; `ops/simulators/telemetry_simulator.py --mode iot` — hardware AMR masih roadmap |
+| 24 | PROD | Schema/API + simulator | API production + `--mode production`; integrasi SCADA nyata menyusul |
+| 25 | DIST | Schema/API + simulator | API distribution + `--mode district` (perlu `dma_zones`); telemetri lapangan nyata menyusul |
 | 26 | NRW | Schema/API parsial | Membutuhkan data DIST |
 | 27 | AI | Pipeline + fixture validation | Auth, no-dummy, feature/artifact contract, dan empat fixture-validation artifact terverifikasi; production-calibrated model menunggu data representatif |
 
@@ -194,7 +194,7 @@ SSL: Certbot + Let's Encrypt. Konfig: `docker/nginx.production.conf`. Verifikasi
   blokade mutlak), reserve/stock-out material+idempotensi, dan kontrak export XLSX/PDF native yang jujur.
 - Snapshot 7 September 2026 (lengkap di `docs/COUNTS.json`/`docs/DOC_MAP.md`): backend SQLite **109/109
   (768 assertions)**; frontend Vitest **7 file/13 tests** + build lulus (workbench, API errors, auth flow,
-  resources config, router); Flutter 44/44 + analyze; ML **29** test (CI); route registry live: **368** API
+  resources config, router); Flutter 44/44 (analyze **0 issue**, 46 test total); ML **32** test (CI); route registry: **369** API
   endpoint method rows. CI `mysql-production-gates` sudah menjalankan migration+seed, privileges drill,
   backup→restore drill sebagai bukti otomatis.
 - Deployment-dependent (tooling lengkap — bukti target masih terbuka): TLS/HSTS + pin verify/rotation di

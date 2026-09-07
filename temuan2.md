@@ -519,7 +519,7 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 | `flutter analyze` | **PASS**: no issues found |
 | `flutter test --no-pub -r expanded` | **PASS**: 44/44 tests |
 | `python -m compileall -q src scripts` | **PASS** |
-| `python -m pytest tests` (Python 3.11 CI) | **PASS**: 29 test (5 file lama + `test_calibration.py` gate §13 #6); lokal Win-ARM64 tidak ada wheel xgboost → `compileall` saja |
+| `python -m pytest tests` (Python 3.11 CI) | **PASS**: 32 test (`test_calibration.py` gate §13 #6 + `test_telemetry_simulator.py` contract ops/simulators); lokal Win-ARM64 tidak ada wheel xgboost → `compileall` saja |
 | `python scripts/generate_validation_artifacts.py` | **PASS**: 4 fixture-validation artifacts + manifests/checksums + summary; `check_artifacts` true |
 | `composer audit` | **PASS**: no advisories |
 | `npm audit --audit-level=high` | **PASS**: 0 vulnerabilities |
