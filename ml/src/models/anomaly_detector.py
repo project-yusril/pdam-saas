@@ -6,14 +6,17 @@ from src.artifacts import ArtifactContractError, load_artifact, save_artifact, v
 
 
 class AnomalyDetector:
+    DEFAULT_HYPERPARAMS = {
+        "n_estimators": 150,
+        "contamination": 0.05,
+        "max_samples": 0.8,
+        "random_state": 42,
+    }
+
     def __init__(self, model_path, hyperparams=None):
         self.model_path = model_path
-        self.hyperparams = hyperparams or {
-            "n_estimators": 150,
-            "contamination": 0.05,
-            "max_samples": 0.8,
-            "random_state": 42,
-        }
+        # user config boleh hanya sebagian (mis. ml/config.yaml models.anomaly)
+        self.hyperparams = {**self.DEFAULT_HYPERPARAMS, **(hyperparams or {})}
         self.model = None
         self.thresholds = {}
         self.feature_cols = None

@@ -239,4 +239,4 @@ jobs:
       - name: pip-audit
         run: |
           pip install pip-audit
-          pip-audit -r ml/requirements.txt || pip-audit -r ml/requirements.txt -s skip
+          pip-audit -r ml/requirements.txt

@@ -216,13 +216,22 @@ class AuditDbPrivileges extends Command
 
     private function triggersPresent(): bool
     {
-        $rows = DB::select(
-            'SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE EVENT_OBJECT_TABLE = ? AND TRIGGER_SCHEMA = DATABASE()',
-            ['privacy_audit_events'],
-        );
-        $names = array_map(fn ($r) => strtolower((string) $r->TRIGGER_NAME), (array) $rows);
+        try {
+            $rows = DB::select(
+                'SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE EVENT_OBJECT_TABLE = ? AND TRIGGER_SCHEMA = DATABASE()',
+                ['privacy_audit_events'],
+            );
+            $names = array_map(fn ($r) => strtolower((string) $r->TRIGGER_NAME), (array) $rows);
+            if (in_array('privacy_audit_events_no_update', $names, true) && in_array('privacy_audit_events_no_delete', $names, true)) {
+                return true;
+            }
 
-        return in_array('privacy_audit_events_no_update', $names, true)
-            && in_array('privacy_audit_events_no_delete', $names, true);
+            // MySQL menyembunyikan information_schema.TRIGGERS dari user tanpa TRIGGER
+            // privilege (runtime akun `pdam_app` memang tidak punya, by design) → fallback:
+            // apakah migration pembuat trigger tercatat jalan.
+            return DB::table('migrations')->where('migration', '2026_09_06_000002_add_privacy_audit_append_only_triggers')->exists();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

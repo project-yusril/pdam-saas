@@ -20,9 +20,9 @@ class MidtransSnap implements PaymentGatewayInterface
 
     public function __construct()
     {
-        $this->serverKey = config('services.midtrans.server_key', '');
-        $this->clientKey = config('services.midtrans.client_key', '');
-        $this->isProduction = config('services.midtrans.is_production', false);
+        $this->serverKey = (string) config('services.midtrans.server_key', '');
+        $this->clientKey = (string) config('services.midtrans.client_key', '');
+        $this->isProduction = filter_var(config('services.midtrans.is_production', false), FILTER_VALIDATE_BOOLEAN);
         $this->baseUrl = $this->isProduction
             ? 'https://app.midtrans.com'
             : 'https://app.sandbox.midtrans.com';
