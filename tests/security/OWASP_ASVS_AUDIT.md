@@ -1,22 +1,30 @@
 # OWASP ASVS Level 2 — Working Assessment
 # PDAM SaaS Platform
-# Updated: 15 July 2026
+# Updated: 7 September 2026 (sebelumnya 15 Juli 2026)
 
 > Dokumen ini adalah working assessment internal, bukan sertifikasi ASVS atau laporan penetration test.
 > Status `✅` lama harus dibaca sebagai kontrol yang ditemukan di source, bukan bukti seluruh requirement
-> telah diuji pada production. Semua 39/39 temuan aplikasi sudah ditutup dan diverifikasi, termasuk suite
-> MySQL 8.4.9 disposable; TLS target, external pentest, operational gates, dan data-quality ML tetap terbuka.
-> Status authoritative ada di `../../temuan2.md`.
+> telah diuji pada production. Seluruh 39/39 temuan aplikasi sudah ditutup dan diverifikasi, termasuk suite
+> MySQL 8.4.9 disposable. Sejak snapshot 15 Juli, item yang toolingnya TERBUKTI OTOMATIS DI CI sudah bisa
+> dianggap "terbukti sebagai kontrol" (seeder-production rut, privilege DB + trigger append-only, backup/restore
+> drill, export injection-guard, audit `pdam:counts`) — tetapi **TLS endpoint/riil, external pentest, data
+> riil ML, dan keputusan PRD §23 tetap terbuka**. Status authoritative: `../../temuan2.md`.
 >
-> **Dokumen terkait:** [`../../README.md`](../../README.md) · [`../../PRD.md`](../../PRD.md) dan [`../../02_flow.md`](../../02_flow.md) sebagai target/desain · [`../../task.md`](../../task.md) dan [`../../temuan.md`](../../temuan.md) sebagai arsip · [`../../SECURITY_CHECKLIST.md`](../../SECURITY_CHECKLIST.md) sebagai baseline internal · [`../../HANDOVER.md`](../../HANDOVER.md) · [`../../backend/DEPLOY.md`](../../backend/DEPLOY.md) sebagai runbook draft. Enam gate persetujuan production canonical hanya didefinisikan di [`../../temuan2.md`](../../temuan2.md).
+> **Dokumen terkait:** peta dokumen & fact sheet [`../../docs/DOC_MAP.md`](../../docs/DOC_MAP.md) ·
+> [`../../README.md`](../../README.md) · [`../../PRD.md`](../../PRD.md) dan [`../../02_flow.md`](../../02_flow.md)
+> sebagai target/desain · [`../../task.md`](../../task.md) dan [`../../temuan.md`](../../temuan.md) sebagai arsip ·
+> [`../../SECURITY_CHECKLIST.md`](../../SECURITY_CHECKLIST.md) sebagai baseline internal ·
+> [`../../HANDOVER.md`](../../HANDOVER.md) · [`../../backend/DEPLOY.md`](../../backend/DEPLOY.md).
+> Enam gate persetujuan production canonical hanya didefinisikan di [`../../temuan2.md`](../../temuan2.md);
+> tooling pembuktian: [`../../ops/README.md`](../../ops/README.md).
 
 ## Executive Summary
 
 | Metric | Value |
 |--------|-------|
-| Target | PDAM SaaS documentation/source snapshot, 15 July 2026 |
+| Target | PDAM SaaS documentation/source snapshot, 7 September 2026 (sebelumnya 15 Juli) |
 | Framework | OWASP ASVS 4.0.3 Level 2 working baseline |
-| Testing Method | Source review + selected automated/manual tests; no external pentest |
+| Testing Method | Source review + selected automated/manual tests; no external pentest (gate §13) |
 | Total Controls Tested | Legacy scope estimate 125; not recounted against this snapshot |
 | Passed | Belum dihitung ulang |
 | Failed | Belum dihitung ulang |
@@ -67,7 +75,7 @@
 | V2.5.4 | Token/session revocation | ✅ | Logout merevoke token mobile atau session web |
 | V2.5.5 | Token not in URL | ✅ | Only Authorization header |
 | V2.5.6 | Token refresh mechanism | ✅ | /api/v1/refresh-token |
-| V2.7.1 | No default credentials | ⚠️ | Seeder demo memakai password `12345678`; wajib dipisahkan dari deploy production |
+| V2.7.1 | No default credentials | ✅ | Seeder demo memakai `12345678` **hanya untuk development**; `DemoGuard` memblokir mutlak seed demo/`12345678` saat `APP_ENV=production` (+ admin production via env `PLATFORM_ADMIN_*` yang menolak password demo). Bukti: `ProductionSeederIsolationTest` 9/9 di CI |
 | V2.7.2 | Account enumeration prevented | ✅ | Consistent error messages |
 
 ---
@@ -151,7 +159,7 @@
 | V7.2.2 | Access control failures logged | ⚠️ Partial | Central handling/middleware exists; exhaustive 403 audit coverage was not demonstrated |
 | V7.3.1 | Logs don't include sensitive data | ✅ | SensitiveData masking |
 | V7.3.2 | Log timestamps with timezone | ✅ | Laravel timestamps |
-| V7.3.3 | Log integrity | ⚠️ | Privacy audit append-only + hash chain tersedia; privilege INSERT-only DB belum diverifikasi |
+| V7.3.3 | Log integrity | ✅ | Privacy audit append-only + hash chain (trigger DB `privacy_audit_events_no_{update,delete}` + `pdam:audit-db-privileges` fail-closed). CI `mysql-production-gates` membuktikan probe penolakan + INSERT/SELECT-only akun audit |
 | V7.4.1 | Error handling doesn't leak info | ✅ | No server/PHP version in responses |
 | V7.4.2 | Exception handler unified | ✅ | bootstrap/app.php exceptions handler |
 
@@ -195,7 +203,7 @@
 | V10.1.1 | Code review for malicious code | ⚠️ Partial | Dependency audits are clean; they are not a malicious-code review |
 | V10.2.1 | Application integrity verified | ✅ | composer.lock + package-lock.json |
 | V10.2.2 | Third-party library verification | ✅ | composer audit + npm audit in CI |
-| V10.3.1 | Build pipeline security | ⚠️ Partial | CI exists but full secret scanning and all cross-component gates were not verified |
+| V10.3.1 | Build pipeline security | ✅ | Root CI `.github/workflows/ci.yml` menjalankan secret scan (gitleaks + allowlist path-scoped `.gitleaks.toml`), composer/npm/pip audit, pint/route-cache, PHPUnit, Vitest+build, Flutter analyze/test, pytest ml, `pdam:counts`, plus drill MySQL (privileges + backup/restore) — lihat pula `../../SECURITY_CHECKLIST.md` A6/A9 |
 | V10.3.2 | Code signing | ⚠️ | Obfuscation Flutter bukan code signing; signing release perlu diverifikasi terpisah |
 
 ---
@@ -274,7 +282,7 @@
 | Brute Force Attack | Medium | Not quantified | Rate limit + account lock | Reduced; operational monitoring residual |
 | PII Data Exposure | Critical | Not quantified | NIK encryption + private owned files | Reduced; key management/access review residual |
 | Zero-Day in Dependency | Medium | Not quantified | Frozen locks + release dependency audits | Accepted residual; continuous monitoring needed |
-| Insider Threat | High | Not quantified | RBAC + partial audit controls | Residual; DB least privilege and monitoring pending |
+| Insider Threat | High | Not quantified | RBAC + append-only audit + least-privilege DB (tooling+CI self-drill siap; provisioning produksi menunggu gate §13 #4) | Residual; monitoring produksi pending |
 
 ---
 

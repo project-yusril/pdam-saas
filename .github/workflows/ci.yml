@@ -1,0 +1,211 @@
+name: CI — full gates (backend MySQL, frontend, flutter, ml, security, counts)
+
+# Workflow root repo (pdam/). Konfigurasi lama backend/.github/workflows/ci.yml
+# tidak pernah dieksekusi GitHub Actions (harus di root) dan telah dipindah.
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-sqlite:
+    name: Backend (lint, cache, PHPUnit, counts)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, intl, pdo_sqlite, zip, gd, dom, xml
+      - uses: ramsey/composer-install@v3
+        with: { working-directory: backend }
+      - name: Lint (Pint)
+        run: composer lint
+      - name: Route/config/view/event caches
+        run: |
+          cp .env.ci .env
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan event:cache
+          php artisan optimize:clear
+      - name: PHPUnit (SQLite in-memory)
+        run: php artisan test
+      - name: Inventory counts sinkron (temuan2.md P3)
+        run: php artisan pdam:counts
+
+  mysql-production-gates:
+    name: MySQL 8 — migrate+seed, privileges, backup/restore drill
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_pw
+          MYSQL_DATABASE: pdam_ci
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci_root_pw"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+      - name: mysql client (mysqldump/mysql utk drill scripts)
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, intl, pdo_mysql, zip, gd, dom, xml
+      - uses: ramsey/composer-install@v3
+        with: { working-directory: backend }
+
+      - name: migrate:fresh + seed router (demo mini via SEED_CUSTOMER_COUNT)
+        working-directory: backend
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_DATABASE: pdam_ci
+          DB_USERNAME: root
+          DB_PASSWORD: ci_root_pw
+          SEED_CUSTOMER_COUNT: '5'
+        run: php artisan migrate:fresh --force --seed
+
+      - name: Verifikasi jumlah tabel
+        run: |
+          N=$(mysql -h 127.0.0.1 -uroot -pci_root_pw -N -e \
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='pdam_ci'")
+          echo "tabel: $N"
+          test "$N" -ge 160
+
+      - name: Provision least-privilege users + destructive probes (gate §13 #4)
+        run: |
+          chmod +x ops/mysql/*.sh
+          export HOST=127.0.0.1 PORT=3306 DB=pdam_ci \
+            ADMIN_USER=root ADMIN_PWD=ci_root_pw \
+            APP_PW=ci_App_Pw_0123456789 MIGRATE_PW=ci_Mig_Pw_0123456789 \
+            BACKUP_PW=ci_Bak_Pw_0123456789 AUDIT_PW=ci_Aud_Pw_0123456789 \
+            RESTORE_PW=ci_Res_Pw_0123456789
+          bash ops/mysql/create_users.sh 127.0.0.1 3306 root pdam_ci
+          bash ops/mysql/verify_privileges.sh
+        env: { BACKUP_PASSPHRASE: ci-drill-pass-123456 }
+
+      - name: Audit privilege dari sisi aplikasi (pdam_app + pdam_audit)
+        working-directory: backend
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_DATABASE: pdam_ci
+          DB_USERNAME: pdam_app
+          DB_PASSWORD: ci_App_Pw_0123456789
+          DB_AUDIT_DRIVER: mysql
+          DB_AUDIT_DATABASE: pdam_ci
+          DB_AUDIT_USERNAME: pdam_audit
+          DB_AUDIT_PASSWORD: ci_Aud_Pw_0123456789
+        run: |
+          cp .env.ci .env
+          php artisan pdam:audit-db-privileges
+          php artisan pdam:queue-health --max-queued=100000 --max-failed=100000
+          php artisan pdam:integrations-health
+
+      - name: Backup terenkripsi + restore drill end-to-end (gate §13 #3)
+        run: |
+          chmod +x ops/backup/*.sh
+          export DB_HOST=127.0.0.1 DB_PORT=3306 SRC_DB=pdam_ci TGT_DB=pdam_restore_validation \
+                 MYSQL_USER=root MYSQL_PWD=ci_root_pw BACKUP_PASSPHRASE=ci-drill-pass-123456 \
+                 DB_RESTORE_USER=root DB_RESTORE_PASSWORD=ci_root_pw \
+                 DB_BACKUP_USER=root DB_BACKUP_PASSWORD=ci_root_pw
+          bash ops/backup/restore_drill.sh
+
+      - name: Upload drill evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-gates-evidence
+          path: drill-work/
+          if-no-files-found: warn
+          retention-days: 90
+
+  frontend:
+    name: Frontend Vue (vitest + build)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  mobile:
+    name: Flutter (analyze + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - run: flutter pub get
+        working-directory: mobile
+      - run: flutter analyze
+        working-directory: mobile
+      - run: flutter test
+        working-directory: mobile
+
+  ml:
+    name: ML Python 3.11 (pytest + calibration)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11', cache: pip }
+      - run: pip install -r ml/requirements.txt
+      - name: Compile + pytest
+        run: |
+          cd ml
+          python -m compileall -q src scripts tests
+          python -m pytest tests -q
+
+  security:
+    name: Security (gitleaks + audits)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: '0' }
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env: { GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.3', extensions: mbstring, intl }
+      - name: Composer audit (prod deps)
+        working-directory: backend
+        run: |
+          composer install --no-dev --no-interaction --no-progress
+          composer audit --no-dev
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: NPM audit
+        working-directory: backend
+        run: |
+          npm ci
+          npm audit --audit-level=high
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: pip-audit
+        run: |
+          pip install pip-audit
+          pip-audit -r ml/requirements.txt || pip-audit -r ml/requirements.txt -s skip

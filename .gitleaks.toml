@@ -1,0 +1,22 @@
+[allowlist]
+description = "Kredensial demo/fixture yang memang harus ada di repo (seed, contoh .env, dokumentasi, test stub)"
+paths = [
+  '''backend/database/seeders/DemoTenantSeeder\.php''',
+  '''backend/database/seeders/SambasTenantSeeder\.php''',
+  '''backend/database/seeders/PlatformAdminSeeder\.php''',
+  '''backend/database/seeders/Support/DemoGuard\.php''',
+  '''backend/SEED_DATA\.md''',
+  '''backend/\.env\.example''',
+  '''backend/\.env\.ci''',
+  '''backend/\.env\.production\.example''',
+  '''README\.md''',
+  '''HANDOVER\.md''',
+  '''mobile/lib/core/security/obfuscation_config\.dart''',
+  '''backend/tests''',
+  '''docs''',
+]
+# regex global DIHAPUS (review CRITICAL): 12345678/base64 pattern yang dulu
+# di-allowlist repo-wide mematikan secret-gate untuk SEMUA Secret riil.
+# Suppress sekarang HANYA via paths[] terarah di atas + allowlist rule per-file.
+{20,}''',
+]
