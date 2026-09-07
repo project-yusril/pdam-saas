@@ -47,7 +47,9 @@ mysqldump --single-transaction --quick --routines --triggers --set-gtid-purged=O
 END=$(date +%s)
 unset MYSQL_PWD PDAM_BACKUP_PASS
 
-sha256sum "$TMP" | sed "s|.*  |$(basename "$OUT")  |" > "$TMP.sha256"
+# sidecar sha256: hanya HASH (bukan 'hash  filename', karena sed '.*  ' di kode lama
+# menelan hash & bikin restore selalu mismatch). Restore memakai awk $1.
+sha256sum "$TMP" | awk '{print $1}' > "$TMP.sha256"
 mv "$TMP" "$OUT"
 mv "$TMP.sha256" "$OUT.sha256"
 
