@@ -40,7 +40,7 @@ authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 | Command artisan `pdam:*` | **21** (baru: openapi, mobile-coverage, audit-db-privileges, queue/integrations-health, ml export, counts; 21 total) | `COUNTS.json` |
 | Test backend (SQLite) | **117/117** (812 assertions) (7 Sep; +Tier3/ops/sim contracts) | `php artisan test` |
 | Test frontend Vitest | **7 files / 13 tests** + `npm run build` OK | `npm run test -- --run` |
-| Test Flutter | **46** + analyze **0 issue** | `flutter test` |
+| Test Flutter | **50** (2 + dio client) + analyze **0 issue** | `flutter test` |
 | Test Python (ml) | **32 test methods** (29 sebelumnya + 3 contract simulator tier-3) — dieksekusi CI `ml` (xgboost tak tersedia di runner Win-ARM64 lokal) | `test_*.py` + workflow |
 | CI root | `.github/workflows/ci.yml` (run 2909807 lulus 6/6): `backend-sqlite` (pint, PHPUnit, counts-drift, openapi drift, mobile-coverage, YAML validation), `mysql-production-gates`, `frontend`, `mobile`, `ml`, `security`. Nightly ops: `.github/workflows/nightly-ops.yml` (k6 + simulator tier-3) — hanya jalan bila `LOAD_ENABLED=true` vars repo |
 

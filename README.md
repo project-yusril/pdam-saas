@@ -8,7 +8,7 @@ Sistem Manajemen PDAM Multi-Tenant berbasis Laravel + Vue 3.
 > **Sumber status saat ini:** [`temuan2.md`](temuan2.md), termasuk enam gate persetujuan production canonical. **Peta dokumentasi + fact sheet angka live:** [`docs/DOC_MAP.md`](docs/DOC_MAP.md). Inventaris tergenerasi: [`docs/COUNTS.json`](docs/COUNTS.json) (`php artisan pdam:counts`).
 
 <!-- doc-sync:start verifikasi 7 Sept 2026 -->
-> **Verifikasi terintegrasi:** 117/117 (117 test backend, 812 assertions) · Vitest 13 · Flutter analyze 0 issue + 46/46 · ML 32 (CI) · 369 method /api/v1 (293 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
+> **Verifikasi terintegrasi:** 117/117 (117 test backend, 812 assertions) · Vitest 13 · Flutter analyze 0 issue + 50/50 · ML 32 (CI) · 369 method /api/v1 (293 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## Documentation Map
@@ -354,7 +354,7 @@ production-ready. Detail gap per area ada di `temuan2.md`.
 Snapshot route registry: **388 baris route** (369 method endpoint `/api/v1` + 19 web; 293 URI
 API unik) — angka kanonis ada di [`docs/COUNTS.json`](docs/COUNTS.json), regenerasi lewat
 `php artisan pdam:counts --write`. Spek kontrak endpoint dari registry: `php artisan pdam:openapi`
-→ **`docs/openapi.json`** (293 path; CI `pdam:openapi --json` diff-gate, H-10). Swagger anotasi & Postman
+→ **`docs/openapi.json`** (293 path; H-10 CI drift: codegen `tools/generate_dio_client.py` → `mobile/lib/api/generated/api_client.g.dart` + `openapi_surface.dart` + diff `git diff --exit-code`). Swagger anotasi & Postman
 tetap referensi tambahan; kontrak `mobile/lib/core/network/endpoints.dart` dipaksa sama oleh
 CI `php artisan pdam:mobile-coverage`. API tenant memakai prefix `/api/v1`.
 
