@@ -5,7 +5,7 @@
 # Config via environment (set di host backup, simpan passphrase di vault):
 #   DB_HOST=127.0.0.1 DB_PORT=3306 DB_NAME=pdam
 #   DB_BACKUP_USER=pdam_backup DB_BACKUP_PASSWORD=...      (akun read-only)
-#   BACKUP_PASSPHRASE=...  → wajib (AES-256-GCM via openssl)
+#   BACKUP_PASSPHRASE=...  → wajib (AES-256-CBC+PBKDF2 via openssl)
 #   BACKUP_DIR=/var/backups/pdam  RETENTION_DAYS=14  OPTIONAL_TARGET=rsync://... 
 #
 # Cron reference (RPO ≤ 1 jam):
@@ -43,7 +43,7 @@ START=$(date +%s)
 mysqldump --single-transaction --quick --routines --triggers --set-gtid-purged=OFF \
   -h "$DB_HOST" -P "$DB_PORT" -u "$DB_BACKUP_USER" "$DB_NAME" \
   | gzip -6 \
-  | openssl enc -aes-256-gcm -pass env:PDAM_BACKUP_PASS -pbkdf2 -iter 200000 -salt > "$TMP"
+  | openssl enc -aes-256-cbc -pass env:PDAM_BACKUP_PASS -pbkdf2 -iter 200000 -salt > "$TMP"
 END=$(date +%s)
 unset MYSQL_PWD PDAM_BACKUP_PASS
 
@@ -52,7 +52,7 @@ mv "$TMP" "$OUT"
 mv "$TMP.sha256" "$OUT.sha256"
 
 SIZE=$(stat -c%s "$OUT" 2>/dev/null || stat -f%z "$OUT")
-echo "{\"type\":\"backup\",\"db\":\"$DB_NAME\",\"ts\":\"$TS\",\"file\":\"$OUT\",\"size_bytes\":$SIZE,\"duration_sec\":$((END-START)),\"cipher\":\"aes-256-gcm+pbkdf2_200k\"}" > "$OUT.meta"
+echo "{\"type\":\"backup\",\"db\":\"$DB_NAME\",\"ts\":\"$TS\",\"file\":\"$OUT\",\"size_bytes\":$SIZE,\"duration_sec\":$((END-START)),\"cipher\":\"aes-256-cbc+pbkdf2_200k\"}" > "$OUT.meta"
 
 # retensi lokal
 find "$BACKUP_DIR" -name "$DB_NAME-*.sql.gz.enc" -mtime +"$RETENTION_DAYS" -delete

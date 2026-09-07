@@ -9,7 +9,7 @@ ops/
 ├── tls/verify_production_tls.sh   # gate #1: chain/HSTS/protocol/cipher/endpoint bukti JSON
 ├── tls/verify_spki_pins.sh        # gate #5 (verifikasi): pin primary/backup vs endpoint riil
 ├── runbooks/TLS_PINNING_ROTATION.md # gate #5 (drill rotasi primary<->backup, langkah demi langkah)
-├── backup/backup_production.sh    # gate #3: dump single-DB→gzip→AES-256-GCM(+PBKDF2)+sha256+umask077 (kredensial via env)
+├── backup/backup_production.sh    # gate #3: dump single-DB→gzip→AES-256-CBC+PBKDF2(+PBKDF2)+sha256+umask077 (kredensial via env)
 ├── backup/restore_production.sh   # gate #3: restore ke TARGET_DB eksplisit (refuse schema sumber, strip DEFINER)
 ├── backup/restore_drill.sh        # gate #3: backup→restore→row/CHECKSUM compare→RPO/RTO JSON
 ├── runbooks/BACKUP_RESTORE.md      # RPO≤60mnt / RTO≤4j + prosedur insiden

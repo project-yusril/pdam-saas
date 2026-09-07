@@ -9,7 +9,7 @@
   memakai `ops/backup/backup_production.sh`.
 - **RTO ≤ 4 jam**: restore di drill aktual (lihat evidence JSON); kalau
   lebih dari 4 jam, insiden P1.
-- Backup = `mysqldump --single-transaction` → gzip → AES-256-GCM (PBKDF2
+- Backup = `mysqldump --single-transaction` → gzip → AES-256-CBC+PBKDF2 (PBKDF2
   200k iter). Passphrase disimpan di vault terpisah dari host DB.
 - Salinan offsite: `BACKUP_REMOTE_CMD` (rclone/s3), retensi lokal 14 hari.
 
