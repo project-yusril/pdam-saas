@@ -22,4 +22,3 @@ class RecurringTransaction extends Model
         ];
     }
 }
-

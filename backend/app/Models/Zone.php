@@ -4,8 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Zone â€” wilayah/cabang PDAM. Fase 2.
@@ -41,4 +41,3 @@ class Zone extends Model
         return $this->hasMany(Customer::class);
     }
 }
-

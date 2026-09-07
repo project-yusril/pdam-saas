@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** BudgetLine — Auto-generated dari skema tabel. */
 class BudgetLine extends Model
@@ -19,6 +20,9 @@ class BudgetLine extends Model
             'realized' => 'decimal:2',
         ];
     }
-public function budget(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(Budget::class); }
-}
 
+    public function budget(): BelongsTo
+    {
+        return $this->belongsTo(Budget::class);
+    }
+}

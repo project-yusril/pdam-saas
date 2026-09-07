@@ -59,6 +59,29 @@ training:
   schedule: "0 2 * * 1"
   retrain_days: 30
 
+# ── Gate production §13 #6 ──────────────────────────────────────────────────
+# Threshold penerimaan model + gerbang representativeness dataset EKSPOR
+# (bukan fixture). `pdam:ml-export-training-data --months 24` menghasilkan
+# CSV; `scripts/calibrate_production.py` menolak produksi bila gate ini gagal.
+# Nilai default harus disetujui tim data sebelum promote.
+production_acceptance:
+  dataset:
+    require_months: 12
+    min_billing_rows: 2000
+    min_meter_reading_rows: 2000
+    min_customers: 100
+  models:
+    consumption:
+      max_val_rmse: 25.0
+    anomaly:
+      min_readings: 1000
+    churn:
+      min_roc_auc: 0.70
+      min_f1: 0.35
+    meter_failure:
+      min_roc_auc: 0.65
+      min_f1: 0.20
+
 api:
   host: 0.0.0.0
   port: 8100

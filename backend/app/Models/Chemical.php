@@ -21,4 +21,3 @@ class Chemical extends Model
         ];
     }
 }
-

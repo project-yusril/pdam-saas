@@ -43,8 +43,8 @@ class ProcurementSeeder extends Seeder
         foreach ($vendorDefs as $i => [$code, $name, $category, $rating]) {
             $vendorIds[$code] = DB::table('vendors')->insertGetId([
                 'pdam_org_id' => $orgId, 'code' => $code, 'name' => $name,
-                'npwp' => '01.234.567.8-90' . $i . '.000', 'contact_name' => 'PIC ' . $name,
-                'phone' => '021700' . $i, 'email' => 'sales' . $i . '@vendor.co.id',
+                'npwp' => '01.234.567.8-90'.$i.'.000', 'contact_name' => 'PIC '.$name,
+                'phone' => '021700'.$i, 'email' => 'sales'.$i.'@vendor.co.id',
                 'address' => 'Indonesia', 'category' => $category, 'rating' => $rating,
                 'is_blacklisted' => false, 'is_active' => true,
                 'created_at' => now(), 'updated_at' => now(),
@@ -53,7 +53,7 @@ class ProcurementSeeder extends Seeder
 
         // ── Tender (selesai, ada pemenang) ──
         $tenderId = DB::table('tenders')->insertGetId([
-            'pdam_org_id' => $orgId, 'tender_number' => 'TDR-' . $orgId . '-0001',
+            'pdam_org_id' => $orgId, 'tender_number' => 'TDR-'.$orgId.'-0001',
             'title' => 'Pengadaan Pipa Distribusi Zona Utara', 'category' => 'material',
             'budget_ceiling' => 500_000_000, 'publish_date' => now()->subDays(40)->toDateString(),
             'submission_deadline' => now()->subDays(25)->toDateString(),
@@ -70,7 +70,7 @@ class ProcurementSeeder extends Seeder
         foreach ($bids as [$vcode, $price, $tech, $priceScore, $total, $rank]) {
             DB::table('tender_bids')->insert([
                 'pdam_org_id' => $orgId, 'tender_id' => $tenderId, 'vendor_id' => $vendorIds[$vcode],
-                'bid_price' => $price, 'technical_proposal' => 'Proposal teknis ' . $vcode,
+                'bid_price' => $price, 'technical_proposal' => 'Proposal teknis '.$vcode,
                 'technical_score' => $tech, 'price_score' => $priceScore, 'total_score' => $total,
                 'rank' => $rank, 'created_at' => now()->subDays(24), 'updated_at' => now()->subDays(20),
             ]);
@@ -79,7 +79,7 @@ class ProcurementSeeder extends Seeder
         // ── Kontrak vendor ──
         $contractId = DB::table('vendor_contracts')->insertGetId([
             'pdam_org_id' => $orgId, 'vendor_id' => $vendorIds['VND-001'],
-            'contract_number' => 'CTR-' . $orgId . '-0001', 'title' => 'Kontrak Pengadaan Pipa Distribusi',
+            'contract_number' => 'CTR-'.$orgId.'-0001', 'title' => 'Kontrak Pengadaan Pipa Distribusi',
             'start_date' => now()->subDays(18)->toDateString(),
             'end_date' => now()->addDays(72)->toDateString(), 'value' => 465_000_000,
             'status' => 'active', 'tender_id' => $tenderId,
@@ -98,7 +98,7 @@ class ProcurementSeeder extends Seeder
         $requester = DB::table('users')->where('pdam_org_id', $orgId)->first();
         $warehouse = DB::table('warehouses')->where('pdam_org_id', $orgId)->first();
         DB::table('purchase_requests')->insert([
-            'pdam_org_id' => $orgId, 'pr_number' => 'PR-' . $orgId . '-0001',
+            'pdam_org_id' => $orgId, 'pr_number' => 'PR-'.$orgId.'-0001',
             'requested_by' => $requester?->id ?? 0, 'warehouse_id' => $warehouse?->id,
             'status' => 'approved', 'required_date' => now()->addDays(20)->toDateString(),
             'estimated_total' => 75_000_000, 'notes' => 'Kebutuhan valve & fitting darurat.',

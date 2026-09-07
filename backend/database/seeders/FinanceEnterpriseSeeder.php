@@ -88,11 +88,11 @@ class FinanceEnterpriseSeeder extends Seeder
 
         // ── Cost centers + projects ──
         $ccId = DB::table('cost_centers')->insertGetId([
-            'pdam_org_id' => $orgId, 'code' => 'CC-OPS-' . $orgId, 'name' => 'Operasional Distribusi',
+            'pdam_org_id' => $orgId, 'code' => 'CC-OPS-'.$orgId, 'name' => 'Operasional Distribusi',
             'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
         ]);
         $projectId = DB::table('projects')->insertGetId([
-            'pdam_org_id' => $orgId, 'code' => 'PRJ-' . $orgId . '-01', 'name' => 'Perluasan Jaringan Zona Utara',
+            'pdam_org_id' => $orgId, 'code' => 'PRJ-'.$orgId.'-01', 'name' => 'Perluasan Jaringan Zona Utara',
             'status' => 'active', 'start_date' => now()->subMonth()->toDateString(),
             'end_date' => now()->addMonths(6)->toDateString(), 'budget' => 250_000_000,
             'created_at' => now(), 'updated_at' => now(),
@@ -107,7 +107,7 @@ class FinanceEnterpriseSeeder extends Seeder
         foreach ([['5-001', 400_000_000, 120_000_000], ['5-002', 600_000_000, 200_000_000]] as [$acc, $amount, $realized]) {
             DB::table('budget_lines')->insert([
                 'pdam_org_id' => $orgId, 'budget_id' => $budgetId, 'account_code' => $acc,
-                'project_code' => 'PRJ-' . $orgId . '-01', 'cost_center_code' => 'CC-OPS-' . $orgId,
+                'project_code' => 'PRJ-'.$orgId.'-01', 'cost_center_code' => 'CC-OPS-'.$orgId,
                 'amount' => $amount, 'realized' => $realized,
                 'created_at' => now(), 'updated_at' => now(),
             ]);
@@ -116,7 +116,7 @@ class FinanceEnterpriseSeeder extends Seeder
         // ── Sales invoice (non-air, mis. jasa sambungan) + item ──
         $siId = DB::table('sales_invoices')->insertGetId([
             'pdam_org_id' => $orgId, 'customer_id' => $customer?->id,
-            'invoice_number' => 'SI-' . $orgId . '-0001',
+            'invoice_number' => 'SI-'.$orgId.'-0001',
             'invoice_date' => now()->subDays(20)->toDateString(),
             'due_date' => now()->subDays(5)->toDateString(),
             'subtotal' => 1_500_000, 'discount' => 0, 'tax_amount' => 165_000, 'total' => 1_665_000,
@@ -133,7 +133,7 @@ class FinanceEnterpriseSeeder extends Seeder
         // ── Purchase invoice + item ──
         $piId = DB::table('purchase_invoices')->insertGetId([
             'pdam_org_id' => $orgId, 'supplier_id' => $supplier?->id,
-            'invoice_number' => 'PI-' . $orgId . '-0001',
+            'invoice_number' => 'PI-'.$orgId.'-0001',
             'supplier_invoice_number' => 'INV-SUP-9981',
             'invoice_date' => now()->subDays(15)->toDateString(),
             'due_date' => now()->addDays(15)->toDateString(),
@@ -152,7 +152,7 @@ class FinanceEnterpriseSeeder extends Seeder
         DB::table('ar_ap_payments')->insert([
             'pdam_org_id' => $orgId, 'payment_type' => 'in',
             'payable_type' => 'sales_invoice', 'payable_id' => $siId,
-            'payment_number' => 'ARP-' . $orgId . '-0001', 'amount' => 1_665_000,
+            'payment_number' => 'ARP-'.$orgId.'-0001', 'amount' => 1_665_000,
             'payment_method' => 'transfer', 'bank_account' => 'Bank Kalbar 1234567890',
             'payment_date' => now()->subDays(5)->toDateString(),
             'notes' => 'Pelunasan invoice pemasangan.',

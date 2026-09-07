@@ -4,9 +4,9 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /** CustomerProspect â€” calon pelanggan. NIK dienkripsi at-rest. Fase 2.1 */
 class CustomerProspect extends Model
@@ -52,4 +52,3 @@ class CustomerProspect extends Model
         return $this->belongsTo(Street::class);
     }
 }
-

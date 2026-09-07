@@ -21,4 +21,3 @@ class Integration extends Model
         ];
     }
 }
-

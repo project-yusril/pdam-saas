@@ -2,7 +2,7 @@
 
 Machine learning prediction service for PDAM water utility management.
 
-> **Authoritative current status:** [`../temuan2.md`](../temuan2.md), including the canonical six production approval gates. Related docs: [`../README.md`](../README.md) · [`../PRD.md`](../PRD.md) and [`../02_flow.md`](../02_flow.md) as target/design · [`../task.md`](../task.md) and [`../temuan.md`](../temuan.md) as archives · [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) as an internal baseline · [`../backend/DEPLOY.md`](../backend/DEPLOY.md) as a draft runbook · [`../HANDOVER.md`](../HANDOVER.md).
+> **Authoritative current status:** [`../temuan2.md`](../temuan2.md) (canonical six production approval gates; gate #6 = ML calibration). Calibration runbook: [`../docs/ML_CALIBRATION.md`](../docs/ML_CALIBRATION.md). Related: [`../README.md`](../README.md) · [`../PRD.md`](../PRD.md), [`../02_flow.md`](../02_flow.md) · archives [`../task.md`](../task.md), [`../temuan.md`](../temuan.md) · [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) · [`../backend/DEPLOY.md`](../backend/DEPLOY.md) · [`../HANDOVER.md`](../HANDOVER.md) · tools [`../ops/README.md`](../ops/README.md).
 
 ## Models
 
@@ -137,16 +137,19 @@ curl -H "X-Service-Token: $ML_SERVICE_TOKEN" \
   http://localhost:8100/predictions/1/2026-07
 ```
 
-## Verification Status
+## Verification Status (gate §13 #6: [`../docs/ML_CALIBRATION.md`](../docs/ML_CALIBRATION.md))
 
 ```bash
 python -m compileall -q src scripts
 python -m unittest discover -s tests -v
 ```
 
-Python 3.11 x64 verification passes compile and **25/25 tests with no skips**. The ML contract rejects
+Python 3.11 verification passes compile and **29/29 tests** (25 legacy + `test_calibration.py` gerbang produksi 4
+test di job CI `ml`; runner Win-ARM64 lokal tanpa wheel xgboost → cukup `compileall`). The ML contract rejects
 dummy training, keeps a consistent 5-tuple, persists/aligned feature order, handles enabled/unknown/disabled
-models explicitly, and returns a nonzero CLI status on failure.
+models explicitly, and returns a nonzero CLI status on failure. `CsvDataLoader` (ml/src/csv_dataset.py) memungkinkan
+kalibrasi `production_calibrated=true` dari CSV yang diekspor via `php artisan pdam:ml-export-training-data`
+tanpa credential DB di pipeline.
 
 ### Deterministic validation artifacts
 
@@ -168,8 +171,10 @@ These artifacts are labeled `artifact_kind=fixture_validation` and `production_c
 Writes are atomic. Manifests include schema, checksum, feature metadata, and provenance; loading validates
 the contract before pickle deserialization and runs a finite-value smoke check. `check_artifacts` passes
 for the generated set. Binary artifacts must not be committed: generate and publish artifact+manifest+
-checksum through a trusted deployment pipeline. Production-calibrated models still require representative
-1-2 year historical data, explicit acceptance thresholds, and trusted publication. This is one of the six canonical production approval gates in `../temuan2.md`.
+checksum through a trusted deployment pipeline. Production-calibrated models still require representative 1-2 year historical data, explicit acceptance
+thresholds, and trusted publication — all enforced by `scripts/calibrate_production.py` (dataset representativeness
+>=12 months + min rows/customers, per-model `max_/min_` thresholds, candidate → `--promote`). See runbook
+`../docs/ML_CALIBRATION.md`. This is gate #6 of the six canonical production approval gates in `../temuan2.md`.
 
 ## Docker
 

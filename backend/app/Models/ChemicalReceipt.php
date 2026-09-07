@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** ChemicalReceipt — Auto-generated dari skema tabel. */
 class ChemicalReceipt extends Model
@@ -20,9 +22,24 @@ class ChemicalReceipt extends Model
             'total_cost' => 'decimal:2',
         ];
     }
-public function items(): \Illuminate\Database\Eloquent\Relations\HasMany { return $this->hasMany(ChemicalReceiptItem::class); }
-public function qcTests(): \Illuminate\Database\Eloquent\Relations\HasMany { return $this->hasMany(ChemicalQcTest::class); }
-public function supplier(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(Supplier::class); }
-public function purchaseOrder(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(PurchaseOrder::class); }
-}
 
+    public function items(): HasMany
+    {
+        return $this->hasMany(ChemicalReceiptItem::class);
+    }
+
+    public function qcTests(): HasMany
+    {
+        return $this->hasMany(ChemicalQcTest::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function purchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class);
+    }
+}

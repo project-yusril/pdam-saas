@@ -184,14 +184,14 @@ class OfflineSyncTest extends TestCase
     private function tenantUser(): array
     {
         $org = PdamOrganization::create([
-            'code' => 'sync-' . uniqid(),
+            'code' => 'sync-'.uniqid(),
             'name' => 'PDAM Sync',
             'subscription_status' => 'active',
         ]);
         $user = User::create([
             'pdam_org_id' => $org->id,
             'name' => 'Field User',
-            'email' => uniqid() . '@sync.test',
+            'email' => uniqid().'@sync.test',
             'password' => 'password',
             'is_active' => true,
         ]);

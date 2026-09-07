@@ -2,13 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Models\City;
 use App\Models\Complaint;
 use App\Models\Customer;
 use App\Models\CustomerProspect;
-use App\Models\PdamOrganization;
+use App\Models\District;
 use App\Models\Module;
+use App\Models\PdamOrganization;
+use App\Models\Province;
+use App\Models\Street;
 use App\Models\SubscriptionModule;
 use App\Models\User;
+use App\Models\Village;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,6 +22,7 @@ class TenantIsolationTest extends TestCase
     use RefreshDatabase;
 
     private User $user1;
+
     private User $user2;
 
     protected function setUp(): void
@@ -56,7 +62,6 @@ class TenantIsolationTest extends TestCase
     }
 
     public function test_user_cannot_see_another_tenant_customers(): void
-
     {
         Customer::create([
             'pdam_org_id' => $this->user1->pdam_org_id,
@@ -76,7 +81,6 @@ class TenantIsolationTest extends TestCase
             'status' => 'active',
         ]);
 
-
         $response = $this->actingAs($this->user1, 'sanctum')
             ->getJson('/api/v1/customers');
 
@@ -88,7 +92,6 @@ class TenantIsolationTest extends TestCase
     }
 
     public function test_user_cannot_access_another_tenant_customer_directly(): void
-
     {
         $otherCustomer = Customer::create([
             'pdam_org_id' => $this->user2->pdam_org_id,
@@ -99,7 +102,6 @@ class TenantIsolationTest extends TestCase
             'status' => 'active',
         ]);
 
-
         $response = $this->actingAs($this->user1, 'sanctum')
             ->getJson("/api/v1/customers/{$otherCustomer->id}");
 
@@ -107,7 +109,6 @@ class TenantIsolationTest extends TestCase
     }
 
     public function test_user_cannot_create_data_in_another_tenant(): void
-
     {
         $response = $this->actingAs($this->user2, 'sanctum')
             ->postJson('/api/v1/complaints', [
@@ -125,7 +126,6 @@ class TenantIsolationTest extends TestCase
     }
 
     public function test_idor_attack_prevented_when_accessing_other_tenant_resource(): void
-
     {
         $prospect = CustomerProspect::create([
             'pdam_org_id' => $this->user2->pdam_org_id,
@@ -138,7 +138,6 @@ class TenantIsolationTest extends TestCase
             'status' => 'pending_review',
         ]);
 
-
         $response = $this->actingAs($this->user1, 'sanctum')
             ->getJson("/api/v1/prospects/{$prospect->id}");
 
@@ -150,7 +149,7 @@ class TenantIsolationTest extends TestCase
         $village = $this->makeVillage();
 
         // Jalan privat milik tenant 2.
-        \App\Models\Street::create([
+        Street::create([
             'pdam_org_id' => $this->user2->pdam_org_id,
             'village_id' => $village->id,
             'name' => 'Jl. Privat B',
@@ -158,7 +157,7 @@ class TenantIsolationTest extends TestCase
         ]);
 
         // Jalan global (pdam_org_id null) — harus tetap terlihat oleh semua.
-        \App\Models\Street::create([
+        Street::create([
             'pdam_org_id' => null,
             'village_id' => $village->id,
             'name' => 'Jl. Global',
@@ -166,7 +165,7 @@ class TenantIsolationTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->user1, 'sanctum')
-            ->getJson('/api/v1/address/streets?village_id=' . $village->id);
+            ->getJson('/api/v1/address/streets?village_id='.$village->id);
 
         $response->assertOk();
         $names = collect($response->json('data'))->pluck('name');
@@ -190,12 +189,12 @@ class TenantIsolationTest extends TestCase
         $this->assertEquals($this->user1->pdam_org_id, $street['pdam_org_id']);
     }
 
-    private function makeVillage(): \App\Models\Village
+    private function makeVillage(): Village
     {
-        $province = \App\Models\Province::create(['code' => 'P-ISO', 'name' => 'Provinsi Iso']);
-        $city = \App\Models\City::create(['province_id' => $province->id, 'code' => 'C-ISO', 'name' => 'Kota Iso']);
-        $district = \App\Models\District::create(['city_id' => $city->id, 'code' => 'D-ISO', 'name' => 'Kec Iso']);
+        $province = Province::create(['code' => 'P-ISO', 'name' => 'Provinsi Iso']);
+        $city = City::create(['province_id' => $province->id, 'code' => 'C-ISO', 'name' => 'Kota Iso']);
+        $district = District::create(['city_id' => $city->id, 'code' => 'D-ISO', 'name' => 'Kec Iso']);
 
-        return \App\Models\Village::create(['district_id' => $district->id, 'code' => 'V-ISO', 'name' => 'Kampung Iso']);
+        return Village::create(['district_id' => $district->id, 'code' => 'V-ISO', 'name' => 'Kampung Iso']);
     }
 }

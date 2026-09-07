@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** BankReconciliation — Auto-generated dari skema tabel. */
 class BankReconciliation extends Model
@@ -22,9 +23,9 @@ class BankReconciliation extends Model
             'difference' => 'decimal:2',
         ];
     }
-    public function bankAccount(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+
+    public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(BankAccount::class);
     }
 }
-

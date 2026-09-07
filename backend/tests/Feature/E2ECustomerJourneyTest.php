@@ -5,16 +5,13 @@ namespace Tests\Feature;
 use App\Models\Bill;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
-use App\Models\CustomerProspect;
-
+use App\Models\Payment;
 use App\Models\PdamOrganization;
+use App\Models\ReadingPeriod;
 use App\Models\TariffCategory;
 use App\Models\TariffTier;
-use App\Models\ReadingPeriod;
 use App\Models\User;
 use App\Models\Zone;
-
-
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -23,6 +20,7 @@ class E2ECustomerJourneyTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $customer;
 
     protected function setUp(): void
@@ -55,9 +53,7 @@ class E2ECustomerJourneyTest extends TestCase
         }
     }
 
-
     public function test_full_journey_prospect_to_paid_customer(): void
-
     {
         // 1. Create tariff first
         $tariff = TariffCategory::create([
@@ -96,7 +92,6 @@ class E2ECustomerJourneyTest extends TestCase
                 'tariff_category_id' => $tariff->id,
             ]);
 
-
         $response->assertCreated();
         $customer = Customer::first();
         $this->assertNotNull($customer->customer_number);
@@ -125,7 +120,6 @@ class E2ECustomerJourneyTest extends TestCase
 
         $response->assertCreated();
 
-
         // 5. Verify bill was created
         $bill = Bill::where('customer_id', $customer->id)->first();
         $this->assertNotNull($bill);
@@ -143,7 +137,7 @@ class E2ECustomerJourneyTest extends TestCase
         $response->assertCreated();
 
         // 7. Mark as paid
-        $payment = \App\Models\Payment::first();
+        $payment = Payment::first();
         $response = $this->actingAs($this->admin, 'sanctum')
             ->postJson('/api/v1/payments/cash', ['payment_id' => $payment->id]);
 

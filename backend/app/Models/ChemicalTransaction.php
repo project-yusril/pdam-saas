@@ -20,4 +20,3 @@ class ChemicalTransaction extends Model
         ];
     }
 }
-

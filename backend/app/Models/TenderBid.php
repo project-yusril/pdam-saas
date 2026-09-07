@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** TenderBid — Auto-generated dari skema tabel. */
 class TenderBid extends Model
@@ -18,7 +19,14 @@ class TenderBid extends Model
             'bid_price' => 'decimal:2',
         ];
     }
-public function tender(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(Tender::class); }
-public function vendor(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(Vendor::class); }
-}
 
+    public function tender(): BelongsTo
+    {
+        return $this->belongsTo(Tender::class);
+    }
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+}

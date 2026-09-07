@@ -20,4 +20,3 @@ class LeaveType extends Model
         ];
     }
 }
-

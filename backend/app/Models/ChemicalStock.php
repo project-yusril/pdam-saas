@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** ChemicalStock — Auto-generated dari skema tabel. */
 class ChemicalStock extends Model
@@ -20,8 +22,19 @@ class ChemicalStock extends Model
             'unit_cost' => 'decimal:2',
         ];
     }
-public function chemical(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(Chemical::class); }
-public function warehouse(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(Warehouse::class); }
-public function transactions(): \Illuminate\Database\Eloquent\Relations\HasMany { return $this->hasMany(ChemicalTransaction::class); }
-}
 
+    public function chemical(): BelongsTo
+    {
+        return $this->belongsTo(Chemical::class);
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(ChemicalTransaction::class);
+    }
+}

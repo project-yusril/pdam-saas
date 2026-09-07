@@ -218,14 +218,14 @@ class PrivateFileAndPrivacyTest extends TestCase
     private function tenantUser(bool $admin): array
     {
         $org = PdamOrganization::create([
-            'code' => 'privacy-' . uniqid(),
+            'code' => 'privacy-'.uniqid(),
             'name' => 'PDAM Privacy',
             'subscription_status' => 'active',
         ]);
         $user = User::create([
             'pdam_org_id' => $org->id,
             'name' => 'Privacy User',
-            'email' => uniqid() . '@privacy.test',
+            'email' => uniqid().'@privacy.test',
             'password' => 'password',
             'is_tenant_admin' => $admin,
             'is_active' => true,

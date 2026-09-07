@@ -22,8 +22,8 @@ echo "Akun COA       : {$coa} (harusnya 12)\n";
 $cat = TariffCategory::where('code', '2A3')->first();
 $calc = app(BillingService::class)->calculate($cat, 35);
 echo "\nUji 2A3 @ 35 m³:\n";
-echo "  Biaya air : Rp " . number_format($calc['water_charge'], 0, ',', '.') . " (harusnya 180.000)\n";
-echo "  Total     : Rp " . number_format($calc['total'], 0, ',', '.') . " (air + komponen tetap)\n";
+echo '  Biaya air : Rp '.number_format($calc['water_charge'], 0, ',', '.')." (harusnya 180.000)\n";
+echo '  Total     : Rp '.number_format($calc['total'], 0, ',', '.')." (air + komponen tetap)\n";
 
 $inventory = ChartOfAccount::where('code', '1-003')->first();
 echo "\nAkun Persediaan Material: {$inventory->name} [{$inventory->type}/{$inventory->normal_balance}]\n";

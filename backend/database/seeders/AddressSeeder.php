@@ -138,7 +138,7 @@ class AddressSeeder extends Seeder
         foreach ($customers as $i => $customer) {
             DB::table('customers')->where('id', $customer->id)->update([
                 'street_id' => $streetIds[$i % count($streetIds)],
-                'address_detail' => 'No. ' . ($i + 1) . ', RT 00' . (($i % 5) + 1) . '/RW 00' . (($i % 3) + 1),
+                'address_detail' => 'No. '.($i + 1).', RT 00'.(($i % 5) + 1).'/RW 00'.(($i % 3) + 1),
             ]);
         }
     }

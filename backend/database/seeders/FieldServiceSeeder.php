@@ -51,7 +51,7 @@ class FieldServiceSeeder extends Seeder
                 'zone_id' => $zone?->id, 'status' => $status,
                 'sla_due_at' => now()->addDays(2),
                 'assigned_to' => $status !== 'open' ? $technician?->id : null,
-                'address' => 'Lokasi pekerjaan ' . ($i + 1), 'description' => $desc,
+                'address' => 'Lokasi pekerjaan '.($i + 1), 'description' => $desc,
                 'started_at' => $status !== 'open' ? now()->subDays(2) : null,
                 'completed_at' => $status === 'completed' ? now()->subDay() : null,
                 'resolution' => $status === 'completed' ? 'Pekerjaan selesai, pelanggan puas.' : null,

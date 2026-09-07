@@ -4,10 +4,10 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /** MeterRoute â€” rute baca meter. Fase 3.1 */
 class MeterRoute extends Model
@@ -37,4 +37,3 @@ class MeterRoute extends Model
         return $this->hasMany(MeterRouteAssignment::class);
     }
 }
-

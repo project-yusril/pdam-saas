@@ -61,7 +61,7 @@ def _atomic_write(path, content, binary=False):
             os.unlink(temporary_path)
 
 
-def save_artifact(model_path, model_type, feature_names, payload):
+def save_artifact(model_path, model_type, feature_names, payload, extra_provenance=None):
     if payload.get("model") is None:
         raise ArtifactContractError("Cannot save an untrained model")
     _validate_features(feature_names)
@@ -85,6 +85,7 @@ def save_artifact(model_path, model_type, feature_names, payload):
         "provenance": {
             "created_at": datetime.now(timezone.utc).isoformat(),
             "python": platform.python_version(),
+            **(extra_provenance or {}),
         },
     }
 

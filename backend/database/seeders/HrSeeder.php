@@ -89,11 +89,11 @@ class HrSeeder extends Seeder
                 'pdam_org_id' => $orgId, 'zone_id' => $zone?->id,
                 'position_id' => $posIds[$pos], 'unit_id' => $unit, 'grade_id' => $gradeIds[$grade],
                 'nip' => sprintf('NIP%d%03d', $orgId, $i + 1), 'name' => $name,
-                'gender' => $gender, 'birth_date' => '198' . $i . '-05-15',
-                'phone' => '0812900010' . $i, 'email' => strtolower(str_replace(' ', '.', $name)) . '@pdam.co.id',
+                'gender' => $gender, 'birth_date' => '198'.$i.'-05-15',
+                'phone' => '0812900010'.$i, 'email' => strtolower(str_replace(' ', '.', $name)).'@pdam.co.id',
                 'education' => $edu, 'employment_status' => $empStatus, 'tax_status' => $taxStatus,
                 'dependents' => $dependents, 'bank_name' => 'Bank Kalbar',
-                'bank_account' => '900' . $i . '11122', 'join_date' => '2021-0' . ($i + 1) . '-01',
+                'bank_account' => '900'.$i.'11122', 'join_date' => '2021-0'.($i + 1).'-01',
                 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
             ]);
         }
@@ -185,7 +185,7 @@ class HrSeeder extends Seeder
 
         // ── Kontrak (pegawai kontrak) ──
         DB::table('employee_contracts')->insert([
-            'pdam_org_id' => $orgId, 'employee_id' => $empIds[2], 'contract_number' => 'PKWT-' . $orgId . '-001',
+            'pdam_org_id' => $orgId, 'employee_id' => $empIds[2], 'contract_number' => 'PKWT-'.$orgId.'-001',
             'start_date' => '2026-01-01', 'end_date' => '2026-12-31', 'type' => 'pkwt', 'status' => 'active',
             'created_at' => now(), 'updated_at' => now(),
         ]);

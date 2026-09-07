@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** Tender — Auto-generated dari skema tabel. */
 class Tender extends Model
@@ -22,7 +24,14 @@ class Tender extends Model
             'final_price' => 'decimal:2',
         ];
     }
-public function bids(): \Illuminate\Database\Eloquent\Relations\HasMany { return $this->hasMany(TenderBid::class); }
-public function winner(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(Vendor::class, 'winner_vendor_id'); }
-}
 
+    public function bids(): HasMany
+    {
+        return $this->hasMany(TenderBid::class);
+    }
+
+    public function winner(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class, 'winner_vendor_id');
+    }
+}

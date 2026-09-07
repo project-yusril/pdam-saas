@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** Budget — Auto-generated dari skema tabel. */
 class Budget extends Model
@@ -19,6 +20,9 @@ class Budget extends Model
             'approved_at' => 'datetime',
         ];
     }
-public function lines(): \Illuminate\Database\Eloquent\Relations\HasMany { return $this->hasMany(BudgetLine::class); }
-}
 
+    public function lines(): HasMany
+    {
+        return $this->hasMany(BudgetLine::class);
+    }
+}

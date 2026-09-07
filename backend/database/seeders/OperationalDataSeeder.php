@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Bill;
 use App\Models\Complaint;
 use App\Models\Customer;
 use App\Models\Material;
@@ -49,8 +48,11 @@ use Illuminate\Database\Seeder;
 class OperationalDataSeeder extends Seeder
 {
     private JournalService $journal;
+
     private BillingService $billing;
+
     private PaymentService $payments;
+
     private StockService $stock;
 
     public function run(): void
@@ -153,6 +155,7 @@ class OperationalDataSeeder extends Seeder
         // Idempotent: bila sudah ada pelanggan, anggap sudah di-seed.
         if (Customer::query()->exists()) {
             TenantContext::clear();
+
             return;
         }
 
@@ -224,7 +227,7 @@ class OperationalDataSeeder extends Seeder
                 'pdam_org_id' => TenantContext::id(),
                 'code' => $code,
                 'name' => $name,
-                'office_address' => 'Kantor ' . $name,
+                'office_address' => 'Kantor '.$name,
                 'is_main' => $isMain,
                 'is_active' => true,
             ]);
@@ -241,10 +244,10 @@ class OperationalDataSeeder extends Seeder
             $warehouses[] = Warehouse::create([
                 'pdam_org_id' => TenantContext::id(),
                 'zone_id' => $zone->id,
-                'code' => 'WH-' . str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT),
-                'name' => 'Gudang ' . $zone->name,
+                'code' => 'WH-'.str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT),
+                'name' => 'Gudang '.$zone->name,
                 'warehouse_type' => $i === 0 ? 'main' : 'buffer',
-                'address' => 'Gudang ' . $zone->name,
+                'address' => 'Gudang '.$zone->name,
                 'is_active' => true,
             ]);
         }
@@ -260,8 +263,8 @@ class OperationalDataSeeder extends Seeder
             $routes[$zone->id] = MeterRoute::create([
                 'pdam_org_id' => TenantContext::id(),
                 'zone_id' => $zone->id,
-                'code' => 'RT-' . str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT),
-                'name' => 'Rute ' . $zone->name,
+                'code' => 'RT-'.str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT),
+                'name' => 'Rute '.$zone->name,
                 'is_active' => true,
             ]);
         }
@@ -373,8 +376,8 @@ class OperationalDataSeeder extends Seeder
                 'pdam_org_id' => TenantContext::id(),
                 'period' => $period,
                 'status' => 'closed', // ditutup → boleh generate tagihan
-                'opened_at' => $period . '-01 08:00:00',
-                'closed_at' => $period . '-25 17:00:00',
+                'opened_at' => $period.'-01 08:00:00',
+                'closed_at' => $period.'-25 17:00:00',
             ]);
         }
     }
@@ -396,7 +399,7 @@ class OperationalDataSeeder extends Seeder
             }
 
             $custNumber = $this->buildCustomerNumber($idx + 1);
-            $serial = 'MTR-' . str_pad((string) ($idx + 1), 5, '0', STR_PAD_LEFT);
+            $serial = 'MTR-'.str_pad((string) ($idx + 1), 5, '0', STR_PAD_LEFT);
             $installDate = '2025-12-15';
 
             $customer = Customer::create([
@@ -441,10 +444,10 @@ class OperationalDataSeeder extends Seeder
                     'customer_id' => $customer->id,
                     'period' => $period,
                     'reading_value' => $currentReading,
-                    'reading_date' => $period . '-20',
+                    'reading_date' => $period.'-20',
                     'reading_type' => 'actual',
                     'read_by' => null,
-                    'verified_at' => $period . '-22 10:00:00',
+                    'verified_at' => $period.'-22 10:00:00',
                 ]);
 
                 // Generate tagihan lewat BillingService (auto jurnal Piutang↔Pendapatan)
@@ -460,6 +463,7 @@ class OperationalDataSeeder extends Seeder
                 } catch (\Throwable $e) {
                     // Lewati bila sudah ada / periode belum siap
                     $previousReading = $currentReading;
+
                     continue;
                 }
 
@@ -471,7 +475,7 @@ class OperationalDataSeeder extends Seeder
                     $payment = $this->payments->createForBill($bill, 'cash', 'tunai');
                     $this->payments->markPaid(
                         $payment,
-                        transactionId: 'CASH-SEED-' . $bill->id,
+                        transactionId: 'CASH-SEED-'.$bill->id,
                         method: 'tunai',
                     );
                 }

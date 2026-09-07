@@ -104,7 +104,7 @@ class AssetSeeder extends Seeder
             DB::table('asset_movements')->insert([
                 'pdam_org_id' => $orgId, 'fixed_asset_id' => $movable->id,
                 'from_zone_id' => $zone?->id, 'to_zone_id' => $zone2->id,
-                'from_location' => 'Kantor Pusat', 'to_location' => 'Kantor ' . $zone2->name,
+                'from_location' => 'Kantor Pusat', 'to_location' => 'Kantor '.$zone2->name,
                 'moved_at' => now()->subDays(10)->toDateString(),
                 'reason' => 'Realokasi armada ke zona baru', 'performed_by' => null,
                 'created_at' => now(), 'updated_at' => now(),

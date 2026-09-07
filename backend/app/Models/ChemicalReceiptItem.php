@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** ChemicalReceiptItem — Auto-generated dari skema tabel. */
 class ChemicalReceiptItem extends Model
@@ -19,9 +20,9 @@ class ChemicalReceiptItem extends Model
             'unit_cost' => 'decimal:2',
         ];
     }
-    public function chemical(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+
+    public function chemical(): BelongsTo
     {
         return $this->belongsTo(Chemical::class);
     }
 }
-

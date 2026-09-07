@@ -4,9 +4,9 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /** Customer â€” sambungan air aktif. Fase 1.4 */
 class Customer extends Model
@@ -75,4 +75,3 @@ class Customer extends Model
         ]);
     }
 }
-

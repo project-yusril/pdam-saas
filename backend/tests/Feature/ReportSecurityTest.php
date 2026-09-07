@@ -199,9 +199,9 @@ class ReportSecurityTest extends TestCase
         $this->assertStringNotContainsString('A&B <active>', $response->json('data'));
         $this->assertStringContainsString('A&amp;B &lt;active&gt;', $response->json('data'));
 
-        foreach (['pdf', 'excel', 'doc', 'xlsx'] as $legacyFormat) {
+        foreach (['excel', 'doc', 'xls'] as $unsupportedFormat) {
             $this->actingAs($admin, 'sanctum')->postJson('/api/v1/export', [
-                'format' => $legacyFormat,
+                'format' => $unsupportedFormat,
                 'table' => 'customers',
             ])->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
         }

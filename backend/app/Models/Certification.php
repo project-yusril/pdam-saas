@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Certification extends Model
 {
@@ -21,7 +22,8 @@ class Certification extends Model
             'expiry_date' => 'date',
         ];
     }
-    public function employee(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+
+    public function employee(): BelongsTo
     {
         return $this->belongsTo(HrEmployee::class, 'employee_id');
     }

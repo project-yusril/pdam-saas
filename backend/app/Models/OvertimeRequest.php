@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** OvertimeRequest — Auto-generated dari skema tabel. */
 class OvertimeRequest extends Model
@@ -20,6 +21,9 @@ class OvertimeRequest extends Model
             'approved_at' => 'datetime',
         ];
     }
-public function employee(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(HrEmployee::class, 'employee_id'); }
-}
 
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(HrEmployee::class, 'employee_id');
+    }
+}

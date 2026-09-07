@@ -13,6 +13,7 @@ use App\Support\ListQueryParams;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
@@ -111,7 +112,7 @@ class AddressController extends Controller
         }
         // Filter jalan yang tergabung dalam rute baca meter tertentu (pivot meter_route_streets).
         if ($request->has('meter_route_id')) {
-            $routeStreetIds = \Illuminate\Support\Facades\DB::table('meter_route_streets')
+            $routeStreetIds = DB::table('meter_route_streets')
                 ->where('meter_route_id', $request->integer('meter_route_id'))
                 ->pluck('street_id');
             $query->whereIn('streets.id', $routeStreetIds);

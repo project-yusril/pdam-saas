@@ -18,14 +18,15 @@ use Illuminate\Console\Command;
  */
 class EscalateInstallationPayments extends Command
 {
-    protected $signature = 'pdam:escalate-installation {--expire-after-hours=24 : Jam sejak jatuh tempo untuk menandai expired}';
+    protected $signature = 'pdam:escalate-installation {--expire-after-hours= : Jam sejak jatuh tempo (default config business.installation.payment_expire_hours)}';
 
     protected $description = 'Eskalasi calon pelanggan yang telat bayar biaya pemasangan ke Kepala Hublang';
 
     public function handle(NotificationService $notifier): int
     {
         $now = now();
-        $expireThreshold = (int) $this->option('expire-after-hours');
+        $opt = $this->option('expire-after-hours');
+        $expireThreshold = $opt !== null && $opt !== '' ? (int) $opt : (int) config('business.installation.payment_expire_hours', 24);
 
         $prospects = CustomerProspect::query()
             ->withoutGlobalScope('tenant')

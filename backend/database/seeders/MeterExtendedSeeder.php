@@ -109,7 +109,7 @@ class MeterExtendedSeeder extends Seeder
                 'pdam_org_id' => $orgId,
                 'customer_id' => $target->id,
                 'old_serial' => $target->meter_serial_number,
-                'new_serial' => 'MTR-NEW-' . $target->id,
+                'new_serial' => 'MTR-NEW-'.$target->id,
                 'old_final_reading' => 120,
                 'new_initial_reading' => 0,
                 'replaced_at' => now()->subDays(7)->toDateString(),

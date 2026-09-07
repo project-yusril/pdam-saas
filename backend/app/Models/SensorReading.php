@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** SensorReading — Auto-generated dari skema tabel. */
 class SensorReading extends Model
@@ -24,14 +25,14 @@ class SensorReading extends Model
             'validated' => 'boolean',
         ];
     }
-    public function customer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function meter(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function meter(): BelongsTo
     {
         return $this->belongsTo(Meter::class);
     }
 }
-

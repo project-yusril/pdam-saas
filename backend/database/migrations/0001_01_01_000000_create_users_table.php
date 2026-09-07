@@ -32,7 +32,6 @@ return new class extends Migration
             $table->unique(['pdam_org_id', 'email']);
         });
 
-
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');

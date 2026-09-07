@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** ChemicalUsage — Auto-generated dari skema tabel. */
 class ChemicalUsage extends Model
@@ -20,6 +21,9 @@ class ChemicalUsage extends Model
             'water_produced_m3' => 'decimal:2',
         ];
     }
-public function chemical(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(Chemical::class); }
-}
 
+    public function chemical(): BelongsTo
+    {
+        return $this->belongsTo(Chemical::class);
+    }
+}

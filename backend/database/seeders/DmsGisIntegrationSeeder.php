@@ -41,7 +41,7 @@ class DmsGisIntegrationSeeder extends Seeder
 
         // ── Dokumen + approval ──
         $docId = DB::table('documents')->insertGetId([
-            'pdam_org_id' => $orgId, 'doc_number' => 'DOC-' . $orgId . '-0001',
+            'pdam_org_id' => $orgId, 'doc_number' => 'DOC-'.$orgId.'-0001',
             'title' => 'SOP Penanganan Kebocoran Pipa', 'category' => 'sop', 'version' => 1,
             'file_path' => 'documents/sop-kebocoran.pdf', 'file_type' => 'pdf', 'file_size' => 524288,
             'tags' => json_encode(['sop', 'teknik', 'kebocoran']), 'status' => 'approved',

@@ -21,4 +21,3 @@ class PayrollComponent extends Model
         ];
     }
 }
-

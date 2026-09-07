@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** IntegrationLog — Auto-generated dari skema tabel. */
 class IntegrationLog extends Model
@@ -20,6 +21,9 @@ class IntegrationLog extends Model
             'retry_count' => 'decimal:2',
         ];
     }
-public function integration(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(Integration::class); }
-}
 
+    public function integration(): BelongsTo
+    {
+        return $this->belongsTo(Integration::class);
+    }
+}

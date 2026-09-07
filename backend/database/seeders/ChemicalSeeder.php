@@ -61,7 +61,7 @@ class ChemicalSeeder extends Seeder
 
         // ── Purchase request ──
         DB::table('chemical_purchase_requests')->insert([
-            'pdam_org_id' => $orgId, 'pr_number' => 'CPR-' . $orgId . '-0001',
+            'pdam_org_id' => $orgId, 'pr_number' => 'CPR-'.$orgId.'-0001',
             'chemical_id' => $chemIds['PAC'], 'supplier_id' => $supplierId,
             'quantity' => 1000, 'unit' => 'kg',
             'required_date' => now()->addDays(14)->toDateString(),
@@ -71,7 +71,7 @@ class ChemicalSeeder extends Seeder
 
         // ── Penerimaan + item + QC ──
         $receiptId = DB::table('chemical_receipts')->insertGetId([
-            'pdam_org_id' => $orgId, 'receipt_number' => 'CRC-' . $orgId . '-0001',
+            'pdam_org_id' => $orgId, 'receipt_number' => 'CRC-'.$orgId.'-0001',
             'supplier_id' => $supplierId, 'receipt_date' => now()->subDays(3)->toDateString(),
             'batch_number' => 'BATCH-PAC-2606', 'expiry_date' => now()->addYear()->toDateString(),
             'status' => 'accepted', 'total_cost' => 8_500_000,

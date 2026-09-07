@@ -29,7 +29,9 @@ class SubscriptionCheck extends Command
                 continue;
             }
 
-            if ($subscription->end_date && $subscription->end_date->lt($now)) {
+            $graceDays = (int) config('business.billing.subscription_grace_days', 0);
+
+            if ($subscription->end_date && $subscription->end_date->addDays($graceDays)->lt($now)) {
                 $subscription->update(['status' => 'expired']);
                 $this->info("Subscription expired: org {$org->id}");
 

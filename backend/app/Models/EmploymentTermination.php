@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** EmploymentTermination — Auto-generated dari skema tabel. */
 class EmploymentTermination extends Model
@@ -20,6 +21,9 @@ class EmploymentTermination extends Model
             'other_compensation' => 'decimal:2',
         ];
     }
-public function employee(): \Illuminate\Database\Eloquent\Relations\BelongsTo { return $this->belongsTo(HrEmployee::class, 'employee_id'); }
-}
 
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(HrEmployee::class, 'employee_id');
+    }
+}

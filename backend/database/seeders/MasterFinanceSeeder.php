@@ -49,7 +49,6 @@ class MasterFinanceSeeder extends Seeder
         ['5-102', 'Rugi Pelepasan Aset', 'EXPENSE', 'DEBIT'],
     ];
 
-
     /**
      * 17 golongan: [code, name, group_type, [tier1_0_10, tier2_10_20, tier3_gt20]].
      * Sumber tarif: PRD 10.2 (PDAM Pontianak).
