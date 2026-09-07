@@ -385,10 +385,9 @@ H-10 kontrak endpoint mobile); frontend Vitest **7 file / 13 tests** (helper wor
 errors, auth flow, router, contract) + `npm run build` lulus; Flutter **44/44** + analyze **0 issue**
 (duplikat konstan endpoints.dart dibersihkan); ML **32 tests** (pytest; inc. `test_telemetry_simulator` contract
 di CI; runner Win-ARM64 lokal tanpa wheel xgboost → compile-all saja); `php artisan pdam:counts`
-sinkron dengan `docs/COUNTS.json`. CI root [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
-memiliki job: `backend-sqlite`, `mysql-production-gates` (migrate+seed MySQL 8.4, provisioning
+sinkron dengan `docs/COUNTS.json`. CI root [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — **run pertama 2909807: 6/6 hijau** — job: `backend-sqlite`, `mysql-production-gates` (migrate+seed MySQL 8.4, provisioning
 least-priv + destructive-probe verify, audit privilege dari sisi app, backup→decrypt→restore drill
-dengan evidence artifact), `frontend`, `mobile`, `ml`, `security` (gitleaks + composer/npm/pip audit).
+dengan evidence artifact), `frontend`, `mobile`, `ml`, `security` (gitleaks CLI + composer/npm/pip audit).
 Enam gate §13 `temuan2.md` tetap terbuka sampai bukti riil (TLS, pentest vendor, drill di host
 produksi, ML data asli) — tooling-nya sudah ada di `ops/`.
 

@@ -201,7 +201,7 @@ SSL: Certbot + Let's Encrypt. Konfig: `docker/nginx.production.conf`. Verifikasi
 - Snapshot 7 September 2026 (lengkap di `docs/COUNTS.json`/`docs/DOC_MAP.md`): backend SQLite **117/117
   (812 assertions)**; frontend Vitest **7 file/13 tests** + build lulus (workbench, API errors, auth flow,
   resources config, router); Flutter 44/44 (analyze **0 issue**, 46 test total); ML **32** test (CI); route registry: **369** API
-  endpoint method rows. CI `mysql-production-gates` sudah menjalankan migration+seed, privileges drill,
+  endpoint method rows. CI `mysql-production-gates` **lulus run 2909807** menjalankan migration+seed, privileges drill,
   backup→restore drill sebagai bukti otomatis.
 - Deployment-dependent (tooling lengkap — bukti target masih terbuka): TLS/HSTS + pin verify/rotation di
   endpoint riil, backup cron+drill restore di host produksi, external pentest, privilege provisioning di

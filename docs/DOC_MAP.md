@@ -21,7 +21,7 @@ authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 | Baseline keamanan internal (OWASP Top10/ASVS) | [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) + [`../tests/security/OWASP_ASVS_AUDIT.md`](../tests/security/OWASP_ASVS_AUDIT.md) (assessment) | README "Checklist Keamanan", HANDOVER §6, temuan2 |
 | Tooling operasional & gate (script TLS/backup/privilege/load/pentest scope) | [`../ops/README.md`](../ops/README.md) & runbook `../ops/runbooks/*` | temuan2 §13, DEPLOY, HANDOVER §8, README |
 | Keputusan bisnis PRD §23 yang menunggu konfirmasi | [`BUSINESS_DECISIONS.md`](BUSINESS_DECISIONS.md) (`config/business.php`) | README, HANDOVER §8, DEPLOY |
-| Angka inventaris live (endpoint/model/tabel/seeder/test) | [`COUNTS.json`](COUNTS.json) — digenerasi `php artisan pdam:counts` | CI gate drift-check (root workflow), README, HANDOVER, temuan2 |
+| Angka inventaris live (endpoint/model/tabel/seeder/test) | [`COUNTS.json`](COUNTS.json) — digenerasi `php artisan pdam:counts` | CI gate drift-check, run hijau `2909807` (6/6), README, HANDOVER, temuan2 |
 | Kalibrasi & gerbang acceptance ML production | [`ML_CALIBRATION.md`](ML_CALIBRATION.md) | ml/README, ops/README, temuan2 §13 #6, DEPLOY |
 | Capacity baseline load test | [`CAPACITY_BASELINE.md`](CAPACITY_BASELINE.md) diisi dari runner `../ops/load/run_load_test.sh` | ops/runbooks/OBSERVABILITY, HANDOVER |
 | Arsip historis (JANGAN dipakai sebagai status) | [`../task.md`](../task.md), [`../temuan.md`](../temuan.md) | hanya untuk riwayat |
@@ -42,7 +42,7 @@ authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 | Test frontend Vitest | **7 files / 13 tests** + `npm run build` OK | `npm run test -- --run` |
 | Test Flutter | **46** + analyze **0 issue** | `flutter test` |
 | Test Python (ml) | **32 test methods** (29 sebelumnya + 3 contract simulator tier-3) — dieksekusi CI `ml` (xgboost tak tersedia di runner Win-ARM64 lokal) | `test_*.py` + workflow |
-| CI root | `.github/workflows/ci.yml`: `backend-sqlite` (pint, PHPUnit, counts-drift, openapi drift, mobile-coverage, YAML validation), `mysql-production-gates`, `frontend`, `mobile`, `ml`, `security`. Nightly ops: `.github/workflows/nightly-ops.yml` (k6 + simulator tier-3) — hanya jalan bila `LOAD_ENABLED=true` vars repo |
+| CI root | `.github/workflows/ci.yml` (run 2909807 lulus 6/6): `backend-sqlite` (pint, PHPUnit, counts-drift, openapi drift, mobile-coverage, YAML validation), `mysql-production-gates`, `frontend`, `mobile`, `ml`, `security`. Nightly ops: `.github/workflows/nightly-ops.yml` (k6 + simulator tier-3) — hanya jalan bila `LOAD_ENABLED=true` vars repo |
 
 ## 3. Status enam gate canonical (§13 temuan2 — selalu cek di sana untuk angka final)
 

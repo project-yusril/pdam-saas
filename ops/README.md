@@ -31,8 +31,8 @@ Dari sisi aplikasi tersedia artisan evidence-command:
 `pdam:integrations-health [--ping]`, `pdam:ml-export-training-data`, `pdam:counts` (inventaris drift),
 `pdam:openapi` (spek dari route registry; committed `docs/openapi.json` + drift gate CI), `pdam:mobile-coverage`
 (gate endpoint `endpoints.dart` ↔ registry), `tools/generate_openapi_surface.dart` (surface Dart utk test).
-CI `workflow ci.yml (job mysql-production-gates)` menjalankan drill privilege
-+ backup/restore otomatis di setiap PR.
+CI job `mysql-production-gates` **sudah lulus drill privilege + AES-CBC backup/drill end-to-end**
+pada run `2909807` (artefak `mysql-gates-evidence` di Actions).
 Nightly `.github/workflows/nightly-ops.yml`: k6 capacity + telemetri simulator Tier-3
 (hanya jalan bila repo-var `LOAD_ENABLED=true` + `LOAD_BASE_URL` staging diset;
 jangan arahkan ke production). Rule contoh & rotasi log: `ops/alerting`, `ops/logrotate`.

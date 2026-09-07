@@ -59,7 +59,7 @@
 ## A6: Vulnerable Components
 - [x] `composer audit` + `npm audit --audit-level=high` + `pip-audit` dijalankan CI (job `security`)
 - [x] Dependensi dibekukan di `composer.lock` + `package-lock.json` + `ml/requirements.txt`
-- [x] Secret-scan (gitleaks dengan allowlist path-scoped) + counts-drift + drill privilege/backup CI
+- [x] Secret-scan (gitleaks CLI + allowlist path-scoped, bukan action berlisensi) + counts/openapi-drift + drill privilege/backup AES-CBC — lulus CI run 2909807
 - [ ] Coverage audit runtime dependency di host produksi (versi terpasang) tetap prosedur Berkala — ops
 
 ## A7: Authentication Failures
@@ -85,7 +85,7 @@
 - [x] Privilege database INSERT-only untuk `privacy_audit_events` harus diterapkan saat deployment
       ➜ `backend/database/provisioning/mysql-privileges.sql` + trigger append-only (migration
       `2026_09_06_000002`) + opsi connection `audit` (`DB_AUDIT_USERNAME`) utk akun INSERT/SELECT-only;
-      bukti otomatis: job CI `mysql-production-gates` menjalankan `ops/mysql/verify_privileges.sh`
+      bukti otomatis: job CI `mysql-production-gates` (run 2909807: privileges drill OK) menjalankan `ops/mysql/verify_privileges.sh`
       (probe UPDATE/DELETE/TRUNCATE/DROP **harus ditolak**) + `php artisan pdam:audit-db-privileges`.
 - [x] Exception handler terpusat (`ApiResponse` + handler di `bootstrap/app.php`)
 
