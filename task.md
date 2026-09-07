@@ -3,6 +3,7 @@
 
 **Versi:** 3.4 (catatan implementasi historis) | **Diperbarui:** 15 Juli 2026
 > **Status dokumen:** arsip implementasi per fase. Sumber status saat ini dan enam gate persetujuan production canonical adalah [`temuan2.md`](temuan2.md).
+> [!NOTE] <!-- doc-sync:note --> Arsip historis. Status & angka terverifikasi: lihat `temuan2.md`, `docs/DOC_MAP.md`, `docs/COUNTS.json`, dan CI 7 September 2026.
 >
 > **Dokumen terkait:** [`README.md`](README.md) · [`PRD.md`](PRD.md) dan [`02_flow.md`](02_flow.md) sebagai target/desain · [`temuan.md`](temuan.md) sebagai arsip audit lama · [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) sebagai baseline internal · [`HANDOVER.md`](HANDOVER.md) · [`backend/DEPLOY.md`](backend/DEPLOY.md) sebagai runbook draft · [`backend/SEED_DATA.md`](backend/SEED_DATA.md)
 

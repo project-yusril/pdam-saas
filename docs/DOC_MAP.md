@@ -5,6 +5,10 @@ Bila ada angka/status yang berbeda antar dokumen, dokumen ini yang jadi penengah
 semuanya harus mengarah ke [`../temuan2.md`](../temuan2.md) sebagai **sumber status/audit
 authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 
+<!-- doc-sync:start verifikasi 7 Sept 2026 -->
+> **Verifikasi terintegrasi:** 117/117 (117 test backend, 812 assertions) · Vitest 13 · Flutter analyze 0 issue + 46/46 · ML 32 (CI) · 369 method /api/v1 (293 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
+<!-- doc-sync:end -->
+
 ## 1. Kepemilikan dokumen (satu topik = satu pemilik)
 
 | Topik | Pemilik (source of truth) | Konsumen/dirujuk oleh |

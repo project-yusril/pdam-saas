@@ -1,7 +1,7 @@
 # 02 — Dokumentasi Flow Proses Bisnis (Rinci)
 ## Platform SaaS Manajemen PDAM (Modular Multi-Tenant)
 
-**Versi:** 2.0 (rinci per modul & per role) | **Diperbarui:** Juli 2026
+**Versi:** 2.1 (flow + pointer tooling) | **Diperbarui:** 7 September 2026 — implementasi Tahap 6 (stock-out+jurnal) kini aktif: lihat `temuan2.md` §10 M-10 dan `backend/tests/Feature/InstallationMaterialStockOutTest.php` <!-- doc-sync:note -->
 **Pendamping:** PRD.md v3.7 — khususnya Bagian 6.B (Katalog Role Lengkap per Modul)
 
 > **Dokumen terkait:** [`temuan2.md`](temuan2.md) sebagai sumber status saat ini · [`PRD.md`](PRD.md) sebagai target produk · [`README.md`](README.md) · [`task.md`](task.md) dan [`temuan.md`](temuan.md) sebagai arsip · [`HANDOVER.md`](HANDOVER.md) · [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) sebagai baseline internal · [`backend/DEPLOY.md`](backend/DEPLOY.md) sebagai runbook draft · [`backend/SEED_DATA.md`](backend/SEED_DATA.md)

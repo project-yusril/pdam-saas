@@ -25,11 +25,17 @@ baca meter → tagihan → pembayaran → jurnal → neraca, plus gudang → sto
 
 > Audit aktif ada di `../temuan2.md`; `../temuan.md` adalah arsip snapshot 8 Juli 2026.
 >
-> **Dokumen terkait:** peta dokumen & fact sheet [`../docs/DOC_MAP.md`](../docs/DOC_MAP.md) · angka live [`../docs/COUNTS.json`](../docs/COUNTS.json) · [`../README.md`](../README.md) · [`README.md`](README.md) · [`../PRD.md`](../PRD.md) dan [`../02_flow.md`](../02_flow.md) sebagai target/desain · [`../task.md`](../task.md) dan [`../temuan.md`](../temuan.md) sebagai arsip · [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) sebagai baseline internal · [`DEPLOY.md`](DEPLOY.md) sebagai runbook deployment · [`../HANDOVER.md`](../HANDOVER.md). Enam gate persetujuan production canonical hanya didefinisikan di [`../temuan2.md`](../temuan2.md); tooling gate [`../ops/README.md`](../ops/README.md).
+> **Dokumen terkait:** peta dokumen & fact sheet [`../docs/DOC_MAP.md`](../docs/DOC_MAP.md) · angka live [`../docs/COUNTS.json`](../docs/COUNTS.json) · [`../README.md`](../README.md) · [`README.md`](../README.md) · [`../PRD.md`](../PRD.md) dan [`../02_flow.md`](../02_flow.md) sebagai target/desain · [`../task.md`](../task.md) dan [`../temuan.md`](../temuan.md) sebagai arsip · [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) sebagai baseline internal · [`DEPLOY.md`](DEPLOY.md) sebagai runbook deployment · [`../HANDOVER.md`](../HANDOVER.md). Enam gate persetujuan production canonical hanya didefinisikan di [`../temuan2.md`](../temuan2.md); tooling gate [`../ops/README.md`](../ops/README.md).
 
 
 
 ---
+
+> **Tautan wajib:** [`README.md`](../README.md) · [`temuan2.md`](../temuan2.md) · [`02_flow.md`](../02_flow.md) · [`HANDOVER.md`](../HANDOVER.md) · [`SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) · [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · [`docs/COUNTS.json`](../docs/COUNTS.json) · [`ops/README.md`](../ops/README.md) · [`backend/README.md`](../README.md) · [`backend/DEPLOY.md`](DEPLOY.md) · [`backend/SEED_DATA.md`](SEED_DATA.md) · [`ml/README.md`](../ml/README.md) · [`docs/ML_CALIBRATION.md`](../docs/ML_CALIBRATION.md) · [`docs/BUSINESS_DECISIONS.md`](../docs/BUSINESS_DECISIONS.md)
+> <!-- doc-sync:links -->
+<!-- doc-sync:start verifikasi 7 Sept 2026 -->
+> **Verifikasi terintegrasi:** 117/117 (117 test backend, 812 assertions) · Vitest 13 · Flutter analyze 0 issue + 46/46 · ML 32 (CI) · 369 method /api/v1 (293 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](../docs/COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
+<!-- doc-sync:end -->
 
 ## 1. Dua Tenant Demo
 
@@ -177,7 +183,7 @@ Super-admin platform (lintas tenant) di-seed oleh `PlatformAdminSeeder`:
 | Super Admin platform | `superadmin@gmail.com` | `12345678` | Pilih mode **Super Admin**; tanpa kode PDAM |
 
 Role tenant `super_admin@gmail.com` berbeda dari akun platform di atas dan bukan identitas platform.
-Daftar role beserta contoh body login juga tersedia di [`backend/README.md`](README.md) Section 6 &
+Daftar role beserta contoh body login juga tersedia di [`backend/README.md`](../README.md) Section 6 &
 [`../README.md`](../README.md).
 
 ---

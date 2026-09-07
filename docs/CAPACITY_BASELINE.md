@@ -1,5 +1,7 @@
 # Capacity Baseline — PDAM SaaS API
 
+
+> Integrasi dokumen: [`../docs/DOC_MAP.md`](DOC_MAP.md) · [`../temuan2.md`](../temuan2.md) · [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml) — angka: `../docs/COUNTS.json`)
 **Diperbarui:** — (template; isi saat dijalankan pada staging mirror production)
 **Dokumen terkait:** [`../ops/runbooks/OBSERVABILITY.md`](../ops/runbooks/OBSERVABILITY.md) · [`../ops/load/run_load_test.sh`](../ops/load/run_load_test.sh) · [`../tests/load/k6-load_test.js`](../tests/load/k6-load-test.js) · status gate: [`../temuan2.md`](../temuan2.md) §13.
 

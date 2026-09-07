@@ -3,9 +3,13 @@
 **Updated:** 7 September 2026  
 **Status:** operational draft, not production approval
 
-> **Authoritative current status:** [`../temuan2.md`](../temuan2.md) (canonical six production approval gates). Doc map & fact sheet: [`../docs/DOC_MAP.md`](../docs/DOC_MAP.md) · gate tooling: [`../ops/README.md`](../ops/README.md) · CI: [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml) · Keputusan bisnis: [`../docs/BUSINESS_DECISIONS.md`](../docs/BUSINESS_DECISIONS.md) · Related: [`../README.md`](../README.md) · [`README.md`](README.md) · [`../PRD.md`](../PRD.md), [`../02_flow.md`](../02_flow.md) · archives [`../task.md`](../task.md), [`../temuan.md`](../temuan.md) · [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) · [`../HANDOVER.md`](../HANDOVER.md) · [`SEED_DATA.md`](SEED_DATA.md) · [`../ml/README.md`](../ml/README.md).
+> **Authoritative current status:** [`../temuan2.md`](../temuan2.md) (canonical six production approval gates). Doc map & fact sheet: [`../docs/DOC_MAP.md`](../docs/DOC_MAP.md) · gate tooling: [`../ops/README.md`](../ops/README.md) · CI: [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml) · Keputusan bisnis: [`../docs/BUSINESS_DECISIONS.md`](../docs/BUSINESS_DECISIONS.md) · Related: [`../README.md`](../README.md) · [`README.md`](../README.md) · [`../PRD.md`](../PRD.md), [`../02_flow.md`](../02_flow.md) · archives [`../task.md`](../task.md), [`../temuan.md`](../temuan.md) · [`../SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) · [`../HANDOVER.md`](../HANDOVER.md) · [`SEED_DATA.md`](SEED_DATA.md) · [`../ml/README.md`](../ml/README.md).
 
 The MySQL 8.4.9 result in `temuan2.md` used a disposable, non-user, non-production database. It validates migrations, rollback/remigration, seeders, constraints, and tests; it does not approve a production environment. Never run `migrate:fresh` or the demo seeder against production data.
+
+<!-- doc-sync:start verifikasi 7 Sept 2026 -->
+> **Verifikasi terintegrasi:** 117/117 (117 test backend, 812 assertions) · Vitest 13 · Flutter analyze 0 issue + 46/46 · ML 32 (CI) · 369 method /api/v1 (293 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](../docs/COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
+<!-- doc-sync:end -->
 
 ## Canonical Blocking Gates
 
@@ -158,6 +162,8 @@ Every production-supporting claim must be reproducible with repo tools:
 php artisan pdam:audit-db-privileges       # least-priv gate check (MySQL only; fails closed)
 php artisan pdam:queue-health              # backlog/failed_jobs alarm (exit!=0 on threshold)
 php artisan pdam:integrations-health --ping # live checks (Midtrans/OCR/ML/mail/DB)
+php artisan pdam:openapi            # regen docs/openapi.json (drift CI)
+php artisan pdam:mobile-coverage    # audit jalur mobile vs registry
 php artisan pdam:ml-export-training-data --org=1 --months=24 --out=ml-dataset
 php artisan pdam:counts                    # drift detector for docs/COUNTS.json (CI gate)
 ```

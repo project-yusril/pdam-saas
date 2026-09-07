@@ -6,6 +6,12 @@
 
 > **Sumber status saat ini:** [`temuan2.md`](temuan2.md), termasuk enam gate persetujuan production canonical. Peta dokumen/fact sheet: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling pembuktian: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Dokumen terkait: [`README.md`](README.md) · [`PRD.md`](PRD.md) dan [`02_flow.md`](02_flow.md) sebagai target/desain · [`task.md`](task.md) dan [`temuan.md`](temuan.md) sebagai arsip · [`tests/security/OWASP_ASVS_AUDIT.md`](tests/security/OWASP_ASVS_AUDIT.md) sebagai assessment internal · [`HANDOVER.md`](HANDOVER.md) · [`backend/DEPLOY.md`](backend/DEPLOY.md) sebagai runbook deployment.
 
+> **Tautan wajib:** [`README.md`](README.md) · [`temuan2.md`](temuan2.md) · [`02_flow.md`](02_flow.md) · [`HANDOVER.md`](HANDOVER.md) · [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) · [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · [`docs/COUNTS.json`](docs/COUNTS.json) · [`ops/README.md`](ops/README.md) · [`backend/README.md`](backend/README.md) · [`backend/DEPLOY.md`](backend/DEPLOY.md) · [`backend/SEED_DATA.md`](backend/SEED_DATA.md) · [`ml/README.md`](ml/README.md) · [`docs/ML_CALIBRATION.md`](docs/ML_CALIBRATION.md) · [`docs/BUSINESS_DECISIONS.md`](docs/BUSINESS_DECISIONS.md)
+> <!-- doc-sync:links -->
+<!-- doc-sync:start verifikasi 7 Sept 2026 -->
+> **Verifikasi terintegrasi:** 117/117 (117 test backend, 812 assertions) · Vitest 13 · Flutter analyze 0 issue + 46/46 · ML 32 (CI) · 369 method /api/v1 (293 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
+<!-- doc-sync:end -->
+
 ## A1: Broken Access Control
 - [x] Web memakai Sanctum stateful/session cookie `HttpOnly` + CSRF; mobile/API device memakai bearer token
 - [x] `CheckPermission` memeriksa entitlement modul sebelum bypass RBAC admin tenant

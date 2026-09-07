@@ -18,6 +18,10 @@
 > Enam gate persetujuan production canonical hanya didefinisikan di [`../../temuan2.md`](../../temuan2.md);
 > tooling pembuktian: [`../../ops/README.md`](../../ops/README.md).
 
+<!-- doc-sync:start verifikasi 7 Sept 2026 -->
+> **Verifikasi terintegrasi:** 117/117 (117 test backend, 812 assertions) · Vitest 13 · Flutter analyze 0 issue + 46/46 · ML 32 (CI) · 369 method /api/v1 (293 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](../../docs/COUNTS.json) · status resmi: [`temuan2.md`](../../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](../../docs/DOC_MAP.md) · tooling: [`ops/README.md`](../../ops/README.md) · CI: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) + `nightly-ops.yml`.
+<!-- doc-sync:end -->
+
 ## Executive Summary
 
 | Metric | Value |
@@ -288,4 +292,4 @@
 
 *Framework snapshot used: OWASP ASVS 4.0.3 Level 2 and OWASP Top 10:2021. This working assessment is not a complete conformance mapping.*
 *Item bertanda ✅ menunjukkan evidence source/test internal yang ditemukan pada snapshot 15 July 2026, bukan sertifikasi eksternal atau jaminan tanpa residual risk.*
-*Last updated: 15 July 2026.*
+*Last updated: 7 September 2026 (verified: backend 117/117, API 369/293, ml 32, tier3 simulator, h-10 openapi/coverage drift di CI).*
