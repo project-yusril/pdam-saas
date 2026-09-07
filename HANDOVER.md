@@ -12,7 +12,7 @@
 > **Tautan wajib:** [`README.md`](README.md) · [`temuan2.md`](temuan2.md) · [`02_flow.md`](02_flow.md) · [`HANDOVER.md`](HANDOVER.md) · [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) · [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · [`docs/COUNTS.json`](docs/COUNTS.json) · [`ops/README.md`](ops/README.md) · [`backend/README.md`](backend/README.md) · [`backend/DEPLOY.md`](backend/DEPLOY.md) · [`backend/SEED_DATA.md`](backend/SEED_DATA.md) · [`ml/README.md`](ml/README.md) · [`docs/ML_CALIBRATION.md`](docs/ML_CALIBRATION.md) · [`docs/BUSINESS_DECISIONS.md`](docs/BUSINESS_DECISIONS.md)
 > <!-- doc-sync:links -->
 <!-- doc-sync:start verifikasi 7 Sept 2026 -->
-> **Verifikasi terintegrasi:** 117/117 (117 test backend, 812 assertions) · Vitest 13 · Flutter analyze 0 issue + 46/46 · ML 32 (CI) · 369 method /api/v1 (293 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
+> **Verifikasi terintegrasi:** 117/117 (backend, 812 assertions) · Vitest 13 · Flutter analyze 0 issue + **50** · Dio client codegen `tools/generate_dio_client.py` (drift CI) · ML 32 (CI) · 369 method /api/v1 (293 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07 (CI run 2909807 hijau 6/6). Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## 1. Ringkasan Produk
@@ -222,7 +222,7 @@ SSL: Certbot + Let's Encrypt. Konfig: `docker/nginx.production.conf`. Verifikasi
 | Backup/drill | `ops/backup/*.sh` |
 | TLS+pin | `ops/tls/verify_production_tls.sh`, `ops/tls/verify_spki_pins.sh`, drill `ops/runbooks/` |
 | Load/capacity | `ops/load/run_load_test.sh` → `docs/CAPACITY_BASELINE.md` |
-| Inventaris & drift | `php artisan pdam:counts` (check) / `--write` |
+| Inventaris & drift | `pdam:counts`; `pdam:openapi`; `tools/generate_openapi_surface.dart` & `tools/generate_dio_client.py` (diff CI) |
 | Alerting insiden | `ops/runbooks/OBSERVABILITY.md` |
 | Nginx monitoring proxy | `docker/monitoring.conf` |
 
@@ -242,7 +242,8 @@ Enam blocking gate authoritative hanya yang tercantum pada `temuan2.md`: product
 | Load test production | Medium | Runner parameterisasi `ops/load/run_load_test.sh`; `tests/load/k6-load-test.js` kini menolak kredensial hardcode; baseline dicatat ke runbook observability |
 | Penetration test | Medium | `ops/PENTEST_SCOPE.md` — butuh vendor eksternal |
 | ML production-calibrated models | High | Harness `ml/scripts/calibrate_production.py` + gerbang threshold config + `php artisan pdam:ml-export-training-data`; CI menguji gerbang dgn data sintetis 24 bln — data riil 1-2 th + approval masih dibutuhkan |
-| IOT/PROD/DIST hardware | Low | Butuh sensor/SCADA |
+| IOT/PROD/DIST hardware | Low | Butuh sensor/SCADA; API+simulator (ops/simulators) & contract test selesai |
+| H-10 OpenAPI client / coverage mobile | ✅ codegen CI | `tools/generate_dio_client.py` → `mobile/.../api_client.g.dart` (369 operasi, path param) & `tools/generate_openapi_surface.dart` → `openapi_surface.dart` + test flutter sync. CI `git diff --exit-code` menolak kalau tak sinkron; gap coverage `pdam:mobile-coverage --report`. Lanjutan: migrasi bertahap call-site repository ke client ini |
 
 
 ## 9. Support Contact & Dokumen
