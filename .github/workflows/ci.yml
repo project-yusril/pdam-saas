@@ -162,9 +162,14 @@ jobs:
         with: { channel: stable, cache: true }
       - run: flutter pub get
         working-directory: mobile
+      - name: OpenAPI→Dart surface codegen drift (H-10)
+        run: |
+          dart tools/generate_openapi_surface.dart
+          git diff --exit-code -- mobile/lib/api/generated/openapi_surface.dart
       - run: flutter analyze
         working-directory: mobile
       - run: flutter test
+        working-directory: mobile
         working-directory: mobile
 
   ml:

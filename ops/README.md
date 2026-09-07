@@ -25,7 +25,9 @@ ops/
 
 Dari sisi aplikasi tersedia artisan evidence-command:
 `pdam:audit-db-privileges`, `pdam:queue-health [--max-failed …]`,
-`pdam:integrations-health [--ping]`, `pdam:ml-export-training-data`, `pdam:counts`.
+`pdam:integrations-health [--ping]`, `pdam:ml-export-training-data`, `pdam:counts` (inventaris drift),
+`pdam:openapi` (spek dari route registry; committed `docs/openapi.json` + drift gate CI), `pdam:mobile-coverage`
+(gate endpoint `endpoints.dart` ↔ registry), `tools/generate_openapi_surface.dart` (surface Dart utk test).
 CI `workflow ci.yml (job mysql-production-gates)` menjalankan drill privilege
 + backup/restore otomatis di setiap PR.
 
