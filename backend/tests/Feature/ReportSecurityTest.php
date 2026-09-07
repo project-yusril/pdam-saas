@@ -199,12 +199,21 @@ class ReportSecurityTest extends TestCase
         $this->assertStringNotContainsString('A&B <active>', $response->json('data'));
         $this->assertStringContainsString('A&amp;B &lt;active&gt;', $response->json('data'));
 
-        foreach (['excel', 'doc', 'xls'] as $unsupportedFormat) {
+        foreach (['excel', 'xls', 'pptx'] as $unsupportedFormat) {
             $this->actingAs($admin, 'sanctum')->postJson('/api/v1/export', [
                 'format' => $unsupportedFormat,
                 'table' => 'customers',
             ])->assertUnprocessable()->assertJsonPath('error.code', 'VALIDATION_ERROR');
         }
+
+        // 'doc' kini native (PhpWord .docx) — bukan lagi format yang ditolak.
+        $doc = $this->actingAs($admin, 'sanctum')->postJson('/api/v1/export', [
+            'format' => 'doc',
+            'table' => 'customers',
+        ])->assertOk()->assertJsonPath('format', 'doc')
+            ->assertJsonPath('content_type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+            ->assertJsonPath('total_rows', 0)
+            ->assertJsonPath('filename', fn ($value) => str_ends_with($value, '.docx'));
     }
 
     private function biAdmin(): array

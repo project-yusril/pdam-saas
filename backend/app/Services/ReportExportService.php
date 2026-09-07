@@ -12,6 +12,8 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\Writer\Word2007;
 
 class ReportExportService
 {
@@ -19,6 +21,7 @@ class ReportExportService
     public const FORMATS = [
         'csv' => ['mime' => 'text/csv', 'binary' => false],
         'html' => ['mime' => 'text/html', 'binary' => false],
+        'doc' => ['mime' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'binary' => true],
         'xlsx' => ['mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'binary' => true],
         'pdf' => ['mime' => 'application/pdf', 'binary' => true],
     ];
@@ -85,9 +88,53 @@ class ReportExportService
         return match ($format) {
             'html' => [$this->html($rows, $columns, $title), self::FORMATS['html']['mime']],
             'xlsx' => [$this->xlsx($rows, $columns, $title), self::FORMATS['xlsx']['mime']],
+            'doc' => [$this->doc($rows, $columns, $title), self::FORMATS['doc']['mime']],
             'pdf' => [$this->pdf($rows, $columns, $title), self::FORMATS['pdf']['mime']],
             default => [$this->csv($rows, $columns, $title), self::FORMATS['csv']['mime']],
         };
+    }
+
+    /**
+     * DOCX (.docx) native via PhpWord — tabel + header bold + tautan privat,
+     * formula injection netral (setText rada sel). Ekstensi yang dikenal Office
+     * = .docx (kontainer WordprocessingML); nama file memakai .docx saat dibuat.
+     */
+    private function doc($rows, array $columns, string $title): string
+    {
+        $ph = new PhpWord;
+        $section = $ph->addSection(['orientation' => 'landscape']);
+        $ph->addTitleStyle(1, ['size' => 14, 'bold' => true]);
+
+        $section->addTitle($title, 1);
+        $section->addText('Periode: '.now()->format('d/m/Y H:i'), ['italic' => true, 'size' => 10]);
+
+        $cellStyle = ['borderSize' => 6, 'cellMargin' => 60];
+        $headerStyle = ['borderSize' => 6, 'cellMargin' => 60, 'bgColor' => 'E0F2FE'];
+
+        $table = $section->addTable();
+        $table->addRow();
+        foreach ($columns as $column) {
+            $cell = $table->addCell(null, $headerStyle);
+            $cell->addText(ucwords(str_replace('_', ' ', $column)), ['bold' => true, 'size' => 9]);
+        }
+
+        foreach ($rows as $row) {
+            $table->addRow();
+            foreach ($columns as $column) {
+                $value = $this->neutralize((string) ($row->$column ?? ''));
+                $cell = $table->addCell(null, $cellStyle);
+                $cell->addText($value, ['size' => 9]);
+            }
+        }
+
+        $tmp = tempnam(sys_get_temp_dir(), 'pdam_docx_');
+        try {
+            (new Word2007($ph))->save($tmp);
+
+            return (string) file_get_contents($tmp);
+        } finally {
+            @unlink($tmp);
+        }
     }
 
     private function xlsx($rows, array $columns, string $title): string

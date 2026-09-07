@@ -654,7 +654,7 @@ dijalankan otomatis. Indeks tooling: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) §3 da
 Status artefak ML hari ini: keempat artifact tetap **`fixture_validation`** dengan
 `production_calibrated=false` sampai langkah riil gate #6 selesai. Seeder demo: `ProductionKernelSeeder`
 + `DemoGuard` memblokir fixture demo **secara mutlak** saat `APP_ENV=production`. Kontrak export UI:
-`csv|html|xlsx|pdf` (DOC roadmap). Worker/scheduler production: `backend/docker/supervisord.production.conf`
+`csv|html|xlsx|pdf|docx` (DOCX via PhpWord; DOC-native legacy .doc belum, kontrak jujur .docx). Worker/scheduler production: `backend/docker/supervisord.production.conf`
 (alarm `pdam:queue-health` + eventlistener protokol `ops/supervisor/crash_alert.py`).
 
 ### Rekomendasi Operasional Tambahan

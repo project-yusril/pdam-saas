@@ -50,9 +50,10 @@ class ExportController extends Controller
         }
 
         $filename = $datasetName.'_'.now()->format('Ymd_His');
+        $extension = $data['format'] === 'doc' ? 'docx' : $data['format'];
 
         $payload = [
-            'filename' => $filename.'.'.$data['format'],
+            'filename' => $filename.'.'.$extension,
             'format' => $data['format'],
             'content_type' => $result['content_type'],
             'total_rows' => $result['row_count'],

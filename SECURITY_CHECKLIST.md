@@ -29,7 +29,7 @@
 - [x] Query biasa memakai binding Eloquent/query builder
 - [x] BI/export dinamis memakai registry allowlist untuk dataset, kolom, filter, sort, dan metric
 - [x] Identifier aggregate BI di-quote dengan grammar koneksi; nilai filter tetap memakai binding query builder
-- [x] Export generik membatasi PII/internal ID dan menetralkan formula CSV; menerima `csv|html|xlsx|pdf`
+- [x] Export generik membatasi PII/internal ID dan menetralkan formula CSV; menerima `csv|html|xlsx|pdf|docx`
       dengan ekstensi+MIME sesuai: XLSX riil via PhpSpreadsheet (sel angka bertipe number, formula
       di-netralkan hanya pada sel teks, header/title tidak lagi jadi formula vector), PDF riil via dompdf
       dengan kop surat PDAM; biner dikirm via `content_base64`. DOC surat-menyurat tetap roadmap.
@@ -131,8 +131,7 @@
 
 - Seluruh 39/39 temuan audit aplikasi selesai; status ini bukan sertifikasi atau persetujuan production.
 - Certificate pinning mobile sudah diimplementasikan dengan primary+backup SPKI wajib dan fail-closed; endpoint TLS/rotation drill masih gate deployment.
-- Export kini `csv|html|xlsx|pdf` (lihat A3); **DOC** surat-menyurat masih roadmap PRD — implementasi nyata
-  belum ada dan tidak boleh diklaim.
+- Export kini `csv|html|xlsx|pdf|docx` (lihat A3); DOCX surat-menyurat via PhpWord (file WordprocessingML riil).
 - Frontend tidak menyimpan bearer auth di `localStorage`; login web memakai session cookie HttpOnly+CSRF.
 - Logging mobile sudah dibatasi ke route ternormalisasi/status/type dan tercakup suite Flutter terbaru.
 - Enam gate persetujuan production canonical belum ditutup: TLS endpoint, pentest eksternal, tested backup/restore, least-privilege DB, drill rotasi pin, dan kalibrasi/acceptance ML representative-data. Definisi authoritative ada di `temuan2.md`.

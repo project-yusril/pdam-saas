@@ -98,4 +98,23 @@ class NativeExportFormatTest extends TestCase
         }
         $response->assertCreated()->assertJsonPath('data.format', 'xlsx');
     }
+
+    public function test_docx_export_is_real_wordprocessingml_container(): void
+    {
+        $admin = $this->admin();
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/v1/export', [
+            'format' => 'doc',
+            'table' => 'customers',
+            'title' => 'Daftar Pelanggan Uji DOC',
+        ])->assertOk()->assertJsonPath('format', 'doc')
+            ->assertJsonPath('content_type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+
+        $binary = base64_decode((string) $response->json('content_base64'), true);
+        $this->assertNotFalse($binary);
+        $this->assertStringStartsWith('PK', $binary, 'DOCX wajib ZIP container');
+        $this->assertStringContainsString('[Content_Types].xml', $binary);
+        $this->assertStringContainsString('word/document.xml', $binary);
+        $this->assertStringEndsWith('.docx', $response->json('filename'));
+    }
 }

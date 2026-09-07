@@ -14,7 +14,7 @@ kredensial demo dimiliki [`SEED_DATA.md`](SEED_DATA.md); deployment production d
 > `php artisan pdam:counts`); Vitest 7 file/**13 test** + build lulus; Flutter **44/44** + analyze; ML
 > **29 test** (pytest; `test_calibration.py` gate §13 #6 — jalan di CI). Seeder kini router: production
 > hanya `ProductionKernelSeeder` dan `DemoGuard` memblokir **mutlak** fixture demo/akun `12345678`
-> (tanpa env escape; bukti `ProductionSeederIsolationTest`). Export menerima `csv|html|xlsx|pdf` native.
+> (tanpa env escape; bukti `ProductionSeederIsolationTest`). Export menerima `csv|html|xlsx|pdf|docx` native.
 > CI lintas komponen + drill MySQL (privilege, backup/restore, audit command) di
 > [`.github/workflows/ci.yml`](../.github/workflows/ci.yml); peta dokumen/fact sheet [`../docs/DOC_MAP.md`](../docs/DOC_MAP.md);
 > tooling & runbook gate [`../ops/README.md`](../ops/README.md). Snapshot MySQL lama 89/89–15 Juli tetap tercatat di
