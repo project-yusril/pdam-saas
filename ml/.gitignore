@@ -2,7 +2,8 @@
 *.pickle
 *.joblib
 *.manifest.json
-models/
+# artifact model saja — BUKAN src/models (kode Python)
+/models/
 output/
 __pycache__/
 *.py[cod]

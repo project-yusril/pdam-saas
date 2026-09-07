@@ -1,14 +1,20 @@
+# Versi 2026-09-07: upgrade untuk lulus `pip-audit` (CI security job).
+# CVE yang ditutup: starlette (transitive fastapi) PYSEC-2026-1941/248,
+# mysql-connector-python PYSEC-2026-1685, python-dotenv PYSEC-2026-2270,
+# + pin fastapi/uvicorn/pydantic yang konsisten dengan starlette>=0.47.
 scikit-learn==1.5.1
 pandas==2.2.2
 numpy==1.26.4
-mysql-connector-python==9.0.0
+mysql-connector-python==9.1.0
 joblib==1.4.2
 xgboost==2.1.0
-fastapi==0.111.1
-uvicorn==0.30.1
-python-dotenv==1.0.1
-pydantic==2.7.3
+fastapi==0.115.12
+starlette>=0.47.2,<0.48
+uvicorn==0.34.3
+python-dotenv==1.1.1
+pydantic==2.11.7
 matplotlib==3.9.0
 seaborn==0.13.2
 tensorflow==2.16.1
 pyyaml==6.0.1
+pytest==8.4.1

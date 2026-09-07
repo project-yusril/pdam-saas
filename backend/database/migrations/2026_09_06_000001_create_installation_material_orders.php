@@ -27,7 +27,7 @@ return new class extends Migration
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
 
-            $table->index(['pdam_org_id', 'prospect_id', 'status']);
+            $table->index(['pdam_org_id', 'prospect_id', 'status'], 'installation_material_orders_org_prospect_status_idx');
         });
     }
 
