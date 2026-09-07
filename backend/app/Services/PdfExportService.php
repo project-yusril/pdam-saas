@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\PdamOrganization;
 use App\Support\TenantContext;
 
 /**
@@ -10,9 +11,14 @@ use App\Support\TenantContext;
  */
 class PdfExportService
 {
+    private function currentOrg(): ?PdamOrganization
+    {
+        return PdamOrganization::find(TenantContext::id());
+    }
+
     public function generate(string $title, array $headers, array $rows, ?string $subTitle = null): string
     {
-        $org = TenantContext::org();
+        $org = $this->currentOrg();
         $orgName = $org->name ?? 'PDAM';
         $date = now()->format('d/m/Y H:i');
 
@@ -67,7 +73,7 @@ class PdfExportService
 
     public function generateReceipt(array $data): string
     {
-        $org = TenantContext::org();
+        $org = $this->currentOrg();
         $orgName = $org->name ?? 'PDAM';
 
         $html = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>

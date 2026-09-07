@@ -97,7 +97,7 @@ class ScheduledReportController extends Controller
         return $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'dataset' => ['required', Rule::in(ReportDatasetRegistry::names())],
-            'format' => ['required', Rule::in(['csv', 'html'])],
+            'format' => ['required', Rule::in(ReportExportService::supportedFormats())],
             'columns' => ['required', 'array', 'min:1', 'max:30'],
             'columns.*' => ['required', 'string', 'distinct'],
             'filters' => ['nullable', 'array', 'max:20'],

@@ -16,7 +16,7 @@ class ExportController extends Controller
     public function export(Request $request, ReportExportService $exports): JsonResponse
     {
         $data = $request->validate([
-            'format' => ['required', 'in:csv,html'],
+            'format' => ['required', 'in:'.implode(',', ReportExportService::supportedFormats())],
             'table' => ['required', 'string'],
             'filters' => ['nullable', 'array', 'max:20'],
             'sort' => ['nullable', 'string'],
@@ -51,12 +51,18 @@ class ExportController extends Controller
 
         $filename = $datasetName.'_'.now()->format('Ymd_His');
 
-        return response()->json([
+        $payload = [
             'filename' => $filename.'.'.$data['format'],
             'format' => $data['format'],
             'content_type' => $result['content_type'],
-            'data' => $result['content'],
             'total_rows' => $result['row_count'],
-        ]);
+        ];
+        if ($result['binary']) {
+            $payload['content_base64'] = base64_encode($result['content']);
+        } else {
+            $payload['data'] = $result['content'];
+        }
+
+        return response()->json($payload);
     }
 }

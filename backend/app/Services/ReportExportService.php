@@ -4,10 +4,32 @@ namespace App\Services;
 
 use App\Exceptions\MarketplaceException;
 use App\Support\ReportDatasetRegistry;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ReportExportService
 {
+    /** @var array<string, array{mime:string, binary:bool}> */
+    public const FORMATS = [
+        'csv' => ['mime' => 'text/csv', 'binary' => false],
+        'html' => ['mime' => 'text/html', 'binary' => false],
+        'xlsx' => ['mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'binary' => true],
+        'pdf' => ['mime' => 'application/pdf', 'binary' => true],
+    ];
+
+    public function __construct(private PdfExportService $pdfTemplate) {}
+
+    public static function supportedFormats(): array
+    {
+        return array_keys(self::FORMATS);
+    }
+
     public function generate(int $organizationId, string $datasetName, string $format, array $columns, array $filters = [], ?string $sort = null, ?string $title = null): array
     {
         $dataset = ReportDatasetRegistry::get($datasetName);
@@ -41,9 +63,133 @@ class ReportExportService
 
         $rows = $query->select($columns)->limit(10000)->get();
         $title ??= 'Laporan '.ucfirst($datasetName);
-        $content = $format === 'html' ? $this->html($rows, $columns, $title) : $this->csv($rows, $columns, $title);
 
-        return ['content' => $content, 'row_count' => $rows->count(), 'content_type' => $format === 'html' ? 'text/html' : 'text/csv'];
+        if (! isset(self::FORMATS[$format])) {
+            throw new MarketplaceException('INVALID_FORMAT', 'Format export tidak didukung.', [$format]);
+        }
+
+        [$content, $contentType] = $this->render($rows, $columns, $title, $format, $organizationId);
+
+        return [
+            'content' => $content,
+            'row_count' => $rows->count(),
+            'content_type' => $contentType,
+            'format' => $format,
+            'binary' => self::FORMATS[$format]['binary'],
+        ];
+    }
+
+    /** @return array{0:string,1:string} [content, content_type] */
+    private function render($rows, array $columns, string $title, string $format, int $organizationId): array
+    {
+        return match ($format) {
+            'html' => [$this->html($rows, $columns, $title), self::FORMATS['html']['mime']],
+            'xlsx' => [$this->xlsx($rows, $columns, $title), self::FORMATS['xlsx']['mime']],
+            'pdf' => [$this->pdf($rows, $columns, $title), self::FORMATS['pdf']['mime']],
+            default => [$this->csv($rows, $columns, $title), self::FORMATS['csv']['mime']],
+        };
+    }
+
+    private function xlsx($rows, array $columns, string $title): string
+    {
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle(substr(preg_replace('/[^A-Za-z0-9 _-]/', '', $title) ?: 'Report', 0, 31));
+
+        $colLetters = array_map(
+            fn ($i) => Coordinate::stringFromColumnIndex($i + 1),
+            array_keys($columns),
+        );
+        $lastCol = $colLetters[count($colLetters) - 1];
+
+        $mergeFromTo = "A1:{$lastCol}1";
+        $sheet->mergeCells($mergeFromTo);
+        $sheet->setCellValueExplicit('A1', $title."\u{200E}", DataType::TYPE_STRING);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->setCellValueExplicit('A2', 'Periode: '.now()->format('d/m/Y H:i')."\u{200E}", DataType::TYPE_STRING);
+
+        foreach ($columns as $i => $column) {
+            $sheet->setCellValueExplicit(
+                $colLetters[$i].'3',
+                $this->neutralize(ucwords(str_replace('_', ' ', $column))),
+                DataType::TYPE_STRING,
+            );
+        }
+
+        $rowNo = 4;
+        foreach ($rows as $row) {
+            foreach ($columns as $i => $column) {
+                $cell = $colLetters[$i].$rowNo;
+                $raw = (string) ($row->$column ?? '');
+
+                // Angka riil ditulis sebagai number — bukan string ber-apostrof
+                // (review: kolom rupiah SUM-nya mati & "-1500000" korup jadi apostrope)
+                if ($this->isPureNumeric($raw)) {
+                    $sheet->setCellValue($cell, $raw + 0);
+                    if (is_string($raw) && str_contains($raw, '.')) {
+                        $sheet->getStyle($cell)->getNumberFormat()->setFormatCode('#,##0.00');
+                    } else {
+                        $sheet->getStyle($cell)->getNumberFormat()->setFormatCode('#,##0');
+                    }
+
+                    continue;
+                }
+
+                if ($raw === '') {
+                    $sheet->setCellValueExplicit($cell, '', DataType::TYPE_STRING);
+                } else {
+                    $sheet->setCellValueExplicit($cell, $this->neutralize($raw), DataType::TYPE_STRING);
+                }
+            }
+            $rowNo++;
+        }
+
+        $sheet->getStyle('A3:'.$lastCol.'3')->getFont()->setBold(true);
+        $sheet->getStyle('A3:'.$lastCol.'3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E0F2FE');
+
+        $tmp = tempnam(sys_get_temp_dir(), 'pdam_xlsx_');
+        try {
+            (new Xlsx($spreadsheet))->save($tmp);
+
+            return (string) file_get_contents($tmp);
+        } finally {
+            $spreadsheet->disconnectWorksheets();
+            @unlink($tmp);
+        }
+    }
+
+    private function pdf($rows, array $columns, string $title): string
+    {
+        $headers = array_map(fn ($column) => ucwords(str_replace('_', ' ', $column)), $columns);
+        $data = [];
+        foreach ($rows as $row) {
+            $data[] = array_map(fn ($column) => $this->neutralize((string) ($row->$column ?? '')), $columns);
+        }
+
+        $html = $this->pdfTemplate->generate($title, $headers, $data, 'Periode: '.now()->format('d/m/Y H:i'));
+
+        return Pdf::loadHTML($html)->setPaper('a4', 'landscape')->output();
+    }
+
+    /**
+     * TRUE untuk angka murni yang boleh ditulis Excel sebagai number:
+     * - optional negative, integer/decimal pendek, TANPA plus/eksponen
+     * - hindari serial panjang (>15 digit) → presisi float hilang
+     * - hindari leading-zero "kode" (007, 0012) → jangan dikonversi ke angka
+     */
+    private function isPureNumeric(string $raw): bool
+    {
+        if ($raw === '' || strlen($raw) >= 15 || preg_match('/[eE@+\s]/', $raw)) {
+            return false;
+        }
+
+        return (bool) preg_match('/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/', $raw);
+    }
+
+    /** Netralkan formula injection pada semua sel non-CVS. */
+    private function neutralize(string $value): string
+    {
+        return $value !== '' && preg_match('/^[=+\-@\t\r]/', $value) ? "'".$value : $value;
     }
 
     private function csv($rows, array $columns, string $title): string

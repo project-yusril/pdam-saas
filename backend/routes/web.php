@@ -3,17 +3,14 @@
 use App\Http\Controllers\Web\AstWebController;
 use App\Http\Controllers\Web\MeterRouteWebController;
 use App\Http\Controllers\Web\MetxWebController;
-
 use App\Http\Controllers\Web\ProspectWebController;
 use App\Http\Controllers\Web\ZoneWebController;
-
 use Illuminate\Support\Facades\Route;
 
 // Root → aplikasi web (Vue SPA). Halaman login tampil otomatis bila belum auth.
 Route::get('/', function () {
     return view('welcome');
 });
-
 
 // ── Admin Web UI — Zone Management ────────────────────────────────────
 Route::middleware(['auth:sanctum', 'tenant'])->prefix('admin')->group(function () {
@@ -38,5 +35,3 @@ Route::middleware(['auth:sanctum', 'tenant'])->prefix('admin')->group(function (
     Route::get('ast/assets', [AstWebController::class, 'assets'])->name('admin.ast.assets');
     Route::get('ast/assets/{fixedAsset}', [AstWebController::class, 'card'])->name('admin.ast.card');
 });
-
-
