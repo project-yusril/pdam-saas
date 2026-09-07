@@ -670,7 +670,10 @@ Item berikut penting untuk operasi yang andal, tetapi **tidak dicampur ke daftar
 - Pisahkan seeder demo dari jalur provisioning/deploy production agar kredensial dan fixture demo tidak dibuat. ✅
   Sudah selesai (`ProductionKernelSeeder` vs `DemoSeeder`+`DemoGuard`, lihat §10 P1).
 - Terapkan observability, alerting, runbook insiden, capacity baseline, dan load test pada topology representatif.
-  ➜ `ops/runbooks/OBSERVABILITY.md` + `ops/load/run_load_test.sh` (k6 PROFILE=smoke|load|stress,
-  kredensial via env, BASE_URL riil) — jalankan di staging mirror sebelum rilis.
+  ➜ `ops/runbooks/OBSERVABILITY.md` + rule contoh `ops/alerting/prometheus-rules.example.yml` + logrotate;
+  `ops/load/run_load_test.sh` (k6 PROFILE=smoke|load|stress) — jalankan di staging mirror sebelum rilis;
+  workflow `nightly-ops.yml` (cron/schedule, `LOAD_ENABLED=true` repo-vars) siap menampilkannya otomatis.
+- Integrasi Tier-3 (IOT/PROD/DIST): API + simulator `ops/simulators/telemetry_simulator.py`
+  dan contract test tier3 — hardware AMR/SCADA/telemetri masih menunggu perangkat.
 
 ---

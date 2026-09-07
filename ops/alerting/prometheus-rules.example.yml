@@ -1,0 +1,44 @@
+# Rules Grafana/Prometheus-style untuk PDAM API (contoh; sesuaikan datasource)
+# Mengacu ops/runbooks/OBSERVABILITY.md.
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata: { name: pdam-saas, labels: { app: pdam-saas } }
+spec:
+  groups:
+    - name: pdam-saas.http
+      rules:
+        - alert: PdamApi5xxRate
+          expr: sum(rate(nginx_http_requests_total{status=~"5..",job="nginx"}[10m])) / sum(rate(nginx_http_requests_total{job="nginx"}[10m])) > .01
+          for: 5m
+          labels: { severity: P2 }
+          annotations: { summary: 'HTTP 5xx > 1% selama 5 menit' }
+        - alert: PdamApiLatency
+          expr: histogram_quantile(.95, sum by (le) (rate(nginx_http_request_duration_seconds_bucket[10m]))) > 1
+          for: 10m
+          labels: { severity: P2 }
+          annotations: { summary: 'p95 API > 1s selama 10 menit' }
+    - name: pdam-saas.workers
+      rules:
+        - alert: PdamQueueBacklog
+          expr: last_over_time(pdam_queue_length{queue=~"default|notifications|payments"}[5m]) > 1000
+          for: 5m
+          labels: { severity: P2 }
+          annotations: { summary: 'backlog queue PDAM > 1000; cek `php artisan pdam:queue-health`' }
+        - alert: PdamFailedJobs
+          expr: pdam_failed_jobs_count > 20
+          for: 10m
+          labels: { severity: P3 }
+          annotations: { summary: 'failed_jobs > 20 (`pdam:queue-health --max-failed-window`)' }
+        - alert: PdamSchedulerStale
+          expr: time() - pdam_schedule_last_success_timestamp > 300
+          for: 2m
+          labels: { severity: P3 }
+          annotations: { summary: 'scheduler `reports:dispatch-scheduled` tidak jalan 5 menit' }
+    - name: pdam-saas.integrations
+      rules:
+        - alert: PdamMlUnready
+          expr: pdam_ml_ready == 0
+          for: 3m
+          labels: { severity: P3 }
+          annotations: { summary: 'health /health/ready ML gagal; cek token & mTLS/VPC' }

@@ -20,7 +20,9 @@ ops/
 ├── supervisor/crash_alert.py      # event-listener protokol supervisor (crash alert)
 ├── runbooks/OBSERVABILITY.md      # alerting rules + incident runbook + capacity baseline proses
 ├── load/run_load_test.sh          # k6 parameterized smoke|load|stress → docs/CAPACITY_BASELINE.md
-├── simulators/telemetry_simulator.py # simulator Tier-3 IOT/PROD/DIST (AMR/SCADA/DMA) — kontrak sama dgn test
+├── simulators/telemetry_simulator.py # simulator Tier-3 IOT/PROD/DIST (AMR/SCADA/DMA) — kontrak = ml/tests+php
+├── alerting/prometheus-rules.example.yml # contoh rule 5xx/queue/ML (diadaptasi ke Prometheus/Grafana)
+├── logrotate/pdam.conf              # rotasi /var/log/pdam (worker/scheduler/queue-health)
 └── nginx/ml-service.mtls.conf     # hardening C-05: mTLS utk private ML service
 ```
 

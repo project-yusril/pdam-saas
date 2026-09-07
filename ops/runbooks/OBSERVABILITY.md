@@ -17,6 +17,9 @@ Format alert di syslog: `logger -t pdam-supervisor` (supervisord
 eventlistener `ops/.../supervisord.production.conf`). Hook
 rsyslog→PagerDuty/Telegram sesuai stack monitoring yang dipilih.
 
+Contoh rule siap pakai (prometheus/Grafana, datasource diadaptasi):
+`ops/alerting/prometheus-rules.example.yml`. Rotasi log `ops/logrotate/pdam.conf`.
+
 ## Kapasitas baseline (proses)
 1. Deploy staging cermin produksi (1 web+php-fpm, 1 mysql, 1 redis, worker).
 2. `PROFILE=smoke ./ops/load/run_load_test.sh` → sanity
