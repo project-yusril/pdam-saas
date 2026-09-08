@@ -156,6 +156,47 @@ class GenerateOpenApi extends Command
                 'securitySchemes' => [
                     'bearerAuth' => ['type' => 'http', 'scheme' => 'bearer', 'bearerFormat' => 'Sanctum'],
                 ],
+                'schemas' => [
+                    'ApiResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'success' => ['type' => 'boolean'],
+                            'data' => ['nullable' => true],
+                            'meta' => ['nullable' => true, 'type' => 'object', 'additionalProperties' => true],
+                            'message' => ['type' => 'string', 'nullable' => true],
+                        ],
+                    ],
+                    'PaginatedResponse' => [
+                        'allOf' => [
+                            ['$ref' => '#/components/schemas/ApiResponse'],
+                            ['type' => 'object', 'properties' => [
+                                'data' => ['type' => 'array', 'items' => new \stdClass()],
+                                'meta' => ['type' => 'object', 'properties' => [
+                                    'current_page' => ['type' => 'integer'],
+                                    'from' => ['type' => 'integer'],
+                                    'to' => ['type' => 'integer'],
+                                    'per_page' => ['type' => 'integer'],
+                                    'total' => ['type' => 'integer'],
+                                ]],
+                            ]],
+                        ],
+                    ],
+                    'ApiError' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'error' => ['type' => 'object', 'properties' => [
+                                'code' => ['type' => 'string'],
+                                'message' => ['type' => 'string'],
+                                'details' => ['type' => 'array', 'items' => ['type' => 'string']],
+                            ]],
+                        ],
+                        'required' => ['error'],
+                    ],
+                    'ValidationError' => [
+                        'allOf' => [['$ref' => '#/components/schemas/ApiError']],
+                        'description' => 'Error 422; format sama dgn ApiError',
+                    ],
+                ],
             ],
             'tags' => $tags,
         ];
@@ -179,11 +220,15 @@ class GenerateOpenApi extends Command
 
     private function responsesFor(string $method): array
     {
+        $ref = [
+            'schema' => ['$ref' => '#/components/schemas/ApiResponse'],
+        ];
+
         return [
-            '200' => ['description' => 'Sukses'],
-            '401' => ['description' => 'Unauthenticated'],
-            '403' => ['description' => 'Forbidden / modul tidak aktif'],
-            '422' => ['description' => 'Validasi gagal'],
+            '200' => ['description' => 'Sukses', 'content' => ['application/json' => $ref]],
+            '401' => ['description' => 'Unauthenticated', 'content' => ['application/json' => ['$ref' => '#/components/schemas/ApiError']]],
+            '403' => ['description' => 'Forbidden / modul tidak aktif', 'content' => ['application/json' => ['$ref' => '#/components/schemas/ApiError']]],
+            '422' => ['description' => 'Validasi gagal', 'content' => ['application/json' => ['$ref' => '#/components/schemas/ValidationError']]],
         ];
     }
 }
