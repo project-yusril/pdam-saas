@@ -117,4 +117,23 @@ class NativeExportFormatTest extends TestCase
         $this->assertStringContainsString('word/document.xml', $binary);
         $this->assertStringEndsWith('.docx', $response->json('filename'));
     }
+
+    public function test_rtf_export_is_real_rich_text_format(): void
+    {
+        $admin = $this->admin();
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/v1/export', [
+            'format' => 'rtf',
+            'table' => 'customers',
+            'title' => 'RTF Daftar Pelanggan',
+        ])
+            ->assertOk()
+            ->assertJsonPath('format', 'rtf')
+            ->assertJsonPath('content_type', 'application/rtf');
+
+        $binary = base64_decode((string) $response->json('content_base64'), true);
+        $this->assertStringStartsWith('{\\rtf', $binary);
+        $this->assertStringContainsString('Daftar Pelanggan', $binary);
+        $this->assertStringEndsWith('.rtf', $response->json('filename'));
+    }
 }

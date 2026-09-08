@@ -1,4 +1,4 @@
-| Baris route registry | **392 method rows** (295 API `/api/v1` + 19 web + refund routes) |# Documentation Map & Fact Sheet — PDAM SaaS
+| Baris route registry | **391 method rows** (295 API `/api/v1` + 19 web + refund routes) |# Documentation Map & Fact Sheet — PDAM SaaS
 
 **Diperbarui:** 7 September 2026 · **Pemilik:** seluruh tim · **Dokumen ini = indeks & fakta bersama.**
 Bila ada angka/status yang berbeda antar dokumen, dokumen ini yang jadi penengah — dan
@@ -30,7 +30,7 @@ authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 
 | Metrik | Nilai | Sumber |
 |---|---|---|
-| Baris route registry | **390 method rows** (371 API `/api/v1` + 19 web) | `php artisan pdam:openapi`/counts + `COUNTS.json` |
+| Baris route registry | **390 method rows** (372 API `/api/v1` + 19 web) | `php artisan pdam:openapi`/counts + `COUNTS.json` |
 | URI API unik | **293** | `route:list --json` |
 | OpenAPI kanonik (drift CI) | **293 path/371 method** di `docs/openapi.json` | `php artisan pdam:openapi --out=../docs/openapi.json` && CI `git diff --exit-code` |
 | Models | **136** | `COUNTS.json` |
@@ -38,7 +38,7 @@ authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 | Seeder classes | **28** (production path: 4 — kernel+permission/module/role) | `COUNTS.json`, `SEED_DATA.md` |
 | Tabel (statis dari migration) | **168** | `COUNTS.json` |
 | Command artisan `pdam:*` | **22** (baru: openapi, mobile-coverage, audit-db-privileges, queue/integrations-health, ml export, counts; 21 total) | `COUNTS.json` |
-| Test backend (SQLite) | **129/129** (853 assertions) (8 Sep; +Tier3/ops/sim contracts) | `php artisan test` |
+| Test backend (SQLite) | **134/134** (853 assertions) (8 Sep; +Tier3/ops/sim contracts) | `php artisan test` |
 | Test frontend Vitest | **7 files / 13 tests** + `npm run build` OK | `npm run test -- --run` |
 | Test Flutter | **50** (2 + dio client) + analyze **0 issue** | `flutter test` |
 | Test Python (ml) | **32 test methods** (29 sebelumnya + 3 contract simulator tier-3) — dieksekusi CI `ml` (xgboost tak tersedia di runner Win-ARM64 lokal) | `test_*.py` + workflow |

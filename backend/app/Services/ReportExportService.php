@@ -13,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\Writer\RTF;
 use PhpOffice\PhpWord\Writer\Word2007;
 
 class ReportExportService
@@ -22,6 +23,7 @@ class ReportExportService
         'csv' => ['mime' => 'text/csv', 'binary' => false],
         'html' => ['mime' => 'text/html', 'binary' => false],
         'doc' => ['mime' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'binary' => true],
+        'rtf' => ['mime' => 'application/rtf', 'binary' => true],
         'xlsx' => ['mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'binary' => true],
         'pdf' => ['mime' => 'application/pdf', 'binary' => true],
     ];
@@ -89,6 +91,7 @@ class ReportExportService
             'html' => [$this->html($rows, $columns, $title), self::FORMATS['html']['mime']],
             'xlsx' => [$this->xlsx($rows, $columns, $title), self::FORMATS['xlsx']['mime']],
             'doc' => [$this->doc($rows, $columns, $title), self::FORMATS['doc']['mime']],
+            'rtf' => [$this->rtf($rows, $columns, $title), self::FORMATS['rtf']['mime']],
             'pdf' => [$this->pdf($rows, $columns, $title), self::FORMATS['pdf']['mime']],
             default => [$this->csv($rows, $columns, $title), self::FORMATS['csv']['mime']],
         };
@@ -99,7 +102,8 @@ class ReportExportService
      * formula injection netral (setText rada sel). Ekstensi yang dikenal Office
      * = .docx (kontainer WordprocessingML); nama file memakai .docx saat dibuat.
      */
-    private function doc($rows, array $columns, string $title): string
+    /** Tabel laporan jadi PhpWord object (shared utk DOCX/RTF). */
+    private function buildWord($rows, array $columns, string $title): PhpWord
     {
         $ph = new PhpWord;
         $section = $ph->addSection(['orientation' => 'landscape']);
@@ -127,9 +131,25 @@ class ReportExportService
             }
         }
 
-        $tmp = tempnam(sys_get_temp_dir(), 'pdam_docx_');
+        return $ph;
+    }
+
+    private function doc($rows, array $columns, string $title): string
+    {
+        return $this->writeTempFile($this->buildWord($rows, $columns, $title), Word2007::class);
+    }
+
+    /** RTF legacy Office document — alternatif .doc (PhpWord tak bikin binary .doc). */
+    private function rtf($rows, array $columns, string $title): string
+    {
+        return $this->writeTempFile($this->buildWord($rows, $columns, $title), RTF::class);
+    }
+
+    private function writeTempFile(PhpWord $phpWord, string $writerClass): string
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'pdam_rtf_');
         try {
-            (new Word2007($ph))->save($tmp);
+            (new $writerClass($phpWord))->save($tmp);
 
             return (string) file_get_contents($tmp);
         } finally {

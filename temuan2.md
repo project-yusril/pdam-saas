@@ -510,7 +510,7 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 
 | Perintah | Hasil |
 |---|---|
-| `php artisan test` (SQLite) | **PASS 8 Sept 2026**: 129/129, 853 assertions (15 Jul: 89/89; 7 Sept: 117) |
+| `php artisan test` (SQLite) | PASS 8 Sept: 134/134+provider Xendit, 867 (15 Jul: 89/89; 7 Sept: 117) |
 | `php artisan test` (MySQL 8.4.9) | **PASS**: 89 discovered, 88 passed, 1 intentionally SQLite-only skipped, 756 assertions, zero failures |
 | `php artisan route:list --json` | **PASS (7 Sep 2026)**: 387 rows — 371 method endpoint `/api/v1` + 19 web; 295 URI API unik. Kanonis: `docs/COUNTS.json` |
 | `php artisan route:cache` | **PASS** |
