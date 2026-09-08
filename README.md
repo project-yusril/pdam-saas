@@ -8,7 +8,7 @@ Sistem Manajemen PDAM Multi-Tenant berbasis Laravel + Vue 3.
 > **Sumber status saat ini:** [`temuan2.md`](temuan2.md), termasuk enam gate persetujuan production canonical. **Peta dokumentasi + fact sheet angka live:** [`docs/DOC_MAP.md`](docs/DOC_MAP.md). Inventaris tergenerasi: [`docs/COUNTS.json`](docs/COUNTS.json) (`php artisan pdam:counts`).
 
 <!-- doc-sync:start verifikasi 7 Sept 2026 -->
-> **Verifikasi terintegrasi:** 117/117 (117 test backend, 812 assertions) · Vitest 13 · Flutter analyze 0 issue + 50/50 · ML 32 (CI) · 369 method /api/v1 (293 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
+> **Verifikasi terintegrasi:** 129/129 (129 test backend, 853 assertions) · Vitest 13 · Flutter analyze 0 issue + 50 · ML 32 (CI) · 371 method /api/v1 (295 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## Documentation Map
@@ -351,7 +351,7 @@ production-ready. Detail gap per area ada di `temuan2.md`.
 
 ## API
 
-Snapshot route registry: **388 baris route** (369 method endpoint `/api/v1` + 19 web; 293 URI
+Snapshot route registry: **392 baris route** (371 method endpoint `/api/v1` + 19 web; 293 URI
 API unik) — angka kanonis ada di [`docs/COUNTS.json`](docs/COUNTS.json), regenerasi lewat
 `php artisan pdam:counts --write`. Spek kontrak endpoint dari registry: `php artisan pdam:openapi`
 → **`docs/openapi.json`** (293 path; H-10 CI drift: codegen `tools/generate_dio_client.py` → `mobile/lib/api/generated/api_client.g.dart` + `openapi_surface.dart` + diff `git diff --exit-code`). Swagger anotasi & Postman
@@ -379,8 +379,8 @@ bash -n ops/**/*.sh                 # syntax ops; CI menjalankan drill ops/backu
 ```
 
 Status verifikasi 7 September 2026 (lokal Windows; CI menjalankan semuanya — termasuk MySQL):
-backend SQLite **117/117, 812 assertions** (termasuk seeder-isolation ProductionSeederIsolationTest,
-fitur refund (gated `business.refund.enabled` + jurnal pembalik), material stock-out, native export XLSX/PDF/DOCX, command `pdam:counts`, `pdam:openapi` & `pdam:mobile-coverage`
+backend SQLite **129/129, 853 assertions** (termasuk seeder-isolation ProductionSeederIsolationTest,
+fitur refund (gated `business.refund.enabled` + jurnal pembalik), material stock-out, native export XLSX/PDF/DOCX, fitur refund+trial+digit-meter (gated config PRD §23), command `pdam:counts`, `pdam:openapi` & `pdam:mobile-coverage`
 H-10 kontrak endpoint mobile); frontend Vitest **7 file / 13 tests** (helper workbench, resources config,
 errors, auth flow, router, contract) + `npm run build` lulus; Flutter **44/44** + analyze **0 issue**
 (duplikat konstan endpoints.dart dibersihkan); ML **32 tests** (pytest; inc. `test_telemetry_simulator` contract

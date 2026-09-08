@@ -423,7 +423,7 @@ Tidak ditemukan `.pkl`, `.joblib`, atau `.onnx` pada path model yang diharapkan.
 
 ### 6.1 Compatibility Smoke Test yang Sudah Dijalankan
 
-- [X] Semua **60 migration** berhasil pada MySQL 8.4.9 disposable dan SQLite temporary; keduanya menghasilkan **167 tabel** karena lima migration baru hanya menambah constraint.
+- [X] Semua **60 migration** berhasil pada MySQL 8.4.9 disposable dan SQLite temporary; keduanya menghasilkan **168 tabel** karena lima migration baru hanya menambah constraint.
 - [X] Semua **24 seeder** yang didaftarkan pada `DatabaseSeeder.php` berhasil dari database kosong pada MySQL dan SQLite.
 - [X] Rollback migration `000004`-`000010` dan migrate ulang lulus pada MySQL setelah supporting-index rollback `L-08` diperbaiki.
 - [X] MySQL `information_schema` mengonfirmasi 234 FK total, termasuk 97 tenant batch FK dan 8 actor FK; orphan/cross-tenant actor preflight nol.
@@ -510,9 +510,9 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 
 | Perintah | Hasil |
 |---|---|
-| `php artisan test` (SQLite) | **PASS 7 Sept 2026**: 117/117, 812 assertions (15 Jul: 89/89, 664) |
+| `php artisan test` (SQLite) | **PASS 8 Sept 2026**: 129/129, 853 assertions (15 Jul: 89/89; 7 Sept: 117) |
 | `php artisan test` (MySQL 8.4.9) | **PASS**: 89 discovered, 88 passed, 1 intentionally SQLite-only skipped, 756 assertions, zero failures |
-| `php artisan route:list --json` | **PASS (7 Sep 2026)**: 387 rows — 368 method endpoint `/api/v1` + 19 web; 292 URI API unik. Kanonis: `docs/COUNTS.json` |
+| `php artisan route:list --json` | **PASS (7 Sep 2026)**: 387 rows — 371 method endpoint `/api/v1` + 19 web; 295 URI API unik. Kanonis: `docs/COUNTS.json` |
 | `php artisan route:cache` | **PASS** |
 | `npm run test` (Vitest) | **PASS (7 Sep 2026)**: 7 file / 13 test (helper workbench, resources config, router, api errors, auth flow) |
 | `npm run build` | **PASS**: 322 modules transformed |
@@ -595,7 +595,7 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 - [X] Ubah dokumentasi utama dari klaim “100% done” menjadi status coverage dan audit faktual.
 - [x] Sinkronkan jumlah endpoint, test, model, tabel, dan seeder secara otomatis di CI.
   `php artisan pdam:counts` (check) + `docs/COUNTS.json`; `--write` regenerasi. Angka faktual:
-  368 endpoint API, 65 migration, 28 seeder (jalur production 4), 136 model, 167 tabel statis,
+  371 endpoint API, 65 migration, 28 seeder (jalur production 4), 136 model, 167 tabel statis,
   107 test method backend; CI job `backend-sqlite` gagal bila file committed drift.
 - [x] Tambahkan CI gates: migrate+seed MySQL, route cache, backend tests, frontend tests/build,
   Flutter analyze/test, pytest, secret scan, dan dependency audit.

@@ -12,7 +12,7 @@
 > **Tautan wajib:** [`README.md`](README.md) · [`temuan2.md`](temuan2.md) · [`02_flow.md`](02_flow.md) · [`HANDOVER.md`](HANDOVER.md) · [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) · [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · [`docs/COUNTS.json`](docs/COUNTS.json) · [`ops/README.md`](ops/README.md) · [`backend/README.md`](backend/README.md) · [`backend/DEPLOY.md`](backend/DEPLOY.md) · [`backend/SEED_DATA.md`](backend/SEED_DATA.md) · [`ml/README.md`](ml/README.md) · [`docs/ML_CALIBRATION.md`](docs/ML_CALIBRATION.md) · [`docs/BUSINESS_DECISIONS.md`](docs/BUSINESS_DECISIONS.md)
 > <!-- doc-sync:links -->
 <!-- doc-sync:start verifikasi 7 Sept 2026 -->
-> **Verifikasi terintegrasi:** 117/117 (backend, 812 assertions) · Vitest 13 · Flutter analyze 0 issue + **50** · Dio client codegen `tools/generate_dio_client.py` (drift CI) · ML 32 (CI) · 369 method /api/v1 (293 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07 (CI run 2909807 hijau 6/6). Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
+> **Verifikasi terintegrasi:** 129/129 (backend, 853 assertions) · Vitest 13 · Flutter analyze 0 issue + **50** · Dio client codegen `tools/generate_dio_client.py` (drift CI) · ML 32 (CI) · 371 method /api/v1 (295 path registry) · 66 migration (refund) · 28 seeder · 21 command · 167 tabel statis · 137 model · 2026-09-07 (CI run 2909807 hijau 6/6). Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## 1. Ringkasan Produk
@@ -27,7 +27,7 @@ Platform SaaS manajemen PDAM multi-tenant. 27 modul bisnis + 1 fondasi platform.
 | Frontend Web | Vue 3 + Vite + Tailwind + PrimeVue |
 | Mobile | Flutter (Clean Architecture — auth, portal, meter reading, survey, OCR, offline sync) |
 | Queue | Redis + Laravel Queue |
-| Payment Gateway | Midtrans Snap |
+| Payment Gateway | Midtrans Snap (adapter `PaymentGatewayInterface`; provider kedua Xendit = roadmap PRD §23) |
 | CI/CD | ✅ Gate lengkap di root `.github/workflows/ci.yml`: pint+route/view/event/config cache, PHPUnit 109, MySQL migrate+seed+privileges drill+backup/restore drill, vitest 13+build, Flutter 44, ml pytest, gitleaks, composer/npm/pip audit, counts-sync |
 
 
@@ -106,7 +106,7 @@ platform, tetapi tidak boleh dianggap sebagai inventaris endpoint lengkap.
 
 `php artisan migrate --seed` pada environment development/demo mengisi **3 tenant demo terintegrasi** (Canada,
 Brazil, Sambas). Snapshot 15 Juli: **60 migration dan 24 seeder** pada MySQL 8.4.9 disposable & SQLite (167
-tabel). Kondisi saat ini (lihat [`docs/COUNTS.json`](docs/COUNTS.json)): **65 migration, 28 class seeder** —
+tabel). Kondisi saat ini (lihat [`docs/COUNTS.json`](docs/COUNTS.json)): **66 migration (refund), 28 class seeder** —
 jalur production hanya `ProductionKernelSeeder` (Permission→Module→RoleTemplate + admin via env `PLATFORM_ADMIN_*`
 dengan tolak password demo) dan `DemoGuard` **memblokir mutlak** seed demo di production (tanpa env escape).
 Tenant **pdam-sambas** mendukung `SEED_CUSTOMER_COUNT` (default 3.000 → 5 untuk CI). MySQL rollback
@@ -195,12 +195,13 @@ SSL: Certbot + Let's Encrypt. Konfig: `docker/nginx.production.conf`. Verifikasi
 ## 6. Security Status
 
 - Terverifikasi backend: module entitlement, tenant isolation regression tests, private-file ownership,
-  service authentication ML, BI/export identifier hardening, MFA, encrypted fields, rate limiting,
-  privacy purge dual-control, kontrak OCR KTP multipart, seeder production-safe (kernel routing + DemoGuard
-  blokade mutlak), reserve/stock-out material+idempotensi, dan kontrak export XLSX/PDF native yang jujur.
-- Snapshot 7 September 2026 (lengkap di `docs/COUNTS.json`/`docs/DOC_MAP.md`): backend SQLite **117/117
-  (812 assertions)**; frontend Vitest **7 file/13 tests** + build lulus (workbench, API errors, auth flow,
-  resources config, router); Flutter 44/44 (analyze **0 issue**, 46 test total); ML **32** test (CI); route registry: **369** API
+service authentication ML, BI/export identifier hardening, MFA, encrypted fields, rate limiting,
+privacy purge dual-control, kontrak OCR KTP multipart, seeder production-safe (kernel routing + DemoGuard
+blokade mutlak), reserve/stock-out material+idempotensi, kontrak export XLSX/PDF/DOCX native, **refund** (gated),
+**trial tenant** & **batas digit meter** (gated PRD §23), dan idempotensi refund.
+- Snapshot 7 September 2026 (lengkap di `docs/COUNTS.json`/`docs/DOC_MAP.md`): backend SQLite **129/129
+  (853 assertions)**; frontend Vitest **7 file/13 tests** + build lulus (workbench, API errors, auth flow,
+  resources config, router); Flutter 44/44 (analyze **0 issue**, 46 test total); ML **32** test (CI); route registry: **371** API
   endpoint method rows. CI `mysql-production-gates` **lulus run 2909807** menjalankan migration+seed, privileges drill,
   backup→restore drill sebagai bukti otomatis.
 - Deployment-dependent (tooling lengkap — bukti target masih terbuka): TLS/HSTS + pin verify/rotation di
@@ -244,7 +245,9 @@ Enam blocking gate authoritative hanya yang tercantum pada `temuan2.md`: product
 | Penetration test | Medium | `ops/PENTEST_SCOPE.md` — butuh vendor eksternal |
 | ML production-calibrated models | High | Harness `ml/scripts/calibrate_production.py` + gerbang threshold config + `php artisan pdam:ml-export-training-data`; CI menguji gerbang dgn data sintetis 24 bln — data riil 1-2 th + approval masih dibutuhkan |
 | IOT/PROD/DIST hardware | Low | Butuh sensor/SCADA; API+simulator (ops/simulators) & contract test selesai |
-| H-10 OpenAPI client / coverage mobile | ✅ codegen CI | `tools/generate_dio_client.py` → `mobile/.../api_client.g.dart` (369 operasi, path param) & `tools/generate_openapi_surface.dart` → `openapi_surface.dart` + test flutter sync. CI `git diff --exit-code` menolak kalau tak sinkron; gap coverage `pdam:mobile-coverage --report`. Lanjutan: migrasi bertahap call-site repository ke client ini |
+| Keputusan bisnis PRD §23 (refund/trial/digit) | ✅ konsumen siap | `RefundService`, `TenantModuleController` trial, `business.meter.digits` bound — keputusan manajemen tinggal isi `PDAM_*`/config & aktifkan |
+| Payment provider kedua (Xendit/DOKU) | 🚧 roadmap | `PaymentGatewayInterface` siap; adapter implementasi = PRD §23 provider selain Midtrans |
+| H-10 OpenAPI client / coverage mobile | ✅ codegen CI | `tools/generate_dio_client.py` → `mobile/.../api_client.g.dart` (371 operasi, path param) & `tools/generate_openapi_surface.dart` → `openapi_surface.dart` + test flutter sync. CI `git diff --exit-code` menolak kalau tak sinkron; gap coverage `pdam:mobile-coverage --report`. Lanjutan: migrasi bertahap call-site repository ke client ini |
 
 
 ## 9. Support Contact & Dokumen

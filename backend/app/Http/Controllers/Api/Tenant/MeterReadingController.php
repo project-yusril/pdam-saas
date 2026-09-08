@@ -28,14 +28,24 @@ class MeterReadingController extends Controller
      */
     public function parseMeter(Request $request, MeterOcrService $ocr): JsonResponse
     {
+        $configured = (int) config('business.meter.digits', 0);
+        $defaultDigits = $configured > 0 ? $configured : 5;
         $data = $request->validate([
             'raw_text' => ['required', 'string'],
             'black_digits' => ['sometimes', 'integer', 'min:3', 'max:8'],
         ]);
 
-        $parsed = $ocr->parse($data['raw_text'], $data['black_digits'] ?? 5);
+        $parsed = $ocr->parse($data['raw_text'], $data['black_digits'] ?? $defaultDigits);
 
         return ApiResponse::success($parsed);
+    }
+
+    /** Batas nilai register sesuai digit terkonfirmasi (PRD §23; fallback aman 5 digit). */
+    private function maxReadingValue(): int
+    {
+        $d = (int) config('business.meter.digits', 0);
+
+        return $d >= 3 && $d <= 8 ? (10 ** $d) - 1 : 99999;
     }
 
     /** Buka periode baca (Koordinator Baca Meter). */
@@ -84,7 +94,12 @@ class MeterReadingController extends Controller
         $data = $request->validate([
             'customer_id' => ['required', 'integer'],
             'period' => ['required', 'regex:/^\d{4}-\d{2}$/'],
-            'reading_value' => ['required', 'integer', 'min:0'],
+            'reading_value' => [
+                'required',
+                'integer',
+                'min:0',
+                'max:'.$this->maxReadingValue(),
+            ],
             'reading_date' => ['required', 'date'],
             'photo_house_url' => ['nullable', 'string', $tenantFile],
             'photo_meter_url' => ['nullable', 'string', $tenantFile],

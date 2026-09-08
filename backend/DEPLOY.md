@@ -8,7 +8,7 @@
 The MySQL 8.4.9 result in `temuan2.md` used a disposable, non-user, non-production database. It validates migrations, rollback/remigration, seeders, constraints, and tests; it does not approve a production environment. Never run `migrate:fresh` or the demo seeder against production data.
 
 <!-- doc-sync:start verifikasi 7 Sept 2026 -->
-> **Verifikasi terintegrasi:** 117/117 (117 test backend, 812 assertions) · Vitest 13 · Flutter analyze 0 issue + 46/46 · ML 32 (CI) · 369 method /api/v1 (293 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](../docs/COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
+> **Verifikasi terintegrasi:** 129/129 (129 test backend, 853 assertions) · Vitest 13 · Flutter analyze 0 issue + 46/46 · ML 32 (CI) · 371 method /api/v1 (295 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](../docs/COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## Canonical Blocking Gates
@@ -75,8 +75,8 @@ python -m compileall -q src scripts
 python -m pytest tests -q   # atau unittest discover -s tests -v
 ```
 
-Expected audit snapshot (7 Sep 2026), not a substitute for release output: SQLite backend **117/117
-and 812 assertions**; route registry **388 rows (369 API + 19 web)**; Vitest **13** + build; Flutter**44/44**;
+Expected audit snapshot (7 Sep 2026), not a substitute for release output: SQLite backend **129/129
+and 853 assertions**; route registry **390 rows (371 API + 19 web)**; Vitest **13** + build; Flutter**44/44**;
 ML **29** tests (CI); `php artisan pdam:counts` sinkron vs `docs/COUNTS.json`. Live numbers always come from
 `../docs/COUNTS.json` — regenerate with `php artisan pdam:counts --write`.
 

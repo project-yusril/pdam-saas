@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Platform;
 use App\Http\Controllers\Controller;
 use App\Models\Module;
 use App\Models\PdamOrganization;
+use App\Models\Subscription;
 use App\Models\SubscriptionModule;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -46,12 +47,25 @@ class TenantModuleController extends Controller
             return ApiResponse::error('ENTITLEMENT_NOT_FOUND', 'Entitlement modul untuk tenant ini tidak ada.', null, 404);
         }
 
+        $trialDays = (int) config('business.billing.trial_days', 0);
+        $expires = $data['expires_at'] ?? null;
+        $method = 'manual_superadmin';
+        if ($expires === null && $trialDays > 0 && (int) $module->tier > 0) {
+            // PRD §23: lama trial ditetapkan manajemen (env PDAM_TRIAL_DAYS via config business).
+            $expires = now()->addDays($trialDays)->toDateString();
+            $method = 'trial';
+            Subscription::withoutGlobalScopes()->updateOrCreate(
+                ['pdam_org_id' => $tenant->id, 'status' => 'active'],
+                ['plan_tier' => 'trial', 'start_date' => now()->toDateString(), 'end_date' => $expires, 'billing_cycle' => 'trial'],
+            );
+        }
+
         $entitlement->update([
             'status' => 'active',
-            'activation_method' => 'manual_superadmin',
+            'activation_method' => $method,
             'activated_by' => $request->user()?->getKey(),
             'activated_at' => now(),
-            'expires_at' => $data['expires_at'] ?? null,
+            'expires_at' => $expires,
             'locked_by' => null,
             'locked_at' => null,
             'note' => $data['note'] ?? null,

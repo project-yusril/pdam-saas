@@ -13,6 +13,15 @@ return [
     'billing' => [
         // Grace days sebelum langganan tenant dianggap expired (SubscriptionCheck).
         'subscription_grace_days' => (int) env('PDAM_SUBSCRIPTION_GRACE_DAYS', 0),
+        // Durasi trial (hari) utk tenant pertama kali aktivasi manual modul tier berbayar
+        // oleh Super-Admin. PRD §23: manajemen menetapkan; default 0 = tidak ada trial.
+        'trial_days' => (int) env('PDAM_TRIAL_DAYS', 0),
+    ],
+
+    // Register meter: jumlah digit hitam (m³) yang dipakai utk validasi input
+    // & parsing OCR. PRD §23 row "digit meter" — 0 = belum ditetapkan (fallback 5).
+    'meter' => [
+        'digits' => (int) env('PDAM_METER_DIGITS', 0),
     ],
 
     // Pengembalian dana (PRD §23) — OFF secara default sampai manajemen memutuskan
