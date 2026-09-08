@@ -17,7 +17,7 @@ ada perubahan kode.
 | 6 | Batas/tata cara isolir | 🟢 siap (per tenant) | `BillingSetting.isolir_after_months` + `pdam:auto-isolir` | Ops | prarisilis |
 | 7 | Digit meter | 🔴 belum ada konsumen | — (UI input panjang saat ini bebas per field; butuh keputusan + perubahan UI) | Teknik | roadmap |
 | 8 | COA baku Pemda vs custom saat onboarding | 🟢 parsial | `MasterFinanceSeeder` COA default + admin UI ChartOfAccount utk custom per tenant | Keuangan | saat onboarding tenant |
-| 9 | Refund | 🔴 belum ada fitur keputusan | `PDAM_REFUND_ENABLED` (saat ini belum digunakan di mana pun — perlu keputusan + implementasi terpisah) | Manajemen | roadmap |
+| 9 | Refund | 🟢 fitur siap (knob default OFF) | `PDAM_REFUND_ENABLED` -> `business.refund.enabled`; `RefundService` + endpoint `POST /payments/{id}/refund` (permission `core.payment.refund`, gated; jurnal balik otomatis). Limit/kebijakan final = manajemen | Manajemen | aktifkan saat kebijakan disetujui |
 | 10 | Provider payment selain Midtrans | 🔴 roadmap | adapter `PaymentGatewayInterface` siap; TIDAK ada knob env provider (config tidak mengakui provider yang belum diimplement) — implement dulu, baru daftarkan | Dev | roadmap |
 | 11 | Target jumlah PDAM tahun 1 | 🔴 belum ada konsumen | — (metrics; tidak dibaca kode) | Direktur | roadmap |
 

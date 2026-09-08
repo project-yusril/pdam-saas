@@ -297,6 +297,8 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
         ->middleware('permission:core.payment.view');
     Route::get('payments/history', [PaymentController::class, 'paymentHistory']);
     Route::get('payments/{payment}/receipt', [PaymentController::class, 'downloadReceipt']);
+    Route::get('payments/{payment}/refunds', [PaymentController::class, 'refunds'])->middleware('permission:core.payment.view');
+    Route::post('payments/{payment}/refund', [PaymentController::class, 'refund'])->middleware('permission:core.payment.refund');
 
     // ── Laporan Akuntansi (Keuangan & Direktur, view) ─────────────────
     Route::prefix('reports/accounting')->middleware('permission:core.report.view')->group(function () {

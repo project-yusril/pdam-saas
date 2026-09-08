@@ -131,6 +131,7 @@ const List<ApiEndpoint> allEndpoints = <ApiEndpoint>[
   ApiEndpoint('GET', '/payments/check/{orderId}', <String>['orderId'], 'PaymentController@checkStatus', 'Check'),
   ApiEndpoint('GET', '/payments/history', <String>[], 'PaymentController@paymentHistory', 'History'),
   ApiEndpoint('GET', '/payments/{payment}/receipt', <String>['payment'], 'PaymentController@downloadReceipt', 'Payment'),
+  ApiEndpoint('GET', '/payments/{payment}/refunds', <String>['payment'], 'PaymentController@refunds', 'Payment'),
   ApiEndpoint('GET', '/platform/marketplace/bundles', <String>[], 'MarketplaceController@bundles', 'Marketplace'),
   ApiEndpoint('GET', '/platform/marketplace/catalog', <String>[], 'MarketplaceController@catalog', 'Marketplace'),
   ApiEndpoint('GET', '/platform/marketplace/dashboard', <String>[], 'MarketplaceController@superAdminDashboard', 'Marketplace'),
@@ -300,6 +301,7 @@ const List<ApiEndpoint> allEndpoints = <ApiEndpoint>[
   ApiEndpoint('POST', '/nrw/calculate', <String>[], 'NrwController@calculate', 'Calculate'),
   ApiEndpoint('POST', '/payments', <String>[], 'PaymentController@createPayment', 'Root'),
   ApiEndpoint('POST', '/payments/cash', <String>[], 'PaymentController@cashPayment', 'Cash'),
+  ApiEndpoint('POST', '/payments/{payment}/refund', <String>['payment'], 'PaymentController@refund', 'Payment'),
   ApiEndpoint('POST', '/payroll/batch-run', <String>[], 'PayrollController@batchRun', 'Batch Run'),
   ApiEndpoint('POST', '/payroll/calculate', <String>[], 'PayrollController@calculate', 'Calculate'),
   ApiEndpoint('POST', '/payroll/slip', <String>[], 'PayrollController@slip', 'Slip'),
@@ -1079,6 +1081,12 @@ class GeneratedApi {
   /// [GET] /payments/{payment}/receipt - PaymentController@downloadReceipt
   Future<Response<dynamic>> paymentapigetpaymentsIdReceipt({required String payment, Map<String, dynamic>? query}) {
     final url = '/api/v1/payments/${payment}/receipt';
+    return _dio.request<dynamic>(url, queryParameters: query, options: Options(method: 'GET'));
+  }
+
+  /// [GET] /payments/{payment}/refunds - PaymentController@refunds
+  Future<Response<dynamic>> paymentapigetpaymentsIdRefunds({required String payment, Map<String, dynamic>? query}) {
+    final url = '/api/v1/payments/${payment}/refunds';
     return _dio.request<dynamic>(url, queryParameters: query, options: Options(method: 'GET'));
   }
 
@@ -2096,6 +2104,12 @@ class GeneratedApi {
     return _dio.request<dynamic>(url, data: data, options: Options(method: 'POST'));
   }
 
+  /// [POST] /payments/{payment}/refund - PaymentController@refund
+  Future<Response<dynamic>> paymentapipostpaymentsIdRefund({required String payment, required Map<String, dynamic> data}) {
+    final url = '/api/v1/payments/${payment}/refund';
+    return _dio.request<dynamic>(url, data: data, options: Options(method: 'POST'));
+  }
+
   /// [POST] /payroll/batch-run - PayrollController@batchRun
   Future<Response<dynamic>> batchrunapipostpayrollBatchRun({required Map<String, dynamic> data}) {
     const url = '/api/v1/payroll/batch-run';
@@ -2620,5 +2634,5 @@ class GeneratedApi {
 
 }
 
-/// Total operasi: 369; path: 293; tag: 132.
-const int generatedOperationCount = 369;
+/// Total operasi: 371; path: 295; tag: 132.
+const int generatedOperationCount = 371;

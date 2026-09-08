@@ -22,7 +22,7 @@ class ApiOp {
   bool get isTemplate => pathParams.isNotEmpty;
 }
 
-/// Path -> {METHOD: ApiOp}. Total operasi: 369; path unik: 293.
+/// Path -> {METHOD: ApiOp}. Total operasi: 371; path unik: 295.
 const Map<String, Map<String, ApiOp>> apiSurface = <String, Map<String, ApiOp>>{
   '/address/cities': <String, ApiOp>{
     'GET': ApiOp(
@@ -1867,6 +1867,22 @@ const Map<String, Map<String, ApiOp>> apiSurface = <String, Map<String, ApiOp>>{
       method: 'GET',
       tag: 'Payment',
       summary: 'PaymentController@downloadReceipt',
+      pathParams: const <String>['payment'],
+    ),
+  },
+  '/payments/{payment}/refund': <String, ApiOp>{
+    'POST': ApiOp(
+      method: 'POST',
+      tag: 'Payment',
+      summary: 'PaymentController@refund',
+      pathParams: const <String>['payment'],
+    ),
+  },
+  '/payments/{payment}/refunds': <String, ApiOp>{
+    'GET': ApiOp(
+      method: 'GET',
+      tag: 'Payment',
+      summary: 'PaymentController@refunds',
       pathParams: const <String>['payment'],
     ),
   },

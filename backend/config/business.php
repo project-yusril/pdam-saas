@@ -15,6 +15,14 @@ return [
         'subscription_grace_days' => (int) env('PDAM_SUBSCRIPTION_GRACE_DAYS', 0),
     ],
 
+    // Pengembalian dana (PRD §23) — OFF secara default sampai manajemen memutuskan
+    // kebijakan/limitnya. RefundService & PaymentController::refund wajib
+    // `business.refund.enabled = true`; endpoint tetap ada utk audit UI.
+    'refund' => [
+        'enabled' => filter_var(env('PDAM_REFUND_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+        'auto_gateway' => filter_var(env('PDAM_REFUND_AUTO_GATEWAY', false), FILTER_VALIDATE_BOOLEAN),
+    ],
+
     'installation' => [
         // Jam tenggang pembayaran pemasangan (pdam:escalate-installation).
         'payment_expire_hours' => (int) env('PDAM_INSTALL_EXPIRE_HOURS', 24),

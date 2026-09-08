@@ -10,6 +10,8 @@ use App\Models\InstallmentSchedule;
 use App\Models\Payment;
 use App\Services\Gateways\MidtransSnap;
 use App\Services\PaymentService;
+use App\Services\RefundException;
+use App\Services\RefundService;
 use App\Support\ApiResponse;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +23,7 @@ class PaymentController extends Controller
     public function __construct(
         private PaymentService $payments,
         private MidtransSnap $midtrans,
+        private RefundService $refunds,
     ) {}
 
     public function createPayment(Request $request): JsonResponse
@@ -134,5 +137,51 @@ class PaymentController extends Controller
         ];
 
         return ApiResponse::success($data);
+    }
+
+    /** Daftar pengembalian dana Payment (keuangan). */
+    public function refunds(Payment $payment): JsonResponse
+    {
+        $this->ensureOwnPayment($payment);
+
+        return ApiResponse::success(['refunds' => $payment->refunds()->with('journal.lines')->get()]);
+    }
+
+    /**
+     * Satu pengembalian dana (partial/full). Gated `business.refund.enabled`
+     * (PRD §23: kebijakan limit/penyetujui) + permission `core.payment.refund`.
+     * Jurnal DEBIT/KREDIT pembayaran asal dipembalikan (proporsional bila partial).
+     */
+    public function refund(Request $request, Payment $payment, RefundService $service): JsonResponse
+    {
+        $this->ensureOwnPayment($payment);
+
+        $data = $request->validate([
+            'amount' => ['nullable', 'numeric', 'gt:0'],
+            'reason' => ['nullable', 'string', 'max:255'],
+            'method' => ['nullable', 'in:counter,transfer,cash'],
+        ]);
+
+        try {
+            $refund = $service->refund(
+                $payment,
+                $request->user()->id,
+                isset($data['amount']) ? (float) $data['amount'] : null,
+                $data['reason'] ?? '',
+                $data['method'] ?? 'counter',
+            );
+        } catch (RefundException $e) {
+            throw ValidationException::withMessages(['refund' => $e->getMessage()]);
+        }
+
+        return ApiResponse::message('Pengembalian diproses + jurnal dibuat.', $refund->load('journal.lines'), 201);
+    }
+
+    /** Payment yang di-resolve model binding bypass scoping; tolak refund lintas tenant. */
+    private function ensureOwnPayment(Payment $payment): void
+    {
+        if (TenantContext::id() === null || (int) $payment->pdam_org_id !== (int) TenantContext::id()) {
+            abort(404);
+        }
     }
 }

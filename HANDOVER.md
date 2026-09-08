@@ -235,6 +235,7 @@ Enam blocking gate authoritative hanya yang tercantum pada `temuan2.md`: product
 | Item | Prioritas | Keterangan |
 |------|-----------|------------|
 | HTTPS/TLS production | High | `ops/tls/verify_production_tls.sh` siap jalankan — masih butuh domain/SSL riil |
+| Refund pembayaran (gated) | ✅ selesai | `RefundService` + endpoint refund + jurnal pembalikan DEBIT/KREDIT terbalik; default `business.refund.enabled=false` — aktifkan saat kebijakan final manajemen (PRD §23) |
 | Export native PDF/XLSX | ✅ selesai | `ReportExportService` kini menghasilkan XLSX (PhpSpreadsheet) & PDF (dompdf, kop surat PDAM); `format=pdf/xlsx` via `/export` + scheduled reports; DOC surat masih roadmap PRD |
 | Material stock-out pemasangan | ✅ selesai | Reservasi stok → `complete()` = stock-out gudang utama + jurnal DEBIT kapitalisasi / KREDIT `1-003`; idempoten; lihat `InstallationMaterialStockOutTest` |
 | TLS endpoint + rotasi pin | High | Pinning aplikasi selesai; `ops/tls/verify_spki_pins.sh` + `ops/runbooks/TLS_PINNING_ROTATION.md` — drill riil menunggu endpoint |

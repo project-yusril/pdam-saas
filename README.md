@@ -380,7 +380,7 @@ bash -n ops/**/*.sh                 # syntax ops; CI menjalankan drill ops/backu
 
 Status verifikasi 7 September 2026 (lokal Windows; CI menjalankan semuanya — termasuk MySQL):
 backend SQLite **117/117, 812 assertions** (termasuk seeder-isolation ProductionSeederIsolationTest,
-material stock-out, native export XLSX/PDF/DOCX, command `pdam:counts`, `pdam:openapi` & `pdam:mobile-coverage`
+fitur refund (gated `business.refund.enabled` + jurnal pembalik), material stock-out, native export XLSX/PDF/DOCX, command `pdam:counts`, `pdam:openapi` & `pdam:mobile-coverage`
 H-10 kontrak endpoint mobile); frontend Vitest **7 file / 13 tests** (helper workbench, resources config,
 errors, auth flow, router, contract) + `npm run build` lulus; Flutter **44/44** + analyze **0 issue**
 (duplikat konstan endpoints.dart dibersihkan); ML **32 tests** (pytest; inc. `test_telemetry_simulator` contract
