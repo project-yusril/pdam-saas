@@ -69,6 +69,7 @@ use App\Http\Controllers\Api\Tenant\WarehouseController;
 use App\Http\Controllers\Api\Tenant\WorkOrderController;
 use App\Http\Controllers\Api\Tenant\ZoneController;
 use App\Http\Controllers\Api\Tenant\ZoneDashboardController;
+use App\Http\Controllers\Api\XenditWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -115,6 +116,10 @@ Route::prefix('platform')->group(function () {
 // ── WEBHOOK PUBLIK (Midtrans) ─────────────────────────────────────────
 // Tanpa auth Sanctum; diverifikasi via signature_key di controller.
 Route::post('webhooks/midtrans', [PaymentWebhookController::class, 'handle']);
+
+// ── WEBHOOK PUBLIK (Xendit — provider kedua, PRD §23) ───────────────
+// Tanpa auth; diverifikasi via x-callback-token (shared secret).
+Route::post('webhooks/xendit', [XenditWebhookController::class, 'handle']);
 
 // ── MOBILE DROPDOWNS (no tenant context needed) ──────────────────────
 // Ringan, tanpa paginasi — dipakai form daftar pelanggan mobile.

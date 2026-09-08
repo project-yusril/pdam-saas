@@ -41,6 +41,14 @@ return [
         'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
     ],
 
+    // Provider pembayaran kedua (PRD §23 adapter Xendit). Default: PDAM_PAYMENT_PROVIDER=xendit
+    // atau field gateway saat POST /payments.
+    'xendit' => [
+        'secret_key' => env('XENDIT_SECRET_KEY'),
+        'webhook_token' => env('XENDIT_WEBHOOK_TOKEN'),
+        'is_production' => env('XENDIT_IS_PRODUCTION', false),
+    ],
+
     'fcm' => [
         'server_key' => env('FCM_SERVER_KEY'),
     ],

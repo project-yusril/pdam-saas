@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Contracts\PaymentGatewayInterface;
+use App\Services\Gateways\MidtransSnap;
+use App\Services\Gateways\PaymentGatewayManager;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -14,7 +17,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // PaymentGatewayManager (PRD 23: provider pertama Midtrans, kedua XenditCharge).
+        $this->app->singleton(PaymentGatewayManager::class, fn () => new PaymentGatewayManager(
+            (array) config('business.payment.providers', [])
+        ));
+
+        // Interface default -> provider aktif saat ini (MidtransSnap agar webhook/callback lama tidak berubah).
+        $this->app->bind(PaymentGatewayInterface::class, MidtransSnap::class);
     }
 
     /**

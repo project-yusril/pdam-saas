@@ -1,5 +1,8 @@
 <?php
 
+use App\Services\Gateways\MidtransSnap;
+use App\Services\Gateways\XenditCharge;
+
 /**
  * Business decision knobs (PRD §23) — SATU tempat untuk nilai yang sudah punya
  * konsumen kode. Keputusan yang BELUM ada konsumennya secara sadar TIDAK dibuat
@@ -30,6 +33,16 @@ return [
     'refund' => [
         'enabled' => filter_var(env('PDAM_REFUND_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
         'auto_gateway' => filter_var(env('PDAM_REFUND_AUTO_GATEWAY', false), FILTER_VALIDATE_BOOLEAN),
+    ],
+
+    // PaymentGateway: provider pertama = Midtrans; provider kedua (Xendit) kini
+    // punya adapter nyata. PRD §23: provider lain di luar daftar ini = roadmap.
+    'payment' => [
+        'default_provider' => env('PDAM_PAYMENT_PROVIDER', 'midtrans'),
+        'providers' => [
+            'midtrans' => MidtransSnap::class,
+            'xendit' => XenditCharge::class,
+        ],
     ],
 
     'installation' => [

@@ -22,7 +22,7 @@ class ApiOp {
   bool get isTemplate => pathParams.isNotEmpty;
 }
 
-/// Path -> {METHOD: ApiOp}. Total operasi: 371; path unik: 295.
+/// Path -> {METHOD: ApiOp}. Total operasi: 372; path unik: 296.
 const Map<String, Map<String, ApiOp>> apiSurface = <String, Map<String, ApiOp>>{
   '/address/cities': <String, ApiOp>{
     'GET': ApiOp(
@@ -2725,6 +2725,14 @@ const Map<String, Map<String, ApiOp>> apiSurface = <String, Map<String, ApiOp>>{
       method: 'POST',
       tag: 'Midtrans',
       summary: 'PaymentWebhookController@handle',
+      pathParams: const <String>[],
+    ),
+  },
+  '/webhooks/xendit': <String, ApiOp>{
+    'POST': ApiOp(
+      method: 'POST',
+      tag: 'Xendit',
+      summary: 'XenditWebhookController@handle',
       pathParams: const <String>[],
     ),
   },

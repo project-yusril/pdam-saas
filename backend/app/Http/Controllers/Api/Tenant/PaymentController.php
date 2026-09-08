@@ -8,7 +8,7 @@ use App\Models\Customer;
 use App\Models\CustomerProspect;
 use App\Models\InstallmentSchedule;
 use App\Models\Payment;
-use App\Services\Gateways\MidtransSnap;
+use App\Services\Gateways\PaymentGatewayManager;
 use App\Services\PaymentService;
 use App\Services\RefundException;
 use App\Services\RefundService;
@@ -22,7 +22,7 @@ class PaymentController extends Controller
 {
     public function __construct(
         private PaymentService $payments,
-        private MidtransSnap $midtrans,
+        private PaymentGatewayManager $gateway,
         private RefundService $refunds,
     ) {}
 
@@ -38,6 +38,8 @@ class PaymentController extends Controller
             'customer_name' => ['nullable', 'string'],
             'customer_email' => ['nullable', 'email'],
             'customer_phone' => ['nullable', 'string'],
+            // provider gateway (PRD §23); provider lain dari whitelist config => 422.
+            'gateway' => ['nullable', 'in:'.implode(',', $this->gateway->allowed())],
         ]);
 
         if ($data['type'] === 'monthly_bill') {
@@ -53,11 +55,15 @@ class PaymentController extends Controller
 
         $snap = null;
         if ($data['channel'] === 'gateway') {
-            $snap = $this->midtrans->createTransaction($payment, [
+            $gateway = $this->gateway->make($data['gateway'] ?? null);
+            $snap = $gateway->createTransaction($payment, [
                 'name' => $data['customer_name'] ?? 'Pelanggan',
                 'email' => $data['customer_email'] ?? null,
                 'phone' => $data['customer_phone'] ?? null,
             ]);
+            // Provider id (intent/order) disimpan di kolom generik agar lookup
+            // webhook lintas provider tetap jalan.
+            $payment->update(['midtrans_transaction_id' => $snap['token'] ?? null]);
         }
 
         return ApiResponse::success([
@@ -91,9 +97,9 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function checkStatus(string $orderId): JsonResponse
+    public function checkStatus(Request $request, string $orderId): JsonResponse
     {
-        $status = $this->midtrans->getStatus($orderId);
+        $status = $this->gateway->make($request->query('gateway') ?: null)->getStatus($orderId);
 
         return ApiResponse::success([
             'order_id' => $orderId,

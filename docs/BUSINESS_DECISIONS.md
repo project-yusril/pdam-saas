@@ -13,12 +13,12 @@ ada perubahan kode.
 | 2 | Siklus tagihan SaaS | 🟡 menunggu | `PDAM_SAAS_BILLING_CYCLE` (bln/thn) via `billing_saas_cycle` | Manajemen | prarisilis |
 | 3 | Durasi trial | 🟢 fitur siap (knob default 0) | `PDAM_TRIAL_DAYS` → `business.billing.trial_days`; `TenantModuleController::activate` buat trial + `Subscription` billing_cycle=trial (test `TenantTrialActivationTest`) | Manajemen | = nilai final |
 | 4 | Timer eskalasi hublang | 🟢 siap (per tenant) | field SLA di DB per tenant menang; config `PDAM_INSTALL_EXPIRE_HOURS` = tenggang bayar pemasangan | Ops hublang | prarisilis |
-| 5 | Denda overdue (flat/persen) | 🟢 siap (per tenant) | `BillingSetting` simpan flat & percent; mark-overdue memakai keduanya | Keuangan | rilis |
+| 5 | Denda overdue (flat/persen) (flat/persen) | 🟢 siap (per tenant) | `BillingSetting` simpan flat & percent; mark-overdue memakai keduanya | Keuangan | rilis |
 | 6 | Batas/tata cara isolir | 🟢 siap (per tenant) | `BillingSetting.isolir_after_months` + `pdam:auto-isolir` | Ops | prarisilis |
 | 7 | Digit meter | 🟢 fitur siap (knob default 0 → fallback 5) | `PDAM_METER_DIGITS` → `business.meter.digits`; validasi `MeterReadingController::store` (max register) + default OCR (test `MeterDigitValidationTest`) | Teknik | = nilai final |
 | 8 | COA baku Pemda vs custom saat onboarding | 🟢 parsial | `MasterFinanceSeeder` COA default + admin UI ChartOfAccount utk custom per tenant | Keuangan | saat onboarding tenant |
 | 9 | Refund | 🟢 fitur siap (knob default OFF) | `PDAM_REFUND_ENABLED` -> `business.refund.enabled`; `RefundService` + endpoint `POST /payments/{id}/refund` (permission `core.payment.refund`, gated; jurnal balik otomatis). Limit/kebijakan final = manajemen | Manajemen | aktifkan saat kebijakan disetujui |
-| 10 | Provider payment selain Midtrans | 🔴 roadmap | adapter `PaymentGatewayInterface` siap; TIDAK ada knob env provider (config tidak mengakui provider yang belum diimplement) — implement dulu, baru daftarkan | Dev | roadmap |
+| 10 | Provider payment selain Midtrans | 🟢 tersedia: Xendit | `PDAM_PAYMENT_PROVIDER=xendit` atau field `gateway` -> `PaymentGatewayManager` + adapter `XenditCharge` + webhook `POST /api/v1/webhooks/xendit` (verifikasi `x-callback-token`). Test `PaymentProviderXenditTest`. Provider lain (DOKU/Stripe) tetap roadmap | Manajemen | aktifkan + isi credential |
 | 11 | Target jumlah PDAM tahun 1 | 🔴 belum ada konsumen | — (metrics; tidak dibaca kode) | Direktur | roadmap |
 
 > 🟢 = knob siap dipergunakan tanpa kode baru · 🟡 knob ada tapi nilai final

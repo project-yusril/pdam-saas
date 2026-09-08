@@ -359,6 +359,7 @@ const List<ApiEndpoint> allEndpoints = <ApiEndpoint>[
   ApiEndpoint('POST', '/warehouse/stock-out', <String>[], 'WarehouseController@stockOut', 'Stock Out'),
   ApiEndpoint('POST', '/webhook', <String>[], 'IntegrationController@webhook', 'Root'),
   ApiEndpoint('POST', '/webhooks/midtrans', <String>[], 'PaymentWebhookController@handle', 'Midtrans'),
+  ApiEndpoint('POST', '/webhooks/xendit', <String>[], 'XenditWebhookController@handle', 'Xendit'),
   ApiEndpoint('POST', '/work-orders', <String>[], 'WorkOrderController@store', 'Root'),
   ApiEndpoint('POST', '/work-orders/{workOrder}/assign', <String>['workOrder'], 'WorkOrderController@assign', 'WorkOrder'),
   ApiEndpoint('POST', '/work-orders/{workOrder}/complete', <String>['workOrder'], 'WorkOrderController@complete', 'WorkOrder'),
@@ -2452,6 +2453,12 @@ class GeneratedApi {
     return _dio.request<dynamic>(url, data: data, options: Options(method: 'POST'));
   }
 
+  /// [POST] /webhooks/xendit - XenditWebhookController@handle
+  Future<Response<dynamic>> xenditapipostwebhooksXendit({required Map<String, dynamic> data}) {
+    const url = '/api/v1/webhooks/xendit';
+    return _dio.request<dynamic>(url, data: data, options: Options(method: 'POST'));
+  }
+
   /// [POST] /work-orders - WorkOrderController@store
   Future<Response<dynamic>> rootapipostworkOrders({required Map<String, dynamic> data}) {
     const url = '/api/v1/work-orders';
@@ -2634,5 +2641,5 @@ class GeneratedApi {
 
 }
 
-/// Total operasi: 371; path: 295; tag: 132.
-const int generatedOperationCount = 371;
+/// Total operasi: 372; path: 296; tag: 133.
+const int generatedOperationCount = 372;
