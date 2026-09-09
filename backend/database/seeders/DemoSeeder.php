@@ -45,6 +45,7 @@ class DemoSeeder extends Seeder
             SmartUtilitySeeder::class,        // Tier-3: IoT/SCADA, DMA/NRW, ML
             PlatformCommerceSeeder::class,    // price tier, bundle, promo, saas invoice
             SambasTenantSeeder::class,        // PDAM Kabupaten Sambas (Kalbar)
+            PipeNetworkDemoSeeder::class,     // GIS Jaringan Perpipaan ( Sambas ): pipa+valve+DMA demo
 
             // Demo super admin platform (password lemah) — selalu paling akhir
             // agar mudah diidentifikasi sebagai fixture, bukan provisioning.

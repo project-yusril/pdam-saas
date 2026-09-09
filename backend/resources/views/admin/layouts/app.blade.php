@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Admin PDAM')</title>
+    @stack('styles')
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: system-ui, sans-serif; background: #f5f6fa; color: #1a1a2e; }
@@ -35,10 +36,17 @@
 <body>
 <nav>
     <span class="brand">PDAM Admin</span>
+    <a href="{{ route('admin.gis.map') }}">Peta Pelanggan</a>
+    <a href="{{ route('admin.network.index') }}">Jaringan Pipa</a>
     <a href="{{ route('admin.zones.index') }}">Wilayah</a>
+    <a href="{{ route('admin.prospects.index') }}">Prospek</a>
+    <a href="{{ route('admin.meter-routes.index') }}">Rute Baca</a>
+    <a href="{{ route('admin.metx.dashboard') }}">Meter</a>
+    <a href="{{ route('admin.ast.dashboard') }}">Aset</a>
 </nav>
 <main>
     @yield('content')
 </main>
+@stack('scripts')
 </body>
 </html>

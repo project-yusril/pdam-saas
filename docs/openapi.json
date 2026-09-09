@@ -7384,6 +7384,224 @@
                 }
             }
         },
+        "/gis/dmas": {
+            "get": {
+                "tags": [
+                    "Dmas"
+                ],
+                "summary": "GisEditorController@dmas",
+                "operationId": "gis_editor_controller_dmas_3e70d7",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sukses",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden / modul tidak aktif",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ValidationError"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Dmas"
+                ],
+                "summary": "GisEditorController@createDma",
+                "operationId": "gis_editor_controller_create_dma_919566",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sukses",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden / modul tidak aktif",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ValidationError"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/gis/dmas/{dma}": {
+            "patch": {
+                "tags": [
+                    "Dmas"
+                ],
+                "summary": "GisEditorController@updateDma",
+                "operationId": "gis_editor_controller_update_dma_231b52",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sukses",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden / modul tidak aktif",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ValidationError"
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "dma",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/gis/dmas/{dma}/nrw-auto": {
+            "post": {
+                "tags": [
+                    "Dmas"
+                ],
+                "summary": "GisEditorController@autoNrw",
+                "operationId": "gis_editor_controller_auto_nrw_790066",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sukses",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden / modul tidak aktif",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ValidationError"
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "dma",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
         "/gis/features": {
             "get": {
                 "tags": [
@@ -7439,6 +7657,166 @@
                 ],
                 "summary": "GisEditorController@createFeature",
                 "operationId": "gis_editor_controller_create_feature_6021bb",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sukses",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden / modul tidak aktif",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ValidationError"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/gis/features/{feature}": {
+            "delete": {
+                "tags": [
+                    "Features"
+                ],
+                "summary": "GisEditorController@destroyFeature",
+                "operationId": "gis_editor_controller_destroy_feature_a98e96",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sukses",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden / modul tidak aktif",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ValidationError"
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "feature",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/gis/incidents": {
+            "post": {
+                "tags": [
+                    "Incidents"
+                ],
+                "summary": "GisEditorController@storeIncident",
+                "operationId": "gis_editor_controller_store_incident_d5e573",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sukses",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden / modul tidak aktif",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ApiError"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal",
+                        "content": {
+                            "application/json": {
+                                "$ref": "#/components/schemas/ValidationError"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/gis/isolate": {
+            "post": {
+                "tags": [
+                    "Isolate"
+                ],
+                "summary": "GisEditorController@isolate",
+                "operationId": "gis_editor_controller_isolate_c8122d",
                 "security": [
                     {
                         "bearerAuth": []
@@ -20060,6 +20438,9 @@
             "name": "Dma Dashboard"
         },
         {
+            "name": "Dmas"
+        },
+        {
             "name": "Document"
         },
         {
@@ -20093,10 +20474,16 @@
             "name": "History"
         },
         {
+            "name": "Incidents"
+        },
+        {
             "name": "Ingest"
         },
         {
             "name": "Integration"
+        },
+        {
+            "name": "Isolate"
         },
         {
             "name": "Kpi Eksekutif"

@@ -11,6 +11,7 @@ use App\Models\FixedAsset;
 use App\Models\Meter;
 use App\Models\MeterAnomaly;
 use App\Models\WorkOrder;
+use App\Services\CustomerMapStatusService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
@@ -79,7 +80,7 @@ class DashboardController extends Controller
         return ApiResponse::success([
             'total_customers' => Customer::count(),
             'active_customers' => Customer::where('status', 'active')->count(),
-            'disconnected_customers' => Customer::where('status', 'disconnected')->count(),
+            'disconnected_customers' => Customer::whereIn('status', CustomerMapStatusService::DISCONNECTED_STATUSES)->count(),
             'pending_installations' => CustomerProspect::whereIn('status', ['surveying', 'survey_submitted', 'approved', 'payment_pending', 'payment_paid'])->count(),
             'open_work_orders' => WorkOrder::whereIn('status', ['open', 'assigned'])->count(),
             'in_progress_work_orders' => WorkOrder::where('status', 'in_progress')->count(),

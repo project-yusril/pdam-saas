@@ -21,7 +21,7 @@ class WorkOrderController extends Controller
             ->when($request->input('type'), fn ($q, $v) => $q->where('type', $v))
             ->when($request->input('assigned_to'), fn ($q, $v) => $q->where('assigned_to', $v))
             ->when($request->input('zone_id'), fn ($q, $v) => $q->where('zone_id', $v))
-            ->orderByRaw("FIELD(priority, 'urgent','high','medium','low')")
+            ->orderByRaw("CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END")
             ->orderByDesc('created_at');
 
         $paginator = $query->paginate($request->input('per_page', 25));

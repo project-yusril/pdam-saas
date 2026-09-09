@@ -18,12 +18,19 @@ return [
     |
     */
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
-        'localhost,localhost:3000,localhost:5173,127.0.0.1,127.0.0.1:5173,127.0.0.1:8000,::1',
-        Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
-    ))),
+    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', implode(',', array_filter([
+        'localhost',
+        'localhost:3000',
+        'localhost:5173',
+        '127.0.0.1',
+        '127.0.0.1:5173',
+        '127.0.0.1:8000',
+        '::1',
+        // Placeholder → saat runtime diganti host:port request, sehingga dev server
+        // pada port berapa pun (8001, dst) tetap diperlakukan first-party/stateful.
+        Sanctum::currentRequestHost(),
+        (string) env('APP_DOMAIN', ''),
+    ])))),
 
     /*
     |--------------------------------------------------------------------------

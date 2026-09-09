@@ -170,7 +170,7 @@ class GenerateOpenApi extends Command
                         'allOf' => [
                             ['$ref' => '#/components/schemas/ApiResponse'],
                             ['type' => 'object', 'properties' => [
-                                'data' => ['type' => 'array', 'items' => new \stdClass()],
+                                'data' => ['type' => 'array', 'items' => new \stdClass],
                                 'meta' => ['type' => 'object', 'properties' => [
                                     'current_page' => ['type' => 'integer'],
                                     'from' => ['type' => 'integer'],

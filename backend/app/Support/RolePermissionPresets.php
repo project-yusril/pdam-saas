@@ -35,6 +35,8 @@ class RolePermissionPresets
                 'metx.meter.view', 'metx.anomaly.view', 'metx.dashboard.view',
                 // AST — direktur lihat aset & dashboard
                 'ast.asset.view', 'ast.depreciation.view', 'ast.dashboard.view',
+                // GIS — direktur pantau peta pelanggan + jaringan perpipaan & NRW
+                'gis.feature.view',
             ],
 
             'finance_head' => [
@@ -80,6 +82,8 @@ class RolePermissionPresets
                 'srv.installation.view', 'srv.installation.schedule', 'srv.installation.complete',
                 // METX — kepala teknik lihat meter & anomali + dashboard (tindak lanjut lapangan)
                 'metx.meter.view', 'metx.meter.update', 'metx.anomaly.view', 'metx.anomaly.review', 'metx.dashboard.view',
+                // GIS — jaringan perpipaan: pantau, tutup valve, insiden → WO
+                'gis.feature.view', 'gis.feature.update', 'fsm.wo.view', 'fsm.wo.create', 'fsm.wo.assign',
             ],
 
             'installer_technician' => [
@@ -132,6 +136,16 @@ class RolePermissionPresets
             // data dibatasi di controller berdasarkan user login, bukan sekadar permission.
             'customer' => [
                 'core.bill.view', 'core.payment.view', 'core.payment.create',
+            ],
+
+            // GIS — kelola penuh jaringan perpipaan + peta + insiden + work order
+            'gis_operator' => [
+                'gis.feature.view', 'gis.feature.create', 'gis.feature.update', 'gis.feature.delete',
+                'fsm.wo.view', 'fsm.wo.create',
+            ],
+            // Teknis lapangan (preset utama digabung di blok atas; dispatcher lihat + WO)
+            'field_dispatcher' => [
+                'gis.feature.view', 'fsm.wo.view', 'fsm.wo.create', 'fsm.wo.assign',
             ],
             // Role berikut modulnya belum dibangun → preset kosong (diisi per fase):
             // production_head, lab_analyst, maintenance_technician,

@@ -17,7 +17,7 @@ class ComplaintController extends Controller
             ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
             ->when($request->input('assigned_to'), fn ($q, $v) => $q->where('assigned_to', $v))
             ->when($request->input('priority'), fn ($q, $v) => $q->where('priority', $v))
-            ->orderByRaw("FIELD(priority, 'urgent','high','medium','low')")
+            ->orderByRaw("CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END")
             ->orderByDesc('created_at');
 
         $paginator = $query->paginate($request->input('per_page', 25));

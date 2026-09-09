@@ -766,8 +766,17 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
     Route::put('gis/pipes/{pipe}', [GisEditorController::class, 'updatePipe'])->middleware('permission:gis.feature.update');
     Route::get('gis/features', [GisEditorController::class, 'features'])->middleware('permission:gis.feature.view');
     Route::post('gis/features', [GisEditorController::class, 'createFeature'])->middleware('permission:gis.feature.create');
+    Route::delete('gis/features/{feature}', [GisEditorController::class, 'destroyFeature'])->middleware('permission:gis.feature.delete');
     Route::get('gis/network-edges', [GisEditorController::class, 'networkEdges'])->middleware('permission:gis.feature.view');
     Route::post('gis/network-edges', [GisEditorController::class, 'createEdge'])->middleware('permission:gis.feature.create');
+    Route::get('gis/dmas', [GisEditorController::class, 'dmas'])->middleware('permission:gis.feature.view');
+    Route::post('gis/dmas', [GisEditorController::class, 'createDma'])->middleware('permission:gis.feature.create');
+    Route::patch('gis/dmas/{dma}', [GisEditorController::class, 'updateDma'])->middleware('permission:gis.feature.update');
+    Route::post('gis/dmas/{dma}/nrw-auto', [GisEditorController::class, 'autoNrw'])->middleware('permission:gis.feature.update');
+
+    // ── GIS: Analisis Kebocoran + Insiden darurat ─────────────────────
+    Route::post('gis/isolate', [GisEditorController::class, 'isolate'])->middleware('permission:gis.feature.view');
+    Route::post('gis/incidents', [GisEditorController::class, 'storeIncident'])->middleware('permission:fsm.wo.create');
 
     // ── Offline Sync ───────────────────────────────────────────
     Route::post('sync/upload', [SyncController::class, 'upload']);

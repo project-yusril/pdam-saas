@@ -45,6 +45,7 @@ class Endpoints {
 
   // ── OCR ────────────────────────────────────────────────────────
   static const String ocrKtpUpload = '/prospects/upload-ktp';
+  static const String ocrKtpParse = '/prospects/parse-ktp';
 
   // ── Offline Sync ───────────────────────────────────────────────
   static const String syncUpload = '/sync/upload';

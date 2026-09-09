@@ -2,13 +2,13 @@
 
 Sistem Manajemen PDAM Multi-Tenant berbasis Laravel + Vue 3.
 
-> **Versi:** 3.5 | **Status:** Tooling gate §13 + CI self-drill selesai; bukti environment produksi & decision PRD §23 masih terbuka | **Diperbarui:** 7 September 2026
+> **Versi:** 3.7 | **Status:** GIS Jaringan Perpipaan + Peta Pelanggan terintegrasi penuh (peta Leaflet nyata, isolasi per rumah, NRW IWA per DMA), tooling gate §13 selesai; bukti environment produksi & decision PRD §23 masih terbuka | **Diperbarui:** 9 September 2026
 
 >
 > **Sumber status saat ini:** [`temuan2.md`](temuan2.md), termasuk enam gate persetujuan production canonical. **Peta dokumentasi + fact sheet angka live:** [`docs/DOC_MAP.md`](docs/DOC_MAP.md). Inventaris tergenerasi: [`docs/COUNTS.json`](docs/COUNTS.json) (`php artisan pdam:counts`).
 
-<!-- doc-sync:start verifikasi 7 Sept 2026 -->
-> **Verifikasi terintegrasi:** 129/129 (129 test backend, 853 assertions) · Vitest 13 · Flutter analyze 0 issue + 50 · ML 32 (CI) · 371 method /api/v1 (295 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
+<!-- doc-sync:start verifikasi 9 Sept 2026 -->
+> **Verifikasi terintegrasi:** 164/164 (164 test backend, 986 assertions) · Vitest 13 · Flutter analyze 0 issue + 50/50 · ML 32 (CI) · 379 method /api/v1 (302 path registry; 44 route web admin/GIS) · 66 migration · 29 seeder · 22 command · 168 tabel statis · 137 model · 2026-09-09. Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## Documentation Map
@@ -64,7 +64,8 @@ bootstrap di [`backend/SEED_DATA.md`](backend/SEED_DATA.md). Jalur production me
 | Konteks | URL/alamat | Catatan |
 |---------|------------|---------|
 | Docker, browser host | `http://localhost:8080` | Web, API `/api/v1`, Swagger `/api/documentation` |
-| Artisan, browser host | `http://127.0.0.1:8000` atau `http://localhost:8000` | Pilih satu hostname secara konsisten selama sesi login |
+| Artisan, browser host | `http://127.0.0.1:<port>` atau `http://localhost:<port>` | Port fleksibel (`serve --port=8001` bila 8000 dipakai aplikasi lain — mis. projeto XAMPP/`nera`); Sanctum kini menerima host request apa pun (config placeholder `currentRequestHost`). Pilih satu hostname secara konsisten selama sesi login |
+| Panel GIS admin | `http://127.0.0.1:8001/admin/network` (Web) | Demo jaringan Sambas ter-seed; butuh login tenant `pdam-sambas` + modul GIS aktif. Lihat §Demo Data |
 | Android emulator ke Artisan host | `http://10.0.2.2:8000/api/v1` | Alias host khusus emulator; bukan URL browser desktop |
 | ML service | bind `0.0.0.0:8100`, akses host `http://localhost:8100` | Detail di `ml/README.md` |
 | MySQL lokal aplikasi | `127.0.0.1:3306` | Bukan URL HTTP |
@@ -107,6 +108,12 @@ tenant terverifikasi **balance**. Detail lengkap di [`backend/SEED_DATA.md`](bac
 > (Sep 2025 → bulan penuh terakhir), 3.000 pelanggan, tunggakan 1/2/3 bulan + 150 pelanggan diisolir
 > (>6 bulan tidak bayar), dan rantai baca meter (foto + petugas → tarif → tagihan → jurnal) yang terbukti
 > nyambung — lihat [`backend/SEED_DATA.md`](backend/SEED_DATA.md) Section 9.
+>
+> **GIS jaringan + rumah terintegrasi:** `PipeNetworkDemoSeeder` + `php artisan pdam:seed-network` membangun
+> ulang seluruh jaringan pipa **dari koordinat pelanggan nyata** — tiap rumah punya node `tap` (SMBS-TAP) + pipa
+> sambungan rumah (SR Ø20) → graf trunk→distribusi→SR per rute baca; 7 DMA ber-polygon convex-hull; percabangan
+> ≥4 rumah otomatis di-upgrade jadi VALVE utk granulair isolasi. Verifikasi hasil: `php artisan pdam:seed-network`
+> (idempoten, reset boundary DMA + reading suplai bulan lalu) — lihat detail §10–11 SEED_DATA.
 
 **Contoh login demo:** kode `pdam-canada`, email `admin_tenant@gmail.com`, password `12345678`.
 Daftar kredensial lengkap dan workflow reset/non-destruktif hanya dipelihara di
@@ -278,7 +285,8 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 | Laporan Baca Meter | `/meter-reading-report` | Tenant | Rincian baca meter per rute & periode: baca lalu vs kini, pemakaian (m³), golongan tarif, biaya, foto meter & rumah, serta petugas (read_by) & verifikator — di-backend `MeterReadingController@report` (`GET /api/v1/meter-readings/report`, izin `mtr.reading.view`). |
 | Master data tenant | `/streets`, `/address` (Master Alamat), `/tariffs` | Tenant | CRUD master: Jalan, Master Alamat berjenjang (Provinsi→Kota→Kecamatan→Desa/Kelurahan), Golongan Tarif. Data alamat bersifat *global reference + override per tenant* (soft-delete + restore). |
 | Pelanggan | `/customers`, `/tariffs` | Tenant | Daftar & tambah pelanggan; golongan tarif. Form pelanggan memiliki cascade Wilayah→Rute→Jalan. |
-| Enterprise tenant | `/gis`, `/employees`, `/employee-self-service`, `/call-center`, `/tenders` | Tenant | UI modul enterprise; backend tetap menegakkan entitlement dan permission. |
+| Enterprise tenant | `/gis`, `/employees`, `/employee-self-service`, `/call-center`, `/tenders` | Tenant | UI modul enterprise; backend tetap menegakkan entitlement dan permission. `/gis` = **peta Leaflet nyata** (bundle npm) — 3.000 rumah Sambas warna status bayar (hijau/biru/kuning/oranye/merah/hitam), pipa 3-tier trunk/distribusi/**sambungan rumah (SR) yang menyambung ke setiap titik pelanggan** (data dari `gis_features`/`gis_network_edges`). |
+| GIS panel admin (Blade) | `/admin/gis/map`, `/admin/network` | Tenant (modul GIS) | **Peta Pelanggan OSM/Leaflet** (`/admin/gis/map`) + **GIS Jaringan Perpipaan** (`/admin/network`): editor pipa/DMA (gambar → auto-wire), valve buka/tutup, **isolasi bocor per rumah** (valve mana ditutup + pelanggan terdampak via convex hull), insiden → WorkOrder `repair`/`urgent`, analisis **NRW IWA per DMA** (suplai reading vs tagihan dalam polygon), pencarian alamat + geocodebatch/petunjuk manual (Nominatim/OSRM gratis via proxy server). Lihat [`backend/SEED_DATA.md`](backend/SEED_DATA.md) §10–11. |
 | Marketplace tenant | `/marketplace` | Tenant | Katalog/harga/dependency dari session tenant; purchase membuat order pending + URL Snap dan aktivasi menunggu settlement Midtrans terverifikasi. |
 | Dashboard role | `/dashboard/director`, `/dashboard/finance`, `/dashboard/technical`, `/dashboard/warehouse` | Tenant | Dashboard khusus role; kegagalan API ditampilkan melalui banner global. |
 | Laporan keuangan | `/finance/general-ledger`, `/finance/trial-balance`, `/finance/income-statement`, `/finance/balance-sheet`, `/finance/cash-flow` | Tenant | Buku Jurnal, Neraca Saldo, Laba Rugi, Neraca, Arus Kas; di-backend oleh `AccountingReportController` (`permission:core.report.view`). |
@@ -351,10 +359,10 @@ production-ready. Detail gap per area ada di `temuan2.md`.
 
 ## API
 
-Snapshot route registry: **392 baris route** (371 method endpoint `/api/v1` + 19 web; 293 URI
+Snapshot route registry: **423 method rows** (379 method endpoint `/api/v1` + 44 web admin/GIS; 302 URI
 API unik) — angka kanonis ada di [`docs/COUNTS.json`](docs/COUNTS.json), regenerasi lewat
 `php artisan pdam:counts --write`. Spek kontrak endpoint dari registry: `php artisan pdam:openapi`
-→ **`docs/openapi.json`** (293 path; H-10 CI drift: codegen `tools/generate_dio_client.py` → `mobile/lib/api/generated/api_client.g.dart` + `openapi_surface.dart` + diff `git diff --exit-code`). Swagger anotasi & Postman
+→ **`docs/openapi.json`** (302 path; H-10 CI drift: codegen `tools/generate_dio_client.py` → `mobile/lib/api/generated/api_client.g.dart` + `openapi_surface.dart` + diff `git diff --exit-code`). Swagger anotasi & Postman
 tetap referensi tambahan; kontrak `mobile/lib/core/network/endpoints.dart` dipaksa sama oleh
 CI `php artisan pdam:mobile-coverage`. API tenant memakai prefix `/api/v1`.
 
@@ -371,6 +379,7 @@ format yang sama. DOC surat-menyurat tetap roadmap.
 ```bash
 php artisan test                    # Unit + integration tests (SQLite in-memory)
 php artisan pdam:counts             # drift-check angka inventaris vs docs/COUNTS.json
+php artisan pdam:seed-network       # Rebuild demo GIS Jaringan Perpipaan per rumah + DMA (idempoten)
 npm test -- --run                   # Vitest frontend
 npm run build                       # Build production Vue
 cd ../mobile && flutter analyze && flutter test --no-pub
@@ -378,11 +387,13 @@ cd ../ml && python -m pytest        # atau unittest discover -s tests
 bash -n ops/**/*.sh                 # syntax ops; CI menjalankan drill ops/backup & ops/mysql
 ```
 
-Status verifikasi 7 September 2026 (lokal Windows; CI menjalankan semuanya — termasuk MySQL):
-backend SQLite **134/134, 867 assertions** (termasuk seeder-isolation ProductionSeederIsolationTest,
+Status verifikasi 9 September 2026 (lokal Windows; CI menjalankan semuanya — termasuk MySQL):
+backend SQLite **164/164, 986 assertions** (termasuk seeder-isolation ProductionSeederIsolationTest,
 fitur refund (gated `business.refund.enabled` + jurnal pembalik), material stock-out, native export XLSX/PDF/DOCX, fitur refund+trial+digit-meter (gated config PRD §23), command `pdam:counts`, `pdam:openapi` & `pdam:mobile-coverage`
-H-10 kontrak endpoint mobile); frontend Vitest **7 file / 13 tests** (helper workbench, resources config,
-errors, auth flow, router, contract) + `npm run build` lulus; Flutter **44/44** + analyze **0 issue**
+H-10 kontrak endpoint mobile; **+29 tes GIS baru `GisMapTest` (12) & `GisNetworkTest` (17): klasifikasi warna 6 level,
+isolasi bocor per rumah, tenant isolation, geocode 1 req/s + User-Agent, routing OSRM proxy, DMA/NRW IWA, permission preset**);
+frontend Vitest **13 tests** (helper workbench, resources config,
+errors, auth flow, router, contract) + `npm run build` lulus; Flutter **50/50** + analyze **0 issue**
 (duplikat konstan endpoints.dart dibersihkan); ML **32 tests** (pytest; inc. `test_telemetry_simulator` contract
 di CI; runner Win-ARM64 lokal tanpa wheel xgboost → compile-all saja); `php artisan pdam:counts`
 sinkron dengan `docs/COUNTS.json`. CI root [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — **run pertama 2909807: 6/6 hijau** — job: `backend-sqlite`, `mysql-production-gates` (migrate+seed MySQL 8.4, provisioning

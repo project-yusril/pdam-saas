@@ -57,4 +57,20 @@ return [
         'vision_api_key' => env('GOOGLE_CLOUD_VISION_API_KEY'),
     ],
 
+    // ── Stack peta OSM gratis (geocoding + routing) ──────────────────────
+    // Default = server publik (fair-use: max 1 req/s & wajib User-Agent).
+    // Produksi: self-host OSRM/Photon via Docker atau isi env *_BASE_URL —
+    // tidak perlu ubah kode (lihat SEED_DATA.md bagian "Peta Pelanggan").
+    'nominatim' => [
+        'base_url' => env('NOMINATIM_BASE_URL', 'https://nominatim.openstreetmap.org'),
+        'user_agent' => env('NOMINATIM_USER_AGENT', 'PDAM-Admin/1.0 (dashboard internal; ganti dgn kontak Anda)'),
+        'countrycodes' => env('NOMINATIM_COUNTRYCODES', 'id'),
+    ],
+
+    'osrm' => [
+        'base_url' => env('OSRM_BASE_URL', 'https://router.project-osrm.org'),
+        'timeout' => (int) env('OSRM_TIMEOUT', 15),
+        'max_points' => (int) env('OSRM_MAX_POINTS', 16),
+    ],
+
 ];

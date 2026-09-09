@@ -34,7 +34,7 @@ baca meter → tagihan → pembayaran → jurnal → neraca, plus gudang → sto
 > **Tautan wajib:** [`README.md`](../README.md) · [`temuan2.md`](../temuan2.md) · [`02_flow.md`](../02_flow.md) · [`HANDOVER.md`](../HANDOVER.md) · [`SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) · [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · [`docs/COUNTS.json`](../docs/COUNTS.json) · [`ops/README.md`](../ops/README.md) · [`backend/README.md`](../README.md) · [`backend/DEPLOY.md`](DEPLOY.md) · [`backend/SEED_DATA.md`](SEED_DATA.md) · [`ml/README.md`](../ml/README.md) · [`docs/ML_CALIBRATION.md`](../docs/ML_CALIBRATION.md) · [`docs/BUSINESS_DECISIONS.md`](../docs/BUSINESS_DECISIONS.md)
 > <!-- doc-sync:links -->
 <!-- doc-sync:start verifikasi 7 Sept 2026 -->
-> **Verifikasi terintegrasi:** 129/129 (129 test backend, 853 assertions) · Vitest 13 · Flutter analyze 0 issue + 46/46 · ML 32 (CI) · 371 method /api/v1 (295 path registry) · 65 migration · 28 seeder · 21 command · 167 tabel statis · 136 model · 2026-09-07. Kanoni angka: [`docs/COUNTS.json`](../docs/COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
+> **Verifikasi terintegrasi:** 164/164 (164 test backend, 986 assertions) · Vitest 13 · Flutter analyze 0 issue + 50/50 · ML 32 (CI) · 379 method /api/v1 (302 path registry; 44 web) · 66 migration · 29 seeder · 22 command · 168 tabel statis · 137 model · 2026-09-09. Kanoni angka: [`docs/COUNTS.json`](../docs/COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## 1. Dua Tenant Demo
@@ -244,6 +244,7 @@ Diverifikasi setelah `php artisan migrate:fresh --seed`:
 | Total stok fisik | 1.800 unit | 700 unit | 7.600 unit (beli awal) |
 | Baca meter (foto+petugas) | — (fokus inti) | — (fokus inti) | 36.000 |
 | Pelanggan isolir (putus) | — | — | 150 |
+| **GIS jaringan (Sambas, 9 Sept)** | (mini Canada/DMS seed) | — | **pipa 3.010** (incl. 3.000 SR Ø20 smua 3.000 rumah tersambung), **edges 3.010**, **node tap 3.000**, valve 9 (hub+zona), hydrant 14, **7 DMA** ber-polygon, reading suplai 5.208 baris (bulan tertutup) → panel `/admin/network` NRW terisi |
 | Jurnal (entries) | 58 | 20 | 69.602 |
 | Modul aktif | **27** | **10** | **27** |
 | Total DEBIT | Rp 5.183.181.700 | Rp 3.082.347.000 | Rp 117.524.114.700 |
@@ -281,6 +282,15 @@ jumlah data sebelum mengandalkan rerun pada database development yang telah dimo
 ```bash
 php artisan migrate:fresh --seed
 ```
+
+### Reset ulang jaringan GIS saja (non-destruktif)
+
+```bash
+php artisan pdam:seed-network
+```
+
+Menghapus + membangun ulang seluruh `SMBS-NET`/tap/pipa/edge/ DMA boundary / reading NRW
+bulan lalu dari **koordinat pelanggan terkini** (idempoten, aman dijalankan berulang — lihat §11).
 
 - **Menjalankan server (Windows):** `backend/start.bat` (klik 2x) — hanya menjalankan `php artisan serve`.
   Setup awal (`.env`, `composer install`, `key:generate`, `migrate --seed`) dilakukan sekali secara manual.
@@ -417,6 +427,138 @@ dapat dipertanggungjawabkan (foto + petugas).
 - **`DataTable.vue`** (shared) → fallback `from`/`to` pada mode server agar list yang tidak mengirim
   `:from`/`:to` (mis. Pegawai) tidak menampilkan `0 to 0`.
 - **`Customer`** → relasi `street(): BelongsTo` ditambahkan agar laporan baca meter bisa menampilkan jalan.
+
+---
+
+
+---
+
+## 10. Peta Pelanggan OSM (GIS Module)
+
+**Modul:** GIS (`module:GIS` required; enabled untuk tenant Sambas + Canada dalam seed demo).  
+**Route web direktur/admin:** `GET /admin/gis/map` (link di nav: *Peta Pelanggan*).  
+**Teknologi peta:** Leaflet 1.9.4 + **OpenStreetMap tiles** (gratis) via CDN.  
+**Routing & geocoding:** gratis dari server publik dengan kebijakan fair-use:
+- **Geocoding (alamat → koordinat):** [Nominatim](https://nominatim.openstreetmap.org) (proxy server-side, User-Agent wajib, maks 1 req/detik); config via `config('services.nominatim')`.
+- **Routing (titik A ke B, tour baca meter):** [OSRM demo](https://router.project-osrm.org), profil `driving|cycling|foot` (proxy server-side, bisa dialihkan ke self-host lewat `config('services.osrm.base_url')`).
+
+### Legenda warna rumah di peta (status pembayaran)
+
+| Warna | Label | Kondisi pelanggan |
+|---|---|---|
+| 🟢 Hijau | Lunas | tidak ada tagihan unpaid/overdue |
+| 🔵 Biru muda | Belum jatuh tempo | ada tagihan unpaid tetapi due_date ≥ hari ini |
+| 🟡 Kuning | Menunggak 1 bulan | 1 periode lewat jatuh tempo |
+| 🟠 Oranye | Menunggak 2 bulan | 2 periode lewat jatuh tempo |
+| 🔴 Merah | Menunggak ≥3 bulan | ≥3 periode lewat jatuh tempo |
+| ⚫ Hitam | Putus / Isolir | status pelanggan ∈ {isolir, terminated, disconnected} |
+
+Icon rumah (divIcon SVG) diwarnai otomatis per status; cluster ikon Zoom-in memisahkan titik.
+
+### Fitur halaman peta
+
+- **Filter:** zona, rute baca meter, pencarian nama/no. pelanggan.
+- **Statistik ringkas:** jumlah pelanggan per warna + jumlah **tanpa koordinat**.
+- **Panel "Belum ada koordinat"** — daftar pelanggan yang butuh titik, tiap baris tombol:
+  - **Geocode alamat** — isi titik otomatis via Nominatim (proxy, respecting rate limit + sleep).
+  - **Tandai di peta** — klik lokasi rumah pada peta, simpan koordinat (PATCH endpoint validasi range Indonesia).
+- **Routing:** klik popup marker → tombol **Mulai rute dr sini** / **Akhiri rute di sini**; gambar polyline biru (jarak km, waktu perkiraan menit/jam) dari proxy OSRM.
+- **Rute baca meter (tour)** — pilih rute baca meter → render urutan kunjungan (nearest-neighbor via OSRM matrix) sebagai garis ungu putus-putus + penomoran stop; berguna untuk perencanaan petugas.
+- **Pencarian alamat (OSM)** — input di toolbar → hasil dropdown (kandidat alamat dari Nominatim) → klik untuk pan peta ke lokasi; opsi **Set titik awal rute** di marker temporer.
+
+### Data demo (Sambas)
+
+Tenant PDAM Kab. Sambas (`SambasTenantSeeder`) sudah menyediakan **3.000 pelanggan** dengan koordinat yang di-klaster **per zona/kecamatan nyata** (Sambas Kota, Pemangkat, Tebas, Jawai, Teluk Keramat, Selakau, Paloh — lihat `DISTRICT_CENTERS`), sesuai bucket:
+70% lunas (hijau), 10% menunggak 1 bulan (kuning), 10% 2 bulan (oranye), 5% 3 bulan (merah), 5% isolir (hitam) — sangat cocok untuk verifikasi dashboard visual.
+
+### Self-hosting & kebijakan penggunaan
+
+Server publik OSRM & Nominatim bersifat **gratis untuk fair-use** (maksimal ~1 req/detik, user-agent wajib berisi kontak Anda). Untuk produksi skala tinggi atau beban lebih, disarankan **self-host**:
+- OSRM (`docker run osrm/osrm-backend` + dataset Indonesia `.osm.pbf`), Nominatim (Docker Nominatim instance atau Photon), lalu set:
+  ```env
+  OSRM_BASE_URL=http://localhost:5000
+  NOMINATIM_BASE_URL=https://nominatim.yourdomain.com
+  NOMINATIM_USER_AGENT=PDAM-SelfHosted/1.0 (support@yourcompany.com)
+  ```
+Tidak perlu mengubah kode; backend mendeteksi URL dari environment.
+
+### Integrasi API
+
+Fitur juga terpapar melalui endpoint REST internal untuk modul lain:
+- `GET /api/v1/gis/customers?zone_id=&meter_route_id=&colors=...&bbox=` (GeoJSON FeatureCollection) — gate `module:GIS`.
+- `GET /api/v1/gis/customers/status-summary` — JSON summary counts (warna + meta).
+- Backend menggunakan `CustomerMapStatusService::classifyBatch` yang efisien (1 query agregate + 1 subquery) untuk 5000 pelanggan maksimum tanpa N+1.
+
+### Unit test
+
+Tes end-to-end mencakup:
+- `tests/Feature/GisMapTest.php`: klasifikasi warna per status, tenant isolation, geocode pacing, routing proxy OSRM, tour nearest-neighbor, dan validasi koordinat manual.
+
+---
+
+
+## 11. GIS Jaringan Perpipaan (Network GIS)
+
+**Route web:** `GET /admin/network` (menu **Jaringan Pipa** di nav admin — direktur, admin, gis_operator, technical_head, field_dispatcher).
+**Endpoint API (mobile/sistem):** blok `gis/network` di `routes/api.php` (gate `module:GIS` + `permission:gis.feature.*`); insiden memakai `fsm.wo.create`.
+
+### Lapisan data (tabel eksisting — TANPA migrasi baru)
+
+| Tabel | Peran |
+|---|---|
+| `gis_features` | `pipe` (LineString), node: `valve / junction / hydrant / pump / reservoir / intake / treatment` |
+| `gis_network_edges` | sambungan node↔node + `pipe_feature_id` (ruas), `length_meters` |
+| `dma_zones` | polygon pembatas DMA (`boundary` GeoJSON Polygon) |
+| `nrw_balances` | hasil perhitungan NRW per DMA/periode |
+| `work_orders` | insiden jaringan (`source_type=gis_feature`, tipe `repair`/`inspection`, prioritas SLA) |
+
+### Fitur halaman
+
+- **Editor Leaflet.draw** (gratis): gambar pipa (auto-wire ujung ke node ≤12 m / junction baru), node titik, polygon DMA; klik fitur → edit properti (material, Ø, status), **toggle valve buka/tutup**, hapus (cascade edge).
+- **Isolasi bocor**: klik ruas pipa → "Isolasi": algoritma BFS `NetworkGraphService` mengembalikan **valve yang harus ditutup**, segmen mati (termasuk cabang buntu/hydrant), peringatan bila masih tersambung sumber tanpa valve, **polygon terdampak (convex hull)** + daftar pelanggan di dalamnya.
+- **Insiden → Work Order**: tombol darurat membuat WO `repair`/`urgent|high|...` + SLA otomatis + log, dan menandai pipa `rusak` (merah di peta).
+- **Analisis NRW otomatik per DMA**: suplai = rata-rata `flow_rate_m3h` reading Distribusi × jam periode; terbaca = Σ `consumption` tagihan pelanggan **di dalam polygon DMA** → upsert `nrw_balances` + status baik/waspada/kritis (>20 %/>30 %) + ILI kasar.
+
+### Demo data (Sambas)
+
+Koordinat pelanggan Sambas di-seed **di sekitar centroid kecamatan aslinya** (konstanta `DISTRICT_CENTERS` di `SambasTenantSeeder` — Sambas Kota, Pemangkat, Tebas, Jawai, Teluk Keramat, Selakau, Paloh) dengan sebaran spiral golden-angle per rute, sehingga **1 rute baca = 1 klaster rumah** yang nyata. Bucket pembayaran: 70% lunas (hijau), 10% tunggak 1 bln (kuning), 10% 2 bln (oranye), 5% 3 bln (merah), 5% isolir/putus (hitam).
+
+
+### Seeder jaringan demo
+
+`PipeNetworkDemoSeeder` (dipanggil `DemoSeeder`, idempoten via marker `SMBS-`) **tidak memakai koordinat karangan** — seluruh jaringan diturunkan dari data pelanggan nyata di DB per rute/zona, **menyambung ke setiap rumah** seperti jaringan PDAM asli:
+- **SETIAP pelanggan** ber-koordinat = node **tap** (`SMBS-TAP <no-pelanggan>`, tipe `tap`) → **pipa sambungan rumah (SR) Ø20 PE** (`SMBS-SVC <no>`, property `service_for=<customer_id>`) dengan ujung tepat di koordinat rumah; graf dirangkai **MST (Prim)** root = valve cabang zona → tidak ada rumah piatu (verifikasi `php artisan pdam:seed-network`: `3000/3000 rumah tersambung pipa`).
+- Percabangan **≥4 rumah** otomatis di-upgrade **VALVE hub** (`SMBS-VLV`) → granularitas isolasi realistis; dua tap terluar tiap zona → **hydrant**.
+- Trunk DI Ø400 merantai Pompa IPA → tiap valve zona → Reservoir; pipa cabang dari trunk ke valve zona (Ø250/160).
+- `gis_network_edges` dibangun dari node yang sama → analisis isolasi bocor berjalan per-simpul; rebuild idempoten: **`php artisan pdam:seed-network`**.
+- `dma_zones.boundary` = convex hull rumah ter-buffer ±300 m per zona (7 DMA); `distribution_readings` suplai per jam untuk **periode bulan tertutup terakhir** (flow = konsumsi nyata × 1.35 → NRW demo realistis ~26%).
+- Skenario demo: klik pipa SR di peta → **Isolasi** → valve hub/zona mana yang ditutup + daftar persis rumah terdampak → buat WO → panel NRW terisi angka terintegrasi.
+
+### Permission baru (preset, tanpa migrasi)
+
+| Role | Permission jaringan |
+|---|---|
+| `director` | `gis.feature.view` (+ preset lama) |
+| `gis_operator` | `gis.feature.view/create/update/delete`, `fsm.wo.view`, `fsm.wo.create` |
+| `technical_head` | `gis.feature.view/update`, `fsm.wo.*` |
+| `field_dispatcher` | `gis.feature.view`, `fsm.wo.view/create/assign` |
+
+Tenant admin selalu tembus RBAC (tetap perlu modul `GIS` aktif — Sambas & Canada: aktif).
+
+### Test
+
+`tests/Feature/GisNetworkTest.php` (17 test) + `tests/Feature/GisMapTest.php` (12) = **29** test GIS, 113 assertion: semantik isolasi (valve tertutup memutus flood, cabang buntu ikut mati, sumber tanpa valve = peringatan), auto-wire, cascade delete, tenant isolation, incidents, NRW polygon, gate auth/permission.
+
+### Rebuild / reset
+
+```bash
+php artisan pdam:seed-network                 # idempoten: hapus SMBS-*, bangun ulang pipa-tap-rumah+DMA+reading dari data terkini
+php artisan db:seed --class=PipeNetworkDemoSeeder --force   # alternatif (skip jika sudah ada)
+```
+
+### Catatan produksi
+
+Server demo OSRM/Nominatim = fair-use publik (lihat §10). **Graf pipa & isolasi murni lokal (database)** — tidak bergantung layanan eksternal, jadi analisis bocor tetap jalan walau offline.
 
 ---
 

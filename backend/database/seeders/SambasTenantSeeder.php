@@ -117,6 +117,33 @@ class SambasTenantSeeder extends Seeder
         ['ZN-07', 'Paloh', ['610108', '610109', '610106'], false],
     ];
 
+    /**
+     * Perkiraan centroid kecamatan Kab. Sambas [lat, lng] — patokan geografis
+     * nyata supaya tiap zona/rute baca = klaster rumah yang terpisah sesuai
+     * wilayah aslinya (dan jalur pipa lewat KlasterPipeNetworkDemoSeeder).
+     */
+    private const DISTRICT_CENTERS = [
+        '610101' => [1.3825, 109.3060], // Sambas (kota)
+        '610102' => [1.5330, 109.4330], // Teluk Keramat
+        '610103' => [1.2500, 109.2120], // Jawai
+        '610104' => [1.1850, 109.1600], // Tebas / Siantan
+        '610105' => [1.3150, 109.0340], // Pemangkat
+        '610106' => [1.3060, 109.4090], // Sejangkung
+        '610107' => [1.3960, 109.1400], // Selakau
+        '610108' => [1.7060, 109.4150], // Paloh
+        '610109' => [1.7900, 109.2950], // Sajingan Besar
+        '610110' => [1.2350, 109.0200], // Subah
+        '610111' => [1.2640, 109.0870], // Galing
+        '610112' => [1.5400, 109.1370], // Tekarang
+        '610113' => [1.3450, 108.9850], // Semparuk
+        '610114' => [1.2600, 109.3290], // Sajad
+        '610115' => [1.2050, 109.3150], // Sebawi
+        '610116' => [1.1650, 109.2300], // Jawai Selatan
+        '610117' => [1.4650, 109.4950], // Tangaran
+        '610118' => [1.5950, 109.2000], // Salatiga
+        '610119' => [1.4040, 109.2260], // Selakau Timur
+    ];
+
     private const CHEMICALS = [
         ['TAWAS', 'Aluminium Sulfat (Tawas)', 'kg', 30.0000, 60.0000],
         ['PAC', 'Poly Aluminium Chloride', 'kg', 25.0000, 50.0000],
@@ -626,10 +653,20 @@ class SambasTenantSeeder extends Seeder
         $dueDay = (int) (BillingSetting::first()?->due_day ?? 20);
         $now = now();
 
+        // Pusat tiap zona = rata-rata centroid kecamatannya (DISTRICT_CENTERS).
+        // Dipakai supaya pelanggan satu rute = satu klaster geografis nyata,
+        // sehingga jalur pipa (PipeNetworkDemoSeeder) melewati rumah/rutenya.
+        $zoneCentroids = [];
+        foreach (self::ZONES as $zi => $zDef) {
+            $lats = array_map(fn ($d) => self::DISTRICT_CENTERS[$d][0] ?? 1.3825, $zDef[2]);
+            $lngs = array_map(fn ($d) => self::DISTRICT_CENTERS[$d][1] ?? 109.3060, $zDef[2]);
+            $zoneCentroids[$zi] = [array_sum($lats) / count($lats), array_sum($lngs) / count($lngs)];
+        }
+
         $bar = $this->command?->getOutput()->createProgressBar($this->customerCount);
         $bar?->start();
 
-        DB::transaction(function () use ($orgId, $zones, $routes, $periods, $total, $verifier, $tariffs, $streetIds, $readerByRoute, $tariffConfigs, $coaIds, $dueDay, $now, $bar) {
+        DB::transaction(function () use ($orgId, $zones, $routes, $periods, $total, $verifier, $tariffs, $streetIds, $readerByRoute, $tariffConfigs, $coaIds, $dueDay, $now, $bar, $zoneCentroids) {
             $billCounter = [];
             $jeCounter = [];
             foreach ($periods as $p) {
@@ -653,6 +690,16 @@ class SambasTenantSeeder extends Seeder
                 $serial = 'MTR-'.str_pad((string) ($i + 1), 6, '0', STR_PAD_LEFT);
                 $installDate = '2025-09-01';
 
+                // Sebar rumah dalam klaster zona-nya (±1,4 km) pakai spiral
+                // golden-angle deterministik → tiap rute baca = gumpalan nyata
+                // yang bisa dilewati jalur pipa.
+                $centroid = $zoneCentroids[$zoneIdx] ?? [1.3825, 109.3060];
+                $seq = (int) ($i / max(1, count($zones)));          // urutan dlm rute ini
+                $ang = $seq * 2.399963229728653;                     // radian golden angle
+                $rad = 0.00006 * sqrt($seq + 1);                     // renggang ~ tiap klaster
+                $latitude = round($centroid[0] + $rad * sin($ang), 7);
+                $longitude = round($centroid[1] + $rad * cos($ang) / max(0.2, cos(deg2rad($centroid[0]))), 7);
+
                 $customer = Customer::create([
                     'pdam_org_id' => $orgId,
                     'customer_number' => $customerNumber,
@@ -661,8 +708,8 @@ class SambasTenantSeeder extends Seeder
                     'zone_id' => $zone->id,
                     'street_id' => $streetId,
                     'address_detail' => 'No. '.(($i % 120) + 1).', RT 0'.(($i % 8) + 1).'/RW 0'.(($i % 5) + 1),
-                    'latitude' => round(1.35 + (($i % 100) / 1000), 7),
-                    'longitude' => round(109.30 + (($i % 100) / 800), 7),
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
                     'tariff_category_id' => $tariff->id,
                     'meter_serial_number' => $serial,
                     'meter_route_id' => $route->id,
