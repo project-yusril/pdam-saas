@@ -22,7 +22,7 @@ class ApiOp {
   bool get isTemplate => pathParams.isNotEmpty;
 }
 
-/// Path -> {METHOD: ApiOp}. Total operasi: 372; path unik: 296.
+/// Path -> {METHOD: ApiOp}. Total operasi: 380; path unik: 303.
 const Map<String, Map<String, ApiOp>> apiSurface = <String, Map<String, ApiOp>>{
   '/address/cities': <String, ApiOp>{
     'GET': ApiOp(
@@ -394,7 +394,8 @@ const Map<String, Map<String, ApiOp>> apiSurface = <String, Map<String, ApiOp>>{
       pathParams: const <String>['scheduledReport'],
     ),
   },
-  '/bi/scheduled-reports/{scheduledReport}/runs/{run}/download': <String, ApiOp>{
+  '/bi/scheduled-reports/{scheduledReport}/runs/{run}/download':
+      <String, ApiOp>{
     'GET': ApiOp(
       method: 'GET',
       tag: 'Scheduled Reports',
@@ -880,6 +881,14 @@ const Map<String, Map<String, ApiOp>> apiSurface = <String, Map<String, ApiOp>>{
       pathParams: const <String>[],
     ),
   },
+  '/field/location': <String, ApiOp>{
+    'POST': ApiOp(
+      method: 'POST',
+      tag: 'Location',
+      summary: 'FieldLocationController@store',
+      pathParams: const <String>[],
+    ),
+  },
   '/files/signed-url': <String, ApiOp>{
     'POST': ApiOp(
       method: 'POST',
@@ -1062,6 +1071,36 @@ const Map<String, Map<String, ApiOp>> apiSurface = <String, Map<String, ApiOp>>{
       pathParams: const <String>[],
     ),
   },
+  '/gis/dmas': <String, ApiOp>{
+    'GET': ApiOp(
+      method: 'GET',
+      tag: 'Dmas',
+      summary: 'GisEditorController@dmas',
+      pathParams: const <String>[],
+    ),
+    'POST': ApiOp(
+      method: 'POST',
+      tag: 'Dmas',
+      summary: 'GisEditorController@createDma',
+      pathParams: const <String>[],
+    ),
+  },
+  '/gis/dmas/{dma}': <String, ApiOp>{
+    'PATCH': ApiOp(
+      method: 'PATCH',
+      tag: 'Dmas',
+      summary: 'GisEditorController@updateDma',
+      pathParams: const <String>['dma'],
+    ),
+  },
+  '/gis/dmas/{dma}/nrw-auto': <String, ApiOp>{
+    'POST': ApiOp(
+      method: 'POST',
+      tag: 'Dmas',
+      summary: 'GisEditorController@autoNrw',
+      pathParams: const <String>['dma'],
+    ),
+  },
   '/gis/features': <String, ApiOp>{
     'GET': ApiOp(
       method: 'GET',
@@ -1073,6 +1112,30 @@ const Map<String, Map<String, ApiOp>> apiSurface = <String, Map<String, ApiOp>>{
       method: 'POST',
       tag: 'Features',
       summary: 'GisEditorController@createFeature',
+      pathParams: const <String>[],
+    ),
+  },
+  '/gis/features/{feature}': <String, ApiOp>{
+    'DELETE': ApiOp(
+      method: 'DELETE',
+      tag: 'Features',
+      summary: 'GisEditorController@destroyFeature',
+      pathParams: const <String>['feature'],
+    ),
+  },
+  '/gis/incidents': <String, ApiOp>{
+    'POST': ApiOp(
+      method: 'POST',
+      tag: 'Incidents',
+      summary: 'GisEditorController@storeIncident',
+      pathParams: const <String>[],
+    ),
+  },
+  '/gis/isolate': <String, ApiOp>{
+    'POST': ApiOp(
+      method: 'POST',
+      tag: 'Isolate',
+      summary: 'GisEditorController@isolate',
       pathParams: const <String>[],
     ),
   },

@@ -510,9 +510,9 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 
 | Perintah | Hasil |
 |---|---|
-| `php artisan test` (SQLite) | **PASS 9 Sept: 164/164, 986 assertions** (134/134 8 Sept; 117 7 Sept; 89/89 15 Jul) |
+| `php artisan test` (SQLite) | **PASS 9 Sept (sesi 2): 201/201, 1173 assertions** (164/164 sesi GIS pagi incl. +74 tes GIS/petugas/risik; 134/134 8 Sept; 89/89 15 Jul) |
 | `php artisan test` (MySQL 8.4.9) | **PASS**: 89 discovered, 88 passed, 1 intentionally SQLite-only skipped, 756 assertions, zero failures |
-| `php artisan route:list --json` | **PASS (9 Sep 2026)**: 423 method rows — 379 method endpoint `/api/v1` (302 URI unik) + 44 web (termasuk panel GIS `/admin/gis/*` & `/admin/network/*`). Kanonis: `docs/COUNTS.json` |
+| `php artisan route:list --json` | **PASS (9 Sep 2026 sesi 2)**: 439 method rows — 380 method endpoint `/api/v1` (303 URI unik) + 59 web (panel GIS `/admin/gis/*`, jaringan `/admin/network/*` termasuk `technicians/dispatch/mnf/health/risks/maintenance/feasibility/export/import/print`). Kanonis: `docs/COUNTS.json` |
 | `php artisan route:cache` | **PASS** |
 | `npm run test` (Vitest) | **PASS (7 Sep 2026)**: 7 file / 13 test (helper workbench, resources config, router, api errors, auth flow) |
 | `npm run build` | **PASS**: 322 modules transformed |
@@ -537,9 +537,9 @@ Tidak setiap tabel memerlukan model Eloquent. Pivot, tabel framework, dan tabel 
 | Peta Pelanggan OSM/Leaflet (`/admin/gis/map`, SPA `#/gis`) | ✅ **16 test GIS** lulus; 3000 rumah berwarna status bayar (6 level: hijau/biru/kuning/oranye/merah/hitam), clustering, filter zona/rute, statistik ringkas, geocode batch (Nominatim proxy 1 req/s) + set manual koordinat, route & tour nearest-neighbor (OSRM proxy). Bug fix: `Endpoints.parseKtp` hilang → getter baru + `strict-raw-type` `Response<dynamic>`; SPA `LeafletMap.vue` tak pernah import leaflet → di-import; warna `blue/orange` tidak sinkron frontend↔backend → diselaraskan |
 | GIS Jaringan Perpipaan (`/admin/network`) | ✅ Leaflet.draw editor pipa/node/DMA (gambar pipa = **auto-wire** simpul ujung + junction baru), toggle valve, hapus cascade edge, **isolasi bocor per rumah** (valve mana ditutup + pipa mati + polygon pelanggan terdampak), insiden → **WorkOrder** type `repair`/`urgent` (pipa ditandai `rusak`), **NRW IWA per DMA otomatis** (suplai reading vs tagihan dalam polygon; lazy di `/admin/network/nrw.json`), permission `gis.feature.*` + modul `GIS` |
 | Jaringan demo per rumah | ✅ `PipeNetworkDemoSeeder` + command **`php artisan pdam:seed-network`** — koordinat pelanggan **per kecamatan nyata** (`DISTRICT_CENTERS`), tiap rumah = node `SMBS-TAP` + pipa SR Ø20 (`SMBS-SVC`, property `service_for`), MST Prim root valve zona → **3000/3000 rumah tersambung pipa**, hub ≥4 → valve, terminal N/S → hydrant, 7 DMA boundary dari hull, `distribution_readings` bulanan + NRW ~26% terisi |
-| Data pipeline | ✅ 66 migration / **168 tabel**; seeder Sambas → klaster rumah per rute → pipa derived; route registry 423 (379 API + 44 web); OpenAPI 302; mobile contract tak ada perubahan endpoint (cek `pdam:mobile-coverage` OK) |
+| Data pipeline | ✅ 66 migration / **168 tabel**; seeder Sambas → klaster rumah per rute → pipa derived; route registry 439 (380 API + 59 web); OpenAPI 303 path / 380 operasi; mobile codegen di-regen (operasi `POST /field/location` masuk surface; `pdam:mobile-coverage` lulus) |
 | Runtime bugs ditemukan & diperbaiki via smoke | ✅ `sanctum.php` hardcode port 8000 → placeholder request-host (server port 8001 dll jalan); `.env` testing-artifacts (`SESSION_DRIVER=array`, `DB_DATABASE=:memory:`) → file sqlite persist; TypeError concat seeder; port 8000 dipakai proyek lain → dokumentasi 8001 |
-| Verifikasi | ✅ `php artisan test` **164/164 (986 assertions)**; Vitest 13/13; `flutter analyze` 0 + `flutter test` **50/50** (client regenerated via `pdam:openapi` tidak mengubah kontrak: `pdam:mobile-coverage` lulus); smoke HTTP end-to-end 13 PASS (`tools/gis-smoke.ps1` — CSRF→Login→pages→GeoJSON→layers→isolate→incident→WO→NRW→officers); Pint clean |
+| Verifikasi | ✅ `php artisan test` **201/201 (1173 assertions)**; Vitest 13/13; `flutter analyze` 0 + `flutter test` **50/50** (codegen di-regen utk operasi `/field/location` baru; `pdam:mobile-coverage` lulus); smoke HTTP end-to-end 13 PASS (`tools/gis-smoke.ps1` — CSRF→Login→pages→GeoJSON→layers→isolate→incident→WO→NRW→officers); Pint clean |
 
 ### Snapshot verifikasi 7 September 2026
 

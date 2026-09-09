@@ -12,7 +12,7 @@
 > **Tautan wajib:** [`README.md`](README.md) · [`temuan2.md`](temuan2.md) · [`02_flow.md`](02_flow.md) · [`HANDOVER.md`](HANDOVER.md) · [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) · [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · [`docs/COUNTS.json`](docs/COUNTS.json) · [`ops/README.md`](ops/README.md) · [`backend/README.md`](backend/README.md) · [`backend/DEPLOY.md`](backend/DEPLOY.md) · [`backend/SEED_DATA.md`](backend/SEED_DATA.md) · [`ml/README.md`](ml/README.md) · [`docs/ML_CALIBRATION.md`](docs/ML_CALIBRATION.md) · [`docs/BUSINESS_DECISIONS.md`](docs/BUSINESS_DECISIONS.md)
 > <!-- doc-sync:links -->
 <!-- doc-sync:start verifikasi 7 Sept 2026 -->
-> **Verifikasi terintegrasi:** 164/164 (backend, 986 assertions — +29 tes GIS 9 Sept) · Vitest 13 · Flutter analyze 0 issue + **50/50** · Dio client codegen `tools/generate_dio_client.py` (drift CI) · ML 32 (CI) · 379 method /api/v1 (302 path registry; +44 route web admin/GIS) · 66 migration (refund) · 29 seeder · 22 command · 168 tabel statis · 137 model · 2026-09-09 (CI run 2909807 hijau 6/6). Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
+> **Verifikasi terintegrasi:** 201/201 (backend, 1173 assertions — +74 tes GIS jaringan/petugas/NRW) · Vitest 13 · Flutter analyze 0 issue + **50/50** · Dio client codegen `tools/generate_dio_client.py` (drift CI) · ML 32 (CI) · 439 method rows (378 API `/api/v1` + 61 web/admin & GIS panel) · 66 migration (refund) · 29 seeder · 24 command · 168 tabel statis · 137 model · 2026-09-09 (CI run 2909807 hijau 6/6). Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## 1. Ringkasan Produk
@@ -57,7 +57,7 @@ selesai di `temuan2.md`.
 | 16 | MNT | API+UI (workbench) | Maintenance |
 | 17 | HR | API+UI (workbench) | SDM (UI workbench/pegawai) |
 | 18 | DMS | API + private file guard | Dokumen privat (UI workbench DMS + upload modal) |
-| 19 | GIS | **API + panel webGIS penuh** | Peta OSM/Leaflet pelanggan (6 warna status, geocode Nominatim, routing OSRM) + **jaringan perpipaan**: pipa tersambung ke **setiap rumah** (node tap + SR Ø20, MST), editor Leaflet.draw (auto-wire), valve hub, **isolasi bocor per rumah**, insiden→WO, 7 DMA + **NRW IWA per DMA** (suplai reading vs tagihan dalam polygon). Rebuild demo: `php artisan pdam:seed-network` — `/admin/gis/map`, `/admin/network`, SPA `#/gis`; 29 tes |
+| 19 | GIS | **API + panel webGIS penuh** | Peta OSM/Leaflet pelanggan (6 warna status, geocode Nominatim, routing OSRM) + **jaringan perpipaan terarah**: pipa tersambung ke **setiap rumah** (node tap + SR Ø20, MST), Leaflet.draw (auto-wire), valve hub, **isolasi bocor via SIMULASI GRAF TERARAH** (arah aliran BFS dari sumber; cut valve minimal; panah ➜ di peta), insiden→WO, **petugas lapangan LIVE** (GPS mobile) + **dispatch** WO petugas terdekat, 7 DMA + **NRW IWA per DMA**, **MNF malam 02–04** (bocor halus), **tren NRW** cron, **validator kesehatan**, **peta risiko pipa** (bahan+umur+WO), **preventif→WO**, **feasibility SR**, **GeoJSON e/impor + lembar status PDF**. Rebuild: `php artisan pdam:seed-network` — `/admin/gis/map`, `/admin/network`, SPA `#/gis`; 74 tes |
 | 20 | CC | API+UI (workbench) | Call center |
 | 21 | BI | Security query + schedule diuji | Allowlist/entitlement report builder; CRUD/run/history/download privat dan dispatcher terjadwal tersedia |
 | 22 | INT | API+UI (workbench) | Integrasi dan API key |
@@ -201,12 +201,17 @@ service authentication ML, BI/export identifier hardening, MFA, encrypted fields
 privacy purge dual-control, kontrak OCR KTP multipart, seeder production-safe (kernel routing + DemoGuard
 blokade mutlak), reserve/stock-out material+idempotensi, kontrak export XLSX/PDF/DOCX native, **refund** (gated),
 **trial tenant** & **batas digit meter** (gated PRD §23), dan idempotensi refund.
-- Snapshot 9 September 2026 (lengkap di `docs/COUNTS.json`/`docs/DOC_MAP.md`): backend SQLite **164/164
-  (986 assertions)** — termasuk 29 tes GIS `GisNetworkTest`/`GisMapTest` (jaringan pipa menyambung ke SETIAP rumah
-  via node `tap`+pipa SR+MST, isolate per rumah, DMA/NRW, geocode/routing proxy, permission & tenant isolation);
-  **panel web GIS/OSM/Leaflet `/admin/gis/map` & `/admin/network`** (route web 19→44); frontend Vitest **7 file/13 tests**
-  + build lulus; Flutter **50/50** (analyze **0 issue**; +dio client contract); ML **32** test (CI); route registry: **423** API+web
-  endpoint method rows (379 API/302 path `docs/openapi.json`). Rebuild jaringan: **`php artisan pdam:seed-network`** (§5.17).
+- Snapshot 9 September 2026 (lengkap di `docs/COUNTS.json`/`docs/DOC_MAP.md`): backend SQLite **201/201
+  (1173 assertions)** — termasuk 74 tes GIS `GisNetworkTest`/`GisMapTest`/`FieldOfficerMapTest`/
+  `NightFlowTrendTest`/`NetworkModuleTest` (jaringan pipa menyambung ke SETIAP rumah via node `tap`+pipa
+  SR+MST; ** isolasi bocor GRAF TERARAH** dengan simulasi tutup valve minimal, petugas LIVE dari GPS mobile +
+  dispatch WO terdekat, **MNF debit malam** 02–04 vs baseline, tren NRW cron, **validator kesehatan** jaringan,
+  **peta risiko pipa** (bahan+umur+WO), preventif valve/hydrant→WO, feasibility SR, GeoJSON import/export,
+  lembar status cetak);
+  **panel web GIS/OSM/Leaflet `/admin/gis/map` & `/admin/network`** (route web 19→59); frontend Vitest
+  **7 file/13 tests** + build lulus; Flutter **50/50** (analyze **0 issue**; +dio client contract); ML
+  **32** test (CI); route registry: **439** API+web endpoint method rows (378 API; `docs/openapi.json`).
+  Rebuild jaringan: **`php artisan pdam:seed-network`** (§5.17).
   CI `mysql-production-gates` **lulus run 2909807** menjalankan migration+seed, privileges drill,
   backup→restore drill sebagai bukti otomatis.
 - Deployment-dependent (tooling lengkap — bukti target masih terbuka): TLS/HSTS + pin verify/rotation di
@@ -253,8 +258,8 @@ Enam blocking gate authoritative hanya yang tercantum pada `temuan2.md`: product
 | IOT/PROD/DIST hardware | Low | Butuh sensor/SCADA; API+simulator (ops/simulators) & contract test selesai |
 | Keputusan bisnis PRD §23 (refund/trial/digit) | ✅ konsumen siap | `RefundService`, `TenantModuleController` trial, `business.meter.digits` bound — keputusan manajemen tinggal isi `PDAM_*`/config & aktifkan |
 | Payment provider kedua (Xendit/DOKU) | 🚧 roadmap | `PaymentGatewayInterface` siap; adapter implementasi = PRD §23 provider selain Midtrans |
-| GIS jaringan perpipaan | ✅ selesai (9 Sept) | Panel `/admin/network` + Peta `/admin/gis/map` + API; pipa menyambung ke SETIAP rumah (MST + SR Ø20), isolasi bocor per rumah, DMA/NRW otomatik; `PipeNetworkDemoSeeder` + `pdam:seed-network`; 29 tes lulus (bukti `temuan2.md` snapshot 9 Sept) |
-| H-10 OpenAPI client / coverage mobile | ✅ codegen CI | `tools/generate_dio_client.py` → `mobile/.../api_client.g.dart` (371 operasi, path param) & `tools/generate_openapi_surface.dart` → `openapi_surface.dart` + test flutter sync. CI `git diff --exit-code` menolak kalau tak sinkron; gap coverage `pdam:mobile-coverage --report`. Lanjutan: migrasi bertahap call-site repository ke client ini |
+| GIS jaringan perpipaan | ✅ selesai (+ lanjutan 9 Sept) | Panel `/admin/network` + Peta `/admin/gis/map` + API; pipa menyambung ke SETIAP rumah (MST + SR Ø20), **graf terarah: isolasi bocor = simulasi tutup valve minimal**, **petugas LIVE + dispatch (GPS↔mobile)**, **MNF malam**, **tren NRW cron**, **validator**, **peta risiko**, **preventif→WO**, **feasibility SR**, **GeoJSON + lembar status PDF**; `PipeNetworkDemoSeeder` + `pdam:seed-network`; 74 tes lulus (bukti `temuan2.md` snapshot 9 Sept) |
+| H-10 OpenAPI client / coverage mobile | ✅ codegen CI | `tools/generate_dio_client.py` → `mobile/.../api_client.g.dart` (380 operasi, path param, 303 path — regen 9 Sept utk `/field/location`) & `tools/generate_openapi_surface.dart` → `openapi_surface.dart` + test flutter sync. CI `git diff --exit-code` menolak kalau tak sinkron; gap coverage `pdam:mobile-coverage --report`. Lanjutan: migrasi bertahap call-site repository ke client ini |
 
 
 ## 9. Support Contact & Dokumen

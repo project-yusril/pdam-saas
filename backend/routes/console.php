@@ -6,6 +6,7 @@ use App\Console\Commands\EscalateInstallationPayments;
 use App\Console\Commands\HealthCheck;
 use App\Console\Commands\InstallmentReminder;
 use App\Console\Commands\MarkOverdueBills;
+use App\Console\Commands\MntNetwork;
 use App\Console\Commands\NrwMonthly;
 use App\Console\Commands\PaymentReconciliation;
 use App\Console\Commands\RecurringJournal;

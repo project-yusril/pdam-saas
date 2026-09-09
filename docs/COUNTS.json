@@ -1,13 +1,13 @@
 {
-    "generated_at": "2026-09-09T14:59:57+00:00",
-    "api_endpoints": 379,
-    "web_endpoints": 44,
+    "generated_at": "2026-09-09T18:56:50+00:00",
+    "api_endpoints": 380,
+    "web_endpoints": 59,
     "migrations": 66,
     "seeder_classes": 29,
     "seeder_production_path": 4,
-    "models": 137,
+    "models": 138,
     "tables_static": 168,
-    "backend_test_methods": 164,
+    "backend_test_methods": 201,
     "frontend_test_files": 6,
-    "console_commands": 22
+    "console_commands": 24
 }

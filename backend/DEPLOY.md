@@ -154,6 +154,13 @@ program (60s loop of `schedule:run --force`); classic cron remains valid:
 
 Verify scheduled-report CRUD, manual run, dispatcher, timezone-to-UTC conversion, unique run slots, private artifact storage, permission/module reauthorization, history, and authorized download on staging/target.
 
+Current registry (`routes/console.php`): billing reminder (23–25th 08:00), `pdam:mark-overdue` (26th 06:00) ·
+installation escalation (hourly) · `pdam:auto-isolir` (1st 02:00) · installment reminder (daily 07:00) ·
+reconciliation (6h) · SLA escalation (hourly) · subscription check (daily 01:00) · recurring journal (daily 03:00) ·
+`pdam:health-check` (5 min) · scheduled-report dispatcher (1 min) ·
+**`pdam:nrw-monthly` (1st 04:00)** — stores NRW balances per DMA for GIS trends ·
+**`pdam:mnt-network` (daily 05:00)** — due preventive valve/hydrant schedules → WO + roll forward.
+
 ## Operational Evidence Commands
 
 Every production-supporting claim must be reproducible with repo tools:

@@ -515,9 +515,25 @@ Tes end-to-end mencakup:
 ### Fitur halaman
 
 - **Editor Leaflet.draw** (gratis): gambar pipa (auto-wire ujung ke node ≤12 m / junction baru), node titik, polygon DMA; klik fitur → edit properti (material, Ø, status), **toggle valve buka/tutup**, hapus (cascade edge).
-- **Isolasi bocor**: klik ruas pipa → "Isolasi": algoritma BFS `NetworkGraphService` mengembalikan **valve yang harus ditutup**, segmen mati (termasuk cabang buntu/hydrant), peringatan bila masih tersambung sumber tanpa valve, **polygon terdampak (convex hull)** + daftar pelanggan di dalamnya.
+- **Isolasi bocor (graf terarah)**: klik ruas pipa → "Isolasi": orientasi aliran BFS dari sumber, simulasi **tutup valve minimal** (`NetworkGraphService::isolate`) → daftar valve, segmen STARVED (kehilangan air; cabang dengan jalur lain & klaster yatim dikecualikan), peringatan bila sumber masih menempel, **polygon terdampak (convex hull)** + daftar pelanggan di dalamnya. Panah arah aliran di peta.
 - **Insiden → Work Order**: tombol darurat membuat WO `repair`/`urgent|high|...` + SLA otomatis + log, dan menandai pipa `rusak` (merah di peta).
 - **Analisis NRW otomatik per DMA**: suplai = rata-rata `flow_rate_m3h` reading Distribusi × jam periode; terbaca = Σ `consumption` tagihan pelanggan **di dalam polygon DMA** → upsert `nrw_balances` + status baik/waspada/kritis (>20 %/>30 %) + ILI kasar.
+
+### Modul lanjutan GIS Jaringan (sesi 9 Sept b.2 — semua data sudah ada di repo)
+
+| # | Modul | Cara kerja / endpoint |
+|---|---|---|
+| 1 | **Graf TERARAH** | Arah aliran per edge dihitung BFS multi-sumber; `isolate()` = **simulasi tutup valve MINIMAL**: starved = dulu teraliri & sesudah penutupan tidak — cabang tetap teraliri via jalur lain TIDAK ikut terpotong; klaster yatim tak dihitung; panah ➜ arah di peta (layer `Arah aliran`). |
+| 2 | **Petugas LIVE + dispatch** | GPS mobile: `POST /api/v1/field/location` (tombol lapor lokasi) + piggyback submit survey & baca meter → `technician_locations` (upsert/user). `GET /admin/network/technicians.json` (online bila < `PDAM_GIS_OFFICER_STALE_MINUTES`, default 30 mnt; klik-layar refresh 30 dtk). `POST /admin/network/dispatch` → haversine terdekat + rute OSRM → WO `gis_feature` ter-`assigned` + notif in-app/push. |
+| 3 | **MNF debit malam** | `GET /admin/network/mnf.json`: rata flow **02:00–04:00** vs `base_demand_m3day` (fallback 0.8 m³/koneksi/hari — `PDAM_MNF_DEFAULT_LPCD`); merah >2× ambang, waspada > ambang (`PDAM_MNF_ALERT_PCT`, def 15 %); polygon DMA ikut berwarna bila layer DMA aktif. |
+| 4 | **Tren NRW + cron** | `pdam:nrw-monthly` (tgl 1 04:00, multi-tenant via TenantContext) isi `nrw_balances`; `nrw-trend.json?months=6` → sparkline SVG per DMA di tabel NRW panel. |
+| 5 | **Validator kesehatan** | `health.json` / tombol panel "🩺": node menggantung, pipa tanpa edge, klaster tanpa sumber (kasus "4 yatim"), ruas > 400 m kedua ujung non-valve, hydrant < 2/DMA. Skor 100−pembobotan temuan. |
+| 6 | **Peta risiko pipa** | `risks.json` skor 0–100: bahan (`Besi Tuang`/`Galvanis`/`Asbes` rawan vs `HDPE` tahan) + umur (`install_year`, cap `PDAM_GIS_RISK_MAX_AGE_YEARS=60`) + jumlah WO repair historis (`source_type=gis_feature`, saturasi eksponensial) + status rusak. Garis kuning→merah + top-5 prioritas ganti di kartu audit. |
+| 7 | **GeoJSON & lembar status** | `export.geojson` (unduhan semua fitur/DMA — kompatibel QGIS), `import.geojson` (Point→node, LineString→pipa+auto-wire, Polygon→DMA; `dry_run` untuk simulasi tanpa insert); `GET /admin/network/print` — lembar A4 landscape (skema SVG jaringan terwarnai risiko + tabel NRW/health/prioritas) dicetak via browser → PDF utk direktur. |
+| 8 | **Preventif valve/hydrant (MNT↔GIS)** | Jadwal disimpan sbg `maintenance_schedules` (`asset_type='gis_feature'`): panel → pilih device → `POST maintenance` (interval 7–730 hr). Cron harian `pdam:mnt-network` + tombol panel "due→WO": semua due-date → WO `inspection` + next_due maju se-siklus; `…/complete` catat pelaksanaan manual. |
+| 9 | **Feasibility pemasangan baru** | `feasibility.json?lat&lng` (tombol 🎯 pilih titik): `nearestPipe()` jarak titik→ruas (planar lokal) + `route_length = jarak × PDAM_SR_ROUTE_FACTOR (1.3)` + biaya = panjang × `PDAM_SR_PIPE_COST_PER_M` (default 0 = belum ditetapkan manajemen → tampil pesan, bukan angka karangan) + status sangat-eligible ≤ 600 m (`PDAM_SR_ELIGIBLE_M`) / perlu persetujuan > `PDAM_SR_APPROVAL_M`. |
+
+Command baru di `routes/console.php`: `NrwMonthly` (tgl 1 04:00) & `MntNetwork` (harian 05:00). Semua threshold = `.env` (lihat `PDAM_MNF_*`, `PDAM_SR_*`, `PDAM_GIS_RISK_*` di `.env.example`). Kontrak lama isolasi/NRW layer TIDAK berubah.
 
 ### Demo data (Sambas)
 
@@ -547,7 +563,7 @@ Tenant admin selalu tembus RBAC (tetap perlu modul `GIS` aktif — Sambas & Cana
 
 ### Test
 
-`tests/Feature/GisNetworkTest.php` (17 test) + `tests/Feature/GisMapTest.php` (12) = **29** test GIS, 113 assertion: semantik isolasi (valve tertutup memutus flood, cabang buntu ikut mati, sumber tanpa valve = peringatan), auto-wire, cascade delete, tenant isolation, incidents, NRW polygon, gate auth/permission.
+`tests/Feature/GisNetworkTest.php` (20) + `GisMapTest.php` (20) + `FieldOfficerMapTest.php` (9) + `NightFlowTrendTest.php` (10) + `NetworkModuleTest.php` (15) = **74** test GIS (±330 assertion): semantik isolasi terarah (rim minimal, pasokan loop via jalur lain aman, klaster yatim), auto-wire, cascade delete, tenant isolation, incidents+dispatch, petugas LIVE (stale/role/org), MNF window+baseline+command NRW bulanan, validator kesehatan 5 pola, risk scoring, GeoJSON e/impor + print, preventif MNT→WO, feasibility tarif/nol-karangan, geocode proxy, gate auth/permission.
 
 ### Rebuild / reset
 
