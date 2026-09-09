@@ -50,6 +50,20 @@ Route::middleware(['auth:sanctum', 'tenant'])->prefix('admin')->group(function (
         Route::post('incidents', [NetworkWebController::class, 'storeIncidentWorkOrder'])->middleware('permission:gis.feature.create')->name('incidents.store');
         Route::get('technicians.json', [NetworkWebController::class, 'technicians'])->middleware('permission:gis.feature.view')->name('technicians');
         Route::post('dispatch', [NetworkWebController::class, 'dispatch'])->middleware('permission:gis.feature.create')->name('dispatch');
+        Route::get('health.json', [NetworkWebController::class, 'health'])->middleware('permission:gis.feature.view')->name('health');
+        Route::get('risks.json', [NetworkWebController::class, 'risks'])->middleware('permission:gis.feature.view')->name('risks');
+        Route::get('audit.json', [NetworkWebController::class, 'auditBundle'])->middleware('permission:gis.feature.view')->name('audit');
+        Route::get('feasibility.json', [NetworkWebController::class, 'feasibility'])->middleware('permission:gis.feature.view')->name('feasibility');
+        Route::get('export.geojson', [NetworkWebController::class, 'exportGeojson'])->middleware('permission:gis.feature.view')
+            ->name('export-geojson');
+        Route::post('import.geojson', [NetworkWebController::class, 'importGeojson'])->middleware('permission:gis.feature.create')->name('import-geojson');
+        Route::get('print', [NetworkWebController::class, 'printView'])->middleware('permission:gis.feature.view')->name('print');
+        // Preventif valve/hydrant: pintu masuk lewat panel GIS — pakai permission GIS
+        // (modul MNT penuh tetap lewat /api/v1/mnt/* dengan permission mnt.*).
+        Route::get('maintenance.json', [NetworkWebController::class, 'maintenance'])->middleware('permission:gis.feature.view')->name('maintenance');
+        Route::post('maintenance', [NetworkWebController::class, 'storeMaintenance'])->middleware('permission:gis.feature.create')->name('maintenance.store');
+        Route::post('maintenance/run', [NetworkWebController::class, 'runMaintenance'])->middleware('permission:gis.feature.create')->name('maintenance.run');
+        Route::post('maintenance/{schedule}/complete', [NetworkWebController::class, 'completeMaintenance'])->middleware('permission:gis.feature.create')->name('maintenance.complete');
         Route::post('dmas', [NetworkWebController::class, 'storeDma'])->middleware('permission:gis.feature.create')->name('dmas.store');
         Route::patch('dmas/{dma}', [NetworkWebController::class, 'updateDma'])->middleware('permission:gis.feature.update')->name('dmas.update');
         Route::delete('dmas/{dma}', [NetworkWebController::class, 'destroyDma'])->middleware('permission:gis.feature.delete')->name('dmas.destroy');

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DmaZone;
 use App\Models\GisFeature;
 use App\Models\GisNetworkEdge;
+use App\Models\MaintenanceSchedule;
 use App\Models\MeterRoute;
 use App\Models\NrwBalance;
 use App\Models\User;
@@ -16,9 +17,12 @@ use App\Services\Geo\FieldLocationService;
 use App\Services\Geo\NetworkGraphService;
 use App\Services\Geo\NrwAnalysisService;
 use App\Services\Geo\OsrmService;
+use App\Services\Geo\PipeRiskService;
+use App\Services\Geo\PreventiveMaintenanceService;
 use App\Services\NotificationChannelService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 /**
@@ -35,6 +39,8 @@ class NetworkWebController extends Controller
         private NetworkGraphService $graph,
         private NrwAnalysisService $nrw,
         private FieldLocationService $officers,
+        private PipeRiskService $risk,
+        private PreventiveMaintenanceService $preventive,
         private OsrmService $osrm,
         private NotificationChannelService $notify,
     ) {}
@@ -575,6 +581,370 @@ class NetworkWebController extends Controller
         $dmaId = $request->input('dma_id') ? (int) $request->input('dma_id') : null;
 
         return response()->json(['dmas' => $this->nrw->trend($dmaId, $months)]);
+    }
+
+    /** Audit kesehatan jaringan (node menggantung, pipa tanpa edge, klaster yatim, dll). */
+    public function health(Request $request): JsonResponse
+    {
+        return response()->json($this->graph->healthAudit());
+    }
+
+    /**
+     * Peta risiko pipa — skor 0..100 per ruas: bahan tua/rapuh + umur + riwayat
+     * WO repair. Untuk garis kuning→merah di peta + daftar prioritisasi ganti.
+     */
+    public function risks(Request $request): JsonResponse
+    {
+        return response()->json($this->risk->report());
+    }
+
+    // ── GeoJSON QGIS interop + lembar status cetak ───────────────────────
+
+    /** Ekspor semua layer jaringan sbg FeatureCollection standar (unduhan .geojson). */
+    public function exportGeojson(): JsonResponse
+    {
+        $payload = json_decode($this->layers()->getContent(), true);
+        $features = array_merge(
+            $payload['pipes'] ?? [],
+            $payload['nodes'] ?? [],
+            $payload['dmas'] ?? [],
+        );
+
+        return response()->json(['type' => 'FeatureCollection', 'features' => $features], headers: [
+            'Content-Disposition' => 'attachment; filename="pdam-jaringan-'.now()->format('Ymd-His').'.geojson"',
+        ]);
+    }
+
+    /**
+     * Impor FeatureCollection dari QGIS/aplikasi lain:
+     * Point→node (properties.feature_type valid, default junction),
+     * LineString→pipa+auto-wiring, Polygon→DMA. Item tak valid = skipped
+     * (+ pesan per item), jadi tak pernah separuh-gagal diam-diam.
+     */
+    public function importGeojson(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'geojson' => ['required'],
+            'dry_run' => ['sometimes', 'boolean'],
+        ]);
+
+        $fc = is_string($data['geojson']) ? json_decode($data['geojson'], true) : $data['geojson'];
+        if (! is_array($fc)) {
+            return response()->json(['error' => 'GeoJSON tidak terbaca — kirim objek FeatureCollection.'], 422);
+        }
+        $features = match (true) {
+            ($fc['type'] ?? '') === 'FeatureCollection' => $fc['features'] ?? [],
+            ($fc['type'] ?? '') === 'Feature' => [$fc],
+            ($fc['type'] ?? '') === 'Point' || ($fc['type'] ?? '') === 'LineString' || ($fc['type'] ?? '') === 'Polygon' => [['geometry' => $fc]],
+            array_is_list($fc) => $fc,
+            default => [],
+        };
+        if ($features === []) {
+            return response()->json(['error' => 'FeatureCollection kosong / tipe tidak dikenali.'], 422);
+        }
+
+        $dryRun = filter_var($data['dry_run'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $created = ['nodes' => 0, 'pipes' => 0, 'dmas' => 0];
+        $skipped = 0;
+        $errors = [];
+        $orgId = $request->user()->pdam_org_id;
+        // pool node utk auto-wiring (di-refresh saat Node baru dibuat)
+        $wireNodes = fn (): Collection => GisFeature::where('pdam_org_id', $orgId)
+            ->whereIn('feature_type', ['valve', 'junction', 'hydrant', 'pump', 'reservoir', 'intake', 'treatment'])
+            ->get()->keyBy('id');
+        $nodesCol = $wireNodes();
+
+        foreach ($features as $i => $feat) {
+            if (! is_array($feat)) {
+                $skipped++;
+
+                continue;
+            }
+            $geometry = $feat['geometry'] ?? null;
+            $props = (array) ($feat['properties'] ?? []);
+            $type = (string) ($geometry['type'] ?? '');
+            $coords = $geometry['coordinates'] ?? null;
+
+            if (! in_array($type, ['Point', 'LineString', 'Polygon'], true)) {
+                $skipped++;
+                if (count($errors) < 10) {
+                    $errors[] = ['index' => $i, 'geometry' => $type ?: 'n/a', 'error' => 'Tipe geometry tak didukung (Point/LineString/Polygon saja).'];
+                }
+
+                continue;
+            }
+
+            try {
+                if ($type === 'Point') {
+                    if (! $dryRun) {
+                        $nodeType = in_array($props['feature_type'] ?? '',
+                            ['valve', 'junction', 'hydrant', 'pump', 'reservoir', 'intake', 'treatment'], true)
+                            ? $props['feature_type'] : 'junction';
+                        $n = GisFeature::create([
+                            'pdam_org_id' => $orgId,
+                            'feature_type' => $nodeType,
+                            'name' => (string) ($props['name'] ?? $nodeType.' #'.($i + 1)),
+                            'geometry' => ['type' => 'Point', 'coordinates' => array_map('floatval', (array) $coords)],
+                            'properties' => $props,
+                            'status' => $props['status'] ?? 'active',
+                        ]);
+                        $nodesCol[$n->id] = $n;
+                    }
+                    $created['nodes']++;
+                } elseif ($type === 'LineString' && is_array($coords) && count($coords) >= 2) {
+                    if (! $dryRun) {
+                        $pipe = GisFeature::create([
+                            'pdam_org_id' => $orgId,
+                            'feature_type' => 'pipe',
+                            'name' => (string) ($props['name'] ?? 'PIPA #'.($i + 1)),
+                            'geometry' => ['type' => 'LineString', 'coordinates' => array_map(fn ($c) => array_map('floatval', (array) $c), $coords)],
+                            'properties' => $props,
+                            'status' => $props['status'] ?? 'active',
+                        ]);
+                        $this->graph->ensureEndpoints($pipe, $nodesCol);      // edge + junction otomatis
+                        $nodesCol = $wireNodes();                              // segarkan utk junction baru
+                        $measured = round($this->graph->lineLengthMeters($pipe->geometry['coordinates']), 1);
+                        $pipe->update(['properties' => array_merge((array) $pipe->properties, [
+                            'length_meters' => (float) ($pipe->properties['length_meters'] ?? 0) > 0
+                                ? (float) $pipe->properties['length_meters'] : $measured,
+                        ])]);
+                    }
+                    $created['pipes']++;
+                } else { // Polygon
+                    $ring = $coords[0] ?? null;
+                    if (! is_array($ring) || count($ring) < 4) {
+                        throw new \Exception('Polygon tanpa ring tertutup.');
+                    }
+                    if (! $dryRun) {
+                        $name = (string) ($props['name'] ?? 'DMA impor #'.($i + 1));
+                        $code = strtoupper((string) ($props['code'] ?? 'IMP-'.strtoupper(substr(md5($name.$i), 0, 6))));
+                        if (! preg_match('/^[A-Z0-9\-_]{3,24}$/', $code) || DmaZone::where('code', $code)->exists()) {
+                            $code = 'IMP'.strtoupper(substr(md5($name.$i.microtime()), 0, 7));
+                        }
+                        DmaZone::create([
+                            'pdam_org_id' => $orgId,
+                            'code' => $code,
+                            'name' => $name,
+                            'zone_id' => $props['zone_id'] ?? null,
+                            'boundary' => ['type' => 'Polygon', 'coordinates' => [array_map(fn ($c) => array_map('floatval', (array) $c), $ring)]],
+                            'is_active' => true,
+                        ]);
+                    }
+                    $created['dmas']++;
+                }
+            } catch (\Throwable $e) {
+                $skipped++;
+                if (count($errors) < 10) {
+                    $errors[] = ['index' => $i, 'geometry' => $type, 'error' => $e->getMessage()];
+                }
+            }
+        }
+
+        return response()->json([
+            'ok' => true,
+            'dry_run' => $dryRun,
+            'created' => $created,
+            'skipped' => $skipped,
+            'errors' => $errors,
+        ]);
+    }
+
+    /** Lembar status jaringan (A4 landscape + peta skema) untuk cetak PDF. */
+    public function printView(Request $request): View
+    {
+        $health = $this->graph->healthAudit();
+        $risk = $this->risk->report();
+        $period = $request->input('period') ?: now()->startOfMonth()->subMonthNoOverflow()->format('Y-m');
+        $levelByPipe = collect($risk['pipes'])->keyBy('pipe_id');
+
+        $pipes = GisFeature::where('feature_type', 'pipe')->get();
+        $nodes = GisFeature::whereIn('feature_type', [
+            'valve', 'junction', 'hydrant', 'pump', 'reservoir', 'intake', 'treatment',
+        ])->get();
+        $dmas = DmaZone::where('is_active', true)->whereNotNull('boundary')->get();
+
+        $pts = [];
+        $pipesEach = $pipes->map(function (GisFeature $f) use ($levelByPipe, &$pts) {
+            $coords = array_map(fn ($c) => [(float) $c[0], (float) $c[1]], $f->geometry['coordinates'] ?? []);
+            $pts = array_merge($pts, $coords);
+
+            return ['name' => (string) ($f->name ?? '#'.$f->id),
+                'pts' => $coords,
+                'status' => (string) $f->status,
+                'level' => $levelByPipe[$f->id]['level'] ?? null,
+                'score' => $levelByPipe[$f->id]['score'] ?? null];
+        })->values();
+        $nodesEach = $nodes->map(function (GisFeature $f) use (&$pts) {
+            $c = $f->geometry['coordinates'] ?? [0, 0];
+            $pts[] = [(float) $c[0], (float) $c[1]];
+
+            return [
+                'name' => (string) ($f->name ?? '#'.$f->id),
+                'type' => $f->feature_type,
+                'status' => $f->status,
+                'pt' => [(float) $c[0], (float) $c[1]],
+            ];
+        })->values();
+        $dmasEach = $dmas->map(function (DmaZone $d) use (&$pts) {
+            $ring = array_map(fn ($c) => [(float) $c[0], (float) $c[1]], $d->boundary['coordinates'][0] ?? []);
+            $pts = array_merge($pts, $ring);
+
+            return ['code' => $d->code, 'name' => $d->name, 'ring' => $ring];
+        })->values();
+
+        $bounds = null;
+        if ($pts) {
+            $minLng = min(array_column($pts, 0));
+            $maxLng = max(array_column($pts, 0));
+            $minLat = min(array_column($pts, 1));
+            $maxLat = max(array_column($pts, 1));
+            $bounds = ['minLng' => $minLng, 'maxLng' => $maxLng, 'minLat' => $minLat, 'maxLat' => $maxLat];
+        }
+
+        return view('admin.network.print', [
+            'health' => $health,
+            'risk' => $risk,
+            'priorities' => collect($risk['pipes'])
+                ->whereIn('level', ['kritis', 'tinggi'])
+                ->sortByDesc('score')->take(15)->values(),
+            'nrwRows' => $this->nrw->summary($period),
+            'period' => $period,
+            'org' => optional($request->user()->organization)->name ?? 'PDAM',
+            'pipes' => $pipesEach->all(),
+            'nodes' => $nodesEach->all(),
+            'dmaPolys' => $dmasEach->all(),
+            'bounds' => $bounds,
+        ]);
+    }
+
+    // ── MNT: jadwal preventif valve/hydrant ────────────────────────────────
+
+    /** Daftar jadwal preventif perangkat (MaintenanceSchedule ber-gis_feature). */
+    public function maintenance(Request $request): JsonResponse
+    {
+        return response()->json(['items' => $this->preventive->schedules($request->input('due') === 'soon')]);
+    }
+
+    /** Buat jadwal preventif dari fitur valve/hydrant (siklus hari dari body). */
+    public function storeMaintenance(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'feature_id' => ['required', 'integer'],
+            'interval_days' => ['required', 'integer', 'min:7', 'max:730'],
+            'checklist' => ['nullable', 'array'],
+        ]);
+
+        $res = $this->preventive->upsertFromFeature(
+            $request->user(), $data['feature_id'], $data['interval_days'], $data['checklist'] ?? null
+        );
+        if (isset($res['error'])) {
+            return response()->json(['error' => $res['error']], (int) ($res['code'] ?? 422));
+        }
+
+        return response()->json($res['data'] ?? [], 201);
+    }
+
+    /** Catat pelaksanaan preventif → next_due maju se-1 siklus. */
+    public function completeMaintenance(Request $request, MaintenanceSchedule $schedule): JsonResponse
+    {
+        if ($schedule->asset_type !== PreventiveMaintenanceService::ASSET_TYPE) {
+            return response()->json(['error' => 'Jadwal ini bukan perangkat jaringan (lihat modul MNT aset tetap).'], 422);
+        }
+
+        return response()->json($this->preventive->markCompleted($request->user(), $schedule));
+    }
+
+    /** Paksa jalankan siklus due-now (semua schedule jatuh tempo → WO). */
+    public function runMaintenance(Request $request): JsonResponse
+    {
+        $n = $this->preventive->processDueDates((int) $request->user()->pdam_org_id);
+
+        return response()->json(['created' => $n]);
+    }
+
+    /**
+     * Health + risk + officers ringkas untuk kartu "Audit jaringan".
+     */
+    public function auditBundle(Request $request): JsonResponse
+    {
+        $risk = $this->risk->report();
+        $hot = collect($risk['pipes'])
+            ->whereIn('level', ['kritis', 'tinggi'])
+            ->sortByDesc('score')
+            ->take(5)
+            ->values();
+
+        $top = $hot->map(fn ($p) => [
+            'pipe_id' => $p['pipe_id'], 'name' => $p['name'], 'score' => $p['score'],
+            'level' => $p['level'], 'material' => $p['material'], 'install_year' => $p['install_year'],
+            'repairs' => $p['repairs'],
+        ])->all();
+
+        return response()->json([
+            'health' => $this->graph->healthAudit(),
+            'risk_counts' => $risk['counts'],
+            'priority_pipes' => $top,
+            'generated_at' => $risk['generated_at'],
+        ]);
+    }
+
+    // ── Feasibility pemasangan baru ───────────────────────────────────────
+
+    /** Hitung kelayakan + estimasi biaya SR: titik → pipa terdekat (jarak pipa) + tarif dari config. */
+    public function feasibility(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'lat' => ['required', 'numeric', 'between:-90,90'],
+            'lng' => ['required', 'numeric', 'between:-180,180'],
+        ]);
+
+        return response()->json($this->feasibilityFor((float) $data['lat'], (float) $data['lng']));
+    }
+
+    /** Inti feasibility SR (dipakai GET feasibility.json & tombol panel). */
+    private function feasibilityFor(float $lat, float $lng): array
+    {
+        $maxReach = (float) config('business.gis.feasibility_max_reach_m', 2000);
+        $nearest = $this->graph->nearestPipe($lat, $lng, $maxReach);
+        $factor = (float) config('business.gis.feasibility_route_factor', 1.3);
+        $rate = (float) config('business.installation.pipe_cost_per_m', 0);
+
+        if (! $nearest) {
+            return [
+                'feasible' => 0,
+                'status' => 'di_luar_jangkauan',
+                'message' => 'Tidak ditemukan ruas pipa aktif ≤ '.round($maxReach).' m — masuk kategori PERLU PERPANJANGAN JALUR (trunk extension), bukan SR instan.',
+                'search_radius_m' => $maxReach,
+            ];
+        }
+
+        $pipe = GisFeature::find($nearest['pipe_id']);
+        $estLength = round($nearest['distance_m'] * $factor);
+        $cost = $rate > 0 ? (int) round($estLength * $rate) : null;
+
+        $status = match (true) {
+            $nearest['distance_m'] <= (float) config('business.gis.feasibility_eligible_m', 600) => 'sangat_eligible',
+            $nearest['distance_m'] <= (float) config('business.gis.feasibility_needs_approval_m', 1500) => 'eligible',
+            default => 'perlu_persetujuan',
+        };
+
+        return [
+            'feasible' => 1,
+            'status' => $status,
+            'pipe_id' => (int) $nearest['pipe_id'],
+            'pipe_name' => $pipe?->name,
+            'pipe_diameter_mm' => $pipe?->properties['diameter_mm'] ?? null,
+            'pipe_material' => $pipe?->properties['material'] ?? null,
+            'point_to_pipe_m' => round($nearest['distance_m'], 1),
+            'route_length_m' => (int) $estLength,
+            'route_factor' => $factor,
+            'connection_point' => $nearest['point'],
+            'pipe_cost_per_m' => $rate > 0 ? $rate : null,
+            'estimated_material_cost' => $cost,
+            'note' => $cost === null
+                ? 'Tarif material per m (PDAM_SR_PIPE_COST_PER_M) belum ditetapkan — isi di config/management agar biaya otomatis muncul.'
+                : 'Estimasi: panjang rute × tarif material per meter (tanpa Bongkar-pasang / izin).',
+        ];
     }
 
     public function nrwCalculate(Request $request, DmaZone $dma): JsonResponse

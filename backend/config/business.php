@@ -48,6 +48,9 @@ return [
     'installation' => [
         // Jam tenggang pembayaran pemasangan (pdam:escalate-installation).
         'payment_expire_hours' => (int) env('PDAM_INSTALL_EXPIRE_HOURS', 24),
+        // Estimasi biaya feasibility SR jaringan: tarif material per meter.
+        // 0 = sengaja belum ditetapkan manajemen => biaya otomatis disembunyikan.
+        'pipe_cost_per_m' => (float) env('PDAM_SR_PIPE_COST_PER_M', 0),
         // Timer eskalasi hublang (PRD §23) BELUM punya konsumen — field SLA
         // per tenant di DB menang sampai konsumen nyata dibuat.
     ],
@@ -70,6 +73,28 @@ return [
         'mnf_lookback_days' => (int) env('PDAM_MNF_LOOKBACK_DAYS', 7),
         // Fallback baseline bila base_demand_m3day DMA belum diisi: liter/koneksi/hari.
         'mnf_default_lpcd' => (float) env('PDAM_MNF_DEFAULT_LPCD', 0.8),
+
+        // Audit kesehatan jaringan (health.json): ruas di atas N meter yang kedua
+        // ujungnya bukan valve dianggap tak bisa diisolasi; DMA idealnya ≥ M hydrant.
+        'audit_uncontrolled_segment_m' => (float) env('PDAM_GIS_AUDIT_SEGMENT_M', 400),
+        'audit_min_hydrants_per_dma' => (int) env('PDAM_GIS_AUDIT_HYDRANTS', 2),
+
+        // Peta risiko pipa: bobot umur maksimal (tahun) + saturasi jumlah WO repair
+        // (half-life) + ambang level skor. Default konservatif; manajemen tinggal
+        // override .env tanpa ganti kode.
+        'risk_max_age_years' => (int) env('PDAM_GIS_RISK_MAX_AGE_YEARS', 60),
+        'risk_repair_half_life' => (int) env('PDAM_GIS_RISK_REPAIR_HALF_LIFE', 4),
+        'risk_thresholds' => [
+            'tinggi' => (float) env('PDAM_GIS_RISK_THRESHOLD_HIGH', 45),
+            'kritis' => (float) env('PDAM_GIS_RISK_THRESHOLD_CRIT', 70),
+        ],
+
+        // Feasibility SR: jarak maksimum cari pipa (m), faktor rute bukan-garis-lurus,
+        // ambang 'sangat eligible' vs perlu persetujuan.
+        'feasibility_max_reach_m' => (float) env('PDAM_SR_MAX_REACH_M', 2000),
+        'feasibility_route_factor' => (float) env('PDAM_SR_ROUTE_FACTOR', 1.3),
+        'feasibility_eligible_m' => (float) env('PDAM_SR_ELIGIBLE_M', 600),
+        'feasibility_needs_approval_m' => (float) env('PDAM_SR_APPROVAL_M', 1500),
     ],
 
     // ── BELUM ADA KUNSUMEN (decision PRD §23; JANGAN dibaca sebagai switch) ──

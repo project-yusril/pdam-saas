@@ -55,12 +55,14 @@
             <span style="margin-left:auto"></span>
             <button type="button" class="btn-xs" id="btn-refresh">↻</button>
             <button type="button" class="btn-xs" id="btn-fit">⤢</button>
+            <a class="btn-xs" target="_blank" href="{{ url('admin/network/print') }}">🖨 Status PDF</a>
         </div>
         <div class="layer-toggle">
             <label><input type="checkbox" id="lay-pipes" checked> Pipa</label>
             <label><input type="checkbox" id="lay-nodes" checked> Node</label>
             <label><input type="checkbox" id="lay-flow" checked> Arah aliran</label>
             <label><input type="checkbox" id="lay-officers" checked> 👷 Petugas live</label>
+            <label><input type="checkbox" id="lay-risk"> 🔥 Peta risiko</label>
             <label><input type="checkbox" id="lay-dma"> DMA</label>
             <label><input type="checkbox" id="lay-impact" checked> Area terdampak</label>
             <label><input type="checkbox" id="lay-customers"> Pelanggan</label>
@@ -90,6 +92,7 @@
                     <button type="button" class="btn-xs" id="btn-toggle-valve" style="display:none">💧 Buka/Tutup</button>
                     <button type="button" class="btn-xs red" id="btn-isolate" style="display:none">🚱 Isolasi bocor</button>
                     <button type="button" class="btn-xs green" id="btn-incident" style="display:none">📞 Insiden → WO</button>
+                    <button type="button" class="btn-xs" id="btn-schedule" style="display:none">📅 Jadwalkan</button>
                     <button type="button" class="btn-xs" id="btn-edit-props">✎ Edit</button>
                     <button type="button" class="btn-xs red" id="btn-delete">🗑</button>
                 </div>
@@ -131,6 +134,39 @@
             <h2>Petugas lapangan <button type="button" class="btn-xs" id="btn-officer-refresh" style="float:right">↻</button></h2>
             <div id="officer-list"><span class="muted">memuat…</span></div>
             <p class="muted">Titik GPS asli dari aplikasi mobile (lapor lokasi / submit survey / baca meter). Klik pipa → <b>Isolasi</b> atau <b>Dispatch</b>.</p>
+        </div>
+
+        <div class="side-card">
+            <h2>Kesehatan &amp; risiko <button type="button" class="btn-xs green" id="btn-audit" style="float:right">🩺 Jalankan audit</button></h2>
+            <div id="audit-body" class="muted">Score integritas data + 5 pipa prioritas ganti.</div>
+        </div>
+
+        <div class="side-card" id="feas-card">
+            <h2>Feasibility SR baru</h2>
+            <p class="muted" style="margin:.1rem 0 .4rem">🎯 Tombol → klik titik di peta → sistem cari pipa terdekat &amp; usulkan biaya (tarif config).</p>
+            <div style="display:flex;gap:.4rem;align-items:center;margin-bottom:.45rem">
+                <button type="button" class="btn-xs" id="btn-feas-pick">🎯 Pilih titik</button>
+                <span class="muted" id="feas-status">belum ada titik</span>
+            </div>
+            <div id="feas-body"></div>
+        </div>
+
+        <div class="side-card" id="mnt-card">
+            <h2>Preventif valve/hydrant
+                <button type="button" class="btn-xs" id="btn-mnt-refresh" style="float:right">↻</button>
+                <button type="button" class="btn-xs" id="btn-mnt-run" style="float:right;margin-right:.35rem">⚙ Tumbalkan due→WO</button>
+            </h2>
+            <div id="mnt-body" class="muted">memuat…</div>
+            <p class="muted">Klik valve/hydrant → "📅 Jadwalkan" (siklus default 180 hari, ubah via prompt).</p>
+        </div>
+
+        <div class="side-card">
+            <h2>GeoJSON (QGIS)</h2>
+            <div style="display:flex;gap:.4rem">
+                <a class="btn-xs" id="btn-export" href="{{ url('admin/network/export.geojson') }}">⬇ Ekspor semua layer</a>
+                <label class="btn-xs">⬆ Impor<input type="file" id="in-geojson" accept=".geojson,.json" style="display:none"></label>
+            </div>
+            <p class="muted">FeatureCollection standar (properties + geometry). Impor membuat node/pipa/DMA baru (auto-wiring pipa aktif).</p>
         </div>
 
         <div class="side-card">
@@ -202,6 +238,8 @@
     let officersLive = [];      // cache technicians.json utk marker + daftar
     let mnfStatus = {};         // dma_id → {status, pct_of_base, ...} dari mnf.json
     let trendByDma = {};        // dma_id → periods[] dari nrw-trend.json
+    let riskCache = null;       // pipeRiskService report.json hasil risks.json
+    let riskByPipe = {};        // pipe_id → {score, level}
 
     const COLORS = { valve: '#1d4ed8', junction: '#94a3b8', hydrant: '#f97316', pump: '#eab308', reservoir: '#14b8a6', intake: '#0ea5e9', treatment: '#a78bfa' };
     const pipeStyle = (p) => {
@@ -213,15 +251,27 @@
                  weight: dia >= 300 ? 5 : (dia >= 110 ? 3 : 1.6), opacity: dia >= 110 ? .9 : .6 };
     };
 
+    const RISK_STYLE = {
+        kritis: { color: '#b91c1c', weight: 5.5, opacity: .95 },
+        tinggi: { color: '#ea580c', weight: 4, opacity: .9 },
+        sedang: { color: '#eab308', weight: 2.8, opacity: .85 },
+        rendah: { color: '#64748b', weight: 1.6, opacity: .6 },
+    };
+    function riskStyle(id) { const r = riskByPipe[id]; return RISK_STYLE[r && r.level] || RISK_STYLE.rendah; }
+
     function drawLayers(data) {
         layers = data;
         ['pipes', 'nodes', 'flows', 'dmas'].forEach(g => groups[g].clearLayers());
+        const useRisk = $('lay-risk') && $('lay-risk').checked;
         (data.pipes || []).forEach((f) => {
-            const line = L.polyline((f.geometry.coordinates || []).map(toLL), pipeStyle(f)).addTo(groups.pipes);
+            const line = L.polyline((f.geometry.coordinates || []).map(toLL),
+                useRisk ? riskStyle(f.properties.feature_id) : pipeStyle(f)).addTo(groups.pipes);
             line.on('click', (e) => { L.DomEvent.stopPropagation(e); select('pipe', f); });
             if (Number(f.properties.diameter_mm || 0) >= 110) {
                 const len = f.properties.length_meters ? ' ≈ ' + Math.round(f.properties.length_meters) + ' m' : '';
-                line.bindTooltip((f.properties.name || f.properties.feature_type) + len, { sticky: true });
+                const rk = useRisk && riskByPipe[f.properties.feature_id];
+                line.bindTooltip((f.properties.name || f.properties.feature_type) + len
+                    + (rk ? ` · risiko ${rk.score}/100 (${rk.level})` : ''), { sticky: true });
             }
         });
         (data.nodes || []).forEach((f) => {
@@ -287,10 +337,19 @@
             + (p.length_meters ? ' · ' + Math.round(p.length_meters) + ' m' : '')
             + (p.diameter_mm ? ' · Ø' + p.diameter_mm : '') + (p.material ? ' · ' + p.material : '');
         $('btn-toggle-valve').style.display = p.feature_type === 'valve' ? '' : 'none';
+        $('btn-schedule').style.display = ['valve', 'hydrant', 'pump'].includes(p.feature_type) ? '' : 'none';
         $('btn-isolate').style.display = kind === 'pipe' ? '' : 'none';
         $('btn-incident').style.display = kind === 'pipe' ? '' : 'none';
     }
-    map.on('click', () => { $('sel-box').style.display = 'none'; $('sel-empty').style.display = 'block'; selected = null; });
+
+    map.on('click', (ev) => {
+        if (feasActive) {
+            feasActive = false; $('btn-feas-pick').classList.remove('on');
+            doFeasibility(ev.latlng);
+            return;
+        }
+        $('sel-box').style.display = 'none'; $('sel-empty').style.display = 'block'; selected = null;
+    });
 
     $('btn-edit-props').onclick = () => {
         if (!selected) return; const p = selected.f.properties;
@@ -542,13 +601,117 @@
     }
     $('btn-mnf-refresh').onclick = () => loadMnf();
 
+    // ── Peta risiko pipa: muat + warna + top list ──────────────────────────
+    async function loadRisk() {
+        const { ok, json } = await api('risks.json'); if (!ok) return false;
+        riskCache = json; riskByPipe = {};
+        (json.pipes || []).forEach(p => { riskByPipe[p.pipe_id] = { score: p.score, level: p.level }; });
+        return true;
+    }
+    $('lay-risk').addEventListener('change', async () => {
+        if ($('lay-risk').checked && !riskCache) await loadRisk();
+        if (layers) drawLayers(layers);
+        const c = riskCache && riskCache.counts;
+        toast($('lay-risk').checked && c ? `Risiko aktif: kritis ${c.kritis} · tinggi ${c.tinggi} · sedang ${c.sedang}` : 'Risiko mati');
+    });
+
+    // ── Audit kesehatan + 5 prioritas ganti ───────────────────────────────
+    async function runAudit() {
+        $('audit-body').innerHTML = 'memuat… <span class="muted">(health + risks)</span>';
+        const { ok, json } = await api('audit.json');
+        if (!ok) { $('audit-body').textContent = 'Gagal audit'; return; }
+        renderAudit(json);
+    }
+    function renderAudit(j) {
+        const h = j.health;
+        const badge = h.score >= 85 ? 'b-baik' : h.score >= 60 ? 'b-waspada' : 'b-kritis';
+        const rows = (h.issues || []).filter(i => i.count).map(i =>
+            `<div class="ins-kv"><span style="color:${i.severity === 'crit' ? '#b91c1c' : i.severity === 'warn' ? '#b45309' : '#1e40af'}">[${i.severity}]</span> ${i.label}: <b>${i.count}</b>${i.items && i.items.length ? ' — ' + i.items.slice(0, 4).map(x => x.name || x.code || '#' + x.pipe_id).join(', ') : ''}</div>`).join('');
+        const top = (j.priority_pipes || []).map((p, i) =>
+            `${i + 1}. <b>${p.name}</b> — ${p.score}/100${p.pipe_material ? ' · ' + p.pipe_material : ''}${p.install_year ? ' (' + p.install_year + ')' : ''}${p.repairs ? ' · WO ×' + p.repairs : ''}`).join('<br>');
+        $('audit-body').innerHTML =
+            `<div class="ins-kv">Skor kesehatan jaringan: <span class="badge-s ${badge}">${h.score}/100</span>`
+            + ` · pipe <b>${h.counts.pipes}</b> · node <b>${h.counts.nodes}</b> · edge <b>${h.counts.edges}</b>`
+            + ` · DMA suplai pipa: ${(j.risk_counts && j.risk_counts.total) || '–'}</div>`
+            + (rows || '<div class="muted">Semua pemeriksaan integritas OK ✔</div>')
+            + (top ? `<div style="margin-top:.45rem"><b>🔧 Prioritas ganti (tertinggi):</b><br>${top}<br><span class="muted">Aktifkan <b>🔥 Peta risiko</b> di kiri atas peta.</span></div>` : '');
+    }
+    $('btn-audit').onclick = runAudit;
+
+    // ── Preventif valve/hydrant → WO ──────────────────────────────────────
+    async function loadMnt() {
+        const { ok, json } = await api('maintenance.json'); const box = $('mnt-body');
+        if (!ok) { box.innerHTML = '<span class="muted">Gagal memuat jadwal.</span>'; return; }
+        const items = json.items || [];
+        box.innerHTML = items.length ? items.map(s => `<div class="ins-kv">
+            <b>${s.code}</b> ${s.feature_name ? '· ' + s.feature_name : ''} <button class="btn-xs" data-mdone="${s.id}" title="Catat preventif selesai">✔</button><br>
+            <span class="muted">siklus ${s.interval_days} h · due <b>${s.next_due_date}</b>${s.due ? ' <b style=color:#b91c1c>▼ JATUH TEMPO</b>' : ''}${s.last_completed_date ? ' · terakhir ' + s.last_completed_date : ''}</span></div>`).join('')
+            : 'Belum ada jadwal preventif — klik valve/hydrant di peta → <b>📅 Jadwalkan</b>.';
+        box.querySelectorAll('[data-mdone]').forEach(b => b.onclick = async () => {
+            const { ok, json } = await api('maintenance/' + b.dataset.mdone + '/complete', { method: 'POST' });
+            toast(ok ? 'Selesai dicatat — due maju satu siklus.' : (json && json.error) || 'Gagal', ok); if (ok) loadMnt();
+        });
+    }
+    $('btn-mnt-refresh').onclick = () => loadMnt();
+    $('btn-mnt-run').onclick = async () => {
+        if (!confirm('Buat WO utk SEMUA jadwal preventif jatuh tempo (org ini)?')) return;
+        const { ok, json } = await api('maintenance/run', { method: 'POST' });
+        toast(ok ? (json.created || 0) + ' WO preventif terbit' : (json && json.error) || 'Gagal', ok);
+        loadMnt(); loadLayers();
+    };
+    async function scheduleSelected() {
+        if (!selected) { toast('Klik valve/hydrant/pump dulu', false); return; }
+        const p = selected.f.properties;
+        const days = (prompt('Siklus preventif (hari, 7–730):', '180') || '').trim();
+        if (!days) return;
+        const { ok, json } = await api('maintenance', { method: 'POST', body: { feature_id: p.feature_id, interval_days: +days } });
+        toast(ok ? (json.data && 'Jadwal ' + json.data.code + ' dibuat — due ' + json.data.next_due_date) : (json && json.error) || 'Gagal', ok);
+        if (ok) loadMnt();
+    }
+    $('btn-schedule').onclick = scheduleSelected;
+
+    // ── Feasibility SR (tap survey → pipa terdekat + tarif) ───────────────
+    let feasActive = false, feasMarker = null;
+    $('btn-feas-pick').onclick = () => {
+        feasActive = !feasActive;
+        $('btn-feas-pick').classList.toggle('on', feasActive);
+        $('feas-status').textContent = feasActive ? 'klik peta…' : 'belum ada titik';
+    };
+    async function doFeasibility(latlng) {
+        $('feas-status').textContent = latlng.lat.toFixed(5) + ', ' + latlng.lng.toFixed(5);
+        if (feasMarker) feasMarker.setLatLng(latlng); else feasMarker = L.marker(latlng, { icon: L.divIcon({ className: '', html: '<span style="font-size:18px">🎯</span>', iconAnchor: [9, 9] }) }).addTo(map);
+        $('feas-body').innerHTML = 'menghitung jarak pipa…';
+        const { ok, json } = await api('feasibility.json?lat=' + latlng.lat + '&lng=' + latlng.lng);
+        if (!ok) { $('feas-body').innerHTML = '<span class="muted">' + ((json && (json.message || json.error)) || 'gagal') + '</span>'; return; }
+        if (!json.feasible) { $('feas-body').innerHTML = '<div class="muted">' + json.message + '</div>'; return; }
+        const cost = json.estimated_material_cost ? ' ≈ <b>Rp ' + Number(json.estimated_material_cost).toLocaleString('id-ID') + '</b>' : ' <span class="muted">(tarif/m belum di-set)</span>';
+        $('feas-body').innerHTML = `<div class="ins-kv"><span class="badge-s ${json.status === 'perlu_persetujuan' ? 'b-kritis' : json.status === 'sangat_eligible' ? 'b-baik' : 'b-waspada'}">${json.status.replaceAll('_', ' ')}</span>
+            → sambung ke <b>${json.pipe_name}</b> Ø${json.pipe_diameter_mm || '?'} ${json.pipe_material || ''}</div>
+            <div>Jarak pipa: <b>${json.point_to_pipe_m} m</b> · rute ±<b>${json.route_length_m} m</b>${cost}</div>
+            <div class="muted">${json.note}</div>`;
+    }
+
+    // ── GeoJSON: impor FC utk QGIS workflow ───────────────────────────────
+    $('btn-export') && ($('btn-export').onclick = () => { location.href = BASE + '/export.geojson'; });
+    $('in-geojson').onchange = async (ev) => {
+        const file = ev.target.files && ev.target.files[0]; if (!file) return;
+        try {
+            const txt = await file.text();
+            const payload = JSON.parse(txt);
+            const { ok, json } = await api('import.geojson', { method: 'POST', body: { geojson: payload } });
+            toast(ok ? `Impor: pipa ${json.created.pipes}, node ${json.created.nodes}, DMA ${json.created.dmas} (skip ${json.skipped})` : (json && json.error) || 'Gagal impor', ok);
+            await loadLayers();
+        } catch (e) { toast('File bukan GeoJSON valid', false); }
+        ev.target.value = '';
+    };
+
     // ── util buttons ───────────────────────────────────────────────────────
     $('btn-refresh').onclick = () => { loadLayers(); loadNrw(); loadTrend(); loadOfficersLive(); loadMnf(); };
     $('btn-fit').onclick = fitNetwork;
 
     // ── boot ───────────────────────────────────────────────────────────────
     loadLayers().then(() => window.setTimeout(fitNetwork, 300));
-    loadNrw(); loadOfficers(); loadOfficersLive(); loadTrend(); loadMnf();
+    loadNrw(); loadOfficers(); loadOfficersLive(); loadTrend(); loadMnf(); loadMnt();
     setInterval(loadOfficersLive, 30000); // petugas live refresh 30 detik
 })();
 </script>

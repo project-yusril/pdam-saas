@@ -43,3 +43,5 @@ Schedule::command(HealthCheck::class)->everyFiveMinutes();
 Schedule::command(DispatchScheduledReports::class)->everyMinute()->withoutOverlapping();
 // NRW otomatis tiap awal bulan — isi nrw_balances utk tren di panel GIS.
 Schedule::command(NrwMonthly::class)->monthlyOn(1, '04:00')->withoutOverlapping();
+// Preventif valve/hydrant due → WO (GIS↔MNT otomatis, harian 05:00).
+Schedule::command(MntNetwork::class)->dailyAt('05:00')->withoutOverlapping();

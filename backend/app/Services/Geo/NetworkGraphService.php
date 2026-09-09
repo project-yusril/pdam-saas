@@ -3,6 +3,7 @@
 namespace App\Services\Geo;
 
 use App\Models\Customer;
+use App\Models\DmaZone;
 use App\Models\GisFeature;
 use App\Models\GisNetworkEdge;
 use Illuminate\Support\Collection;
@@ -513,7 +514,7 @@ class NetworkGraphService
         return 2 * $r * atan2(sqrt($a), sqrt(1 - $a));
     }
 
-    /** Panjang streets LineString [lng,lat][] dalam meter. */
+    /** Panjang garis LineString [lng,lat][] dalam meter. */
     public function lineLengthMeters(array $coordinates): float
     {
         $len = 0.0;
@@ -525,6 +526,66 @@ class NetworkGraphService
         }
 
         return $len;
+    }
+
+    /**
+     * Jarak terdekat titik (lat,lng) ke ruas pipa mana pun + titik sambungnya —
+     * utk feasibility SR & validasi. Planar equirectangular lokal (cukup <2 km).
+     *
+     * @return array{pipe_id:int, distance_m:float, point:array{0:float,1:float}}|null
+     */
+    public function nearestPipe(float $lat, float $lng, float $maxM = 5000): ?array
+    {
+        $best = null;
+        $bestD = INF;
+        foreach (GisFeature::where('feature_type', 'pipe')->cursor() as $pipe) {
+            $coords = $pipe->geometry['coordinates'] ?? [];
+            if (count($coords) < 2) {
+                continue;
+            }
+            // proyeksi lokal terhadap titik target
+            $cosLat = cos(deg2rad($lat));
+            $mx = fn ($lon) => ($lon - $lng) * 111320 * $cosLat;
+            $my = fn ($lla) => ($lla - $lat) * 110540;
+            $px = $mx($lng);
+            $py = $my($lat);
+            for ($i = 1; $i < count($coords); $i++) {
+                $ax = $mx((float) $coords[$i - 1][0]);
+                $ay = $my((float) $coords[$i - 1][1]);
+                $bx = $mx((float) $coords[$i][0]);
+                $by = $my((float) $coords[$i][1]);
+                $d = $this->pointToSegmentM($px, $py, $ax, $ay, $bx, $by);
+                if ($d < $bestD) {
+                    $bestD = $d;
+                    $best = [
+                        'pipe_id' => (int) $pipe->id,
+                        'distance_m' => round($d, 1),
+                        'point' => [(float) $coords[$i][1], (float) $coords[$i][0]], // [lat,lng] ujung segmen
+                    ];
+                }
+            }
+        }
+        if ($best && $best['distance_m'] <= $maxM) {
+            return $best;
+        }
+
+        return null;
+    }
+
+    /** Jarak titik ke segmen dalam meter (planar lokal). */
+    private function pointToSegmentM(float $px, float $py, float $ax, float $ay, float $bx, float $by): float
+    {
+        $dx = $bx - $ax;
+        $dy = $by - $ay;
+        $len2 = $dx * $dx + $dy * $dy;
+        if ($len2 <= 0) {
+            return sqrt(($px - $ax) ** 2 + ($py - $ay) ** 2);
+        }
+        $t = max(0, min(1, (($px - $ax) * $dx + ($py - $ay) * $dy) / $len2));
+        $qx = $ax + $t * $dx;
+        $qy = $ay + $t * $dy;
+
+        return sqrt(($px - $qx) ** 2 + ($py - $qy) ** 2);
     }
 
     /**
@@ -606,6 +667,170 @@ class NetworkGraphService
         $feature->delete();
 
         return $deleted;
+    }
+
+    /**
+     * Audit kesehatan jaringan — bikin data demo & produksi selalu rapi.
+     * Cek: node menggantung (tanpa edge), pipa belum tersambung edge,
+     * klaster terisolasi (komponen tanpa sumber — kasus "yatim"),
+     * ruas panjang tanpa valve di kedua ujung (tak bisa diisolasi),
+     * DMA dengan hydrant di bawah minimum.
+     *
+     * @return array{score:int, checked_at:string, passed:int, counts:array<string,int>,
+     *               issues:array<int,array{check:string,label:string,severity:string,count:int,deduction:int,items:array}>}
+     */
+    public function healthAudit(): array
+    {
+        $maxSegM = (float) config('business.gis.audit_uncontrolled_segment_m', 400);
+        $minHydrants = (int) config('business.gis.audit_min_hydrants_per_dma', 2);
+
+        /** @var Collection<int,GisFeature> $nodes */
+        $nodes = GisFeature::whereIn('feature_type', ['valve', 'junction', 'hydrant', 'pump', 'reservoir', 'intake', 'treatment'])
+            ->get()->keyBy('id');
+        $pipes = GisFeature::where('feature_type', 'pipe')->get()->keyBy('id');
+        $edges = $this->loadEdges();
+
+        $degree = [];
+        $pipeWithEdge = [];
+        $byPipeEnds = [];       // pipe id → [[nodeA,nodeB], ...]
+        foreach ($edges as $e) {
+            if ($e->from && $e->to) {
+                $degree[$e->from] = ($degree[$e->from] ?? 0) + 1;
+                $degree[$e->to] = ($degree[$e->to] ?? 0) + 1;
+                if ($e->pipe) {
+                    $pipeWithEdge[$e->pipe] = true;
+                    $byPipeEnds[$e->pipe][] = [$e->from, $e->to];
+                }
+            }
+        }
+
+        $featureInfo = fn (GisFeature $f) => ['id' => $f->id, 'name' => $f->name ?? ('#'.$f->id), 'type' => $f->feature_type];
+        $shortList = fn (array $a) => array_slice($a, 0, 25);
+
+        // 1) node menggantung
+        $dangling = array_values(array_map($featureInfo, array_filter(
+            $nodes->all(), fn (GisFeature $n) => ! ($degree[$n->id] ?? 0)
+        )));
+
+        // 2) pipa tanpa edge
+        $orphanPipes = array_values(array_map($featureInfo, array_filter(
+            $pipes->all(), fn (GisFeature $p) => ! isset($pipeWithEdge[$p->id])
+        )));
+
+        // 3) klaster tanpa sumber (komponen fisik tak berarah berukuran ≥2)
+        $adj = [];
+        foreach ($edges as $e) {
+            if (! $e->from || ! $e->to) {
+                continue;
+            }
+            $adj[$e->from][] = $e->to;
+            $adj[$e->to][] = $e->from;
+        }
+        $seen = [];
+        $isolated = [];
+        foreach (array_keys($nodes->all()) as $n) {
+            if (isset($seen[$n]) || $n === 0) {
+                continue;
+            }
+            $queue = [$n];
+            $comp = [];
+            $hasSource = false;
+            while ($queue) {
+                $id = (int) array_shift($queue);
+                if (isset($seen[$id])) {
+                    continue;
+                }
+                $seen[$id] = true;
+                $comp[] = $id;
+                if (in_array($nodes->get($id)?->feature_type, self::SOURCE_TYPES, true)) {
+                    $hasSource = true;
+                }
+                foreach ($adj[$id] ?? [] as $to) {
+                    if (! isset($seen[$to])) {
+                        $queue[] = $to;
+                    }
+                }
+            }
+            if (! $hasSource && count($comp) >= 2) {
+                $isolated[] = ['size' => count($comp), 'members' => $shortList($comp)];
+            }
+        }
+
+        // 4) ruas panjang tanpa valve di kedua ujungnya
+        $longUncontrolled = [];
+        foreach ($pipes as $p) {
+            $len = (float) ($p->properties['length_meters'] ?? 0);
+            if ($len <= 0) {
+                $len = $this->lineLengthMeters($p->geometry['coordinates'] ?? []);
+            }
+            if ($len <= $maxSegM || empty($byPipeEnds[$p->id])) {
+                continue;
+            }
+            $guarded = false;
+            foreach ($byPipeEnds[$p->id] as [$a, $b]) {
+                if (in_array($nodes->get($a)?->feature_type ?? '', self::BARRIER_TYPES, true)
+                    || in_array($nodes->get($b)?->feature_type ?? '', self::BARRIER_TYPES, true)) {
+                    $guarded = true;
+                    break;
+                }
+            }
+            if (! $guarded) {
+                $longUncontrolled[] = ['id' => (int) $p->id, 'name' => $p->name ?? ('#'.$p->id), 'length_m' => round($len, 1)];
+            }
+        }
+
+        // 5) hydrant minimum per DMA ber-polygon
+        $hydrants = $nodes->filter(fn (GisFeature $n) => $n->feature_type === 'hydrant');
+        $dmaFewHydrants = [];
+        foreach (DmaZone::where('is_active', true)->whereNotNull('boundary')->cursor() as $dma) {
+            $ring = $dma->boundary['coordinates'][0] ?? null;
+            if (! is_array($ring) || count($ring) < 4) {
+                continue;
+            }
+            $poly = array_map(fn ($pt) => [(float) $pt[0], (float) $pt[1]], $ring);
+            $n = $hydrants->filter(function (GisFeature $h) use ($poly) {
+                $c = $h->geometry['coordinates'] ?? null;
+
+                return $c && $this->pointInPolygon([(float) $c[0], (float) $c[1]], $poly);
+            })->count();
+            if ($n < $minHydrants) {
+                $dmaFewHydrants[] = ['dma_id' => (int) $dma->id, 'code' => $dma->code, 'name' => $dma->name, 'count' => $n, 'min' => $minHydrants];
+            }
+        }
+
+        $checks = [];
+        $deduct = function (string $check, string $label, string $severity, int $weight, int $cap, array $items, array $extra = []) use (&$checks): int {
+            $count = count($items);
+            $d = $count ? min($cap, $weight * $count) : 0;
+            $checks[] = array_merge([
+                'check' => $check, 'label' => $label, 'severity' => $severity,
+                'count' => $count, 'deduction' => $d, 'items' => $items,
+            ], $extra);
+
+            return $d;
+        };
+
+        $totalDeduct = 0;
+        $totalDeduct += $deduct('dangling_nodes', 'Node menggantung (belum ada sambungan)', 'warn', 2, 10, $shortList($dangling));
+        $totalDeduct += $deduct('pipes_without_edges', 'Pipa belum terhubung ke graf (tanpa edge)', 'warn', 3, 12, $shortList($orphanPipes));
+        $totalDeduct += $deduct('isolated_clusters', 'Klaster komponen tanpa sumber air (yatim)', 'crit', 6, 18, $shortList(array_map(
+            fn ($c) => ['size' => $c['size'], 'node_ids' => $c['members']], $isolated
+        )));
+        $totalDeduct += $deduct('long_uncontrolled_segments', "Ruas > {$maxSegM} m tanpa valve pemutus di ujung", 'warn', 2, 10, array_values($shortList($longUncontrolled)));
+        $totalDeduct += $deduct('hydrants_below_min', "Hydrant < {$minHydrants} per DMA", 'info', 2, 6, $shortList($dmaFewHydrants));
+
+        return [
+            'score' => max(0, 100 - $totalDeduct),
+            'checked_at' => now()->toIso8601String(),
+            'passed' => $totalDeduct === 0 ? 1 : 0,
+            'counts' => [
+                'nodes' => count($nodes), 'pipes' => count($pipes), 'edges' => count($edges),
+                'dangling_nodes' => count($dangling), 'pipes_without_edges' => count($orphanPipes),
+                'isolated_clusters' => count($isolated), 'long_uncontrolled_segments' => count($longUncontrolled),
+                'hydrants_below_min' => count($dmaFewHydrants),
+            ],
+            'issues' => $checks,
+        ];
     }
 
     private function emptyResult(string $note): array
