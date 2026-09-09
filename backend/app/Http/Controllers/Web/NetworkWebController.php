@@ -44,7 +44,7 @@ class NetworkWebController extends Controller
 
     // ── Data lapisan (GeoJSON) ─────────────────────────────────────────────
 
-    /** Satu endpoint utk semua layer: pipa, node, edge, DMA. */
+    /** Satu endpoint utk semua layer: pipa, node, edge (＋ arah aliran), DMA. */
     public function layers(): JsonResponse
     {
         $pipes = GisFeature::where('feature_type', 'pipe')
@@ -54,6 +54,7 @@ class NetworkWebController extends Controller
             ->whereIn('feature_type', ['valve', 'junction', 'hydrant', 'pump', 'reservoir', 'intake', 'treatment'])
             ->get(['id', 'name', 'geometry', 'properties', 'status', 'zone_id'])
             ->map(fn ($f) => $this->toFeature($f, 'node'))->values();
+        $orientations = $this->graph->edgeOrientations();
         $edges = GisNetworkEdge::with(['fromFeature:id,feature_type', 'toFeature:id,feature_type'])
             ->get()
             ->map(fn (GisNetworkEdge $e) => [
@@ -62,6 +63,10 @@ class NetworkWebController extends Controller
                 'from' => ['id' => $e->from_node_id, 'type' => $e->fromFeature?->feature_type],
                 'to' => ['id' => $e->to_node_id, 'type' => $e->toFeature?->feature_type],
                 'length_meters' => $e->length_meters !== null ? (float) $e->length_meters : null,
+                // arah aliran hasil BFS sumber (hulu→hilir) — untuk panah di peta.
+                'flow' => isset($orientations[$e->id])
+                    ? ['from' => $orientations[$e->id]['from'], 'to' => $orientations[$e->id]['to']]
+                    : null,
             ])->values();
         $dmas = DmaZone::whereNotNull('boundary')->where('boundary', '!=', '[]')
             ->get(['id', 'code', 'name', 'boundary'])

@@ -29,6 +29,8 @@
     .legend-row { display: flex; align-items: center; gap: .45rem; font-size: .76rem; padding: .1rem 0; }
     .lg-line { width: 18px; height: 3px; border-radius: 2px; }
     .lg-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 0 1px #999; }
+    .flow-arrow { background: transparent; border: none; }
+    .flow-arrow span { position: absolute; left: 50%; top: 50%; color: #0284c7; font-size: 11px; font-weight: 700; text-shadow: 0 0 3px #fff; }
 </style>
 @endpush
 
@@ -57,6 +59,7 @@
         <div class="layer-toggle">
             <label><input type="checkbox" id="lay-pipes" checked> Pipa</label>
             <label><input type="checkbox" id="lay-nodes" checked> Node</label>
+            <label><input type="checkbox" id="lay-flow" checked> Arah aliran</label>
             <label><input type="checkbox" id="lay-dma"> DMA</label>
             <label><input type="checkbox" id="lay-impact" checked> Area terdampak</label>
             <label><input type="checkbox" id="lay-customers"> Pelanggan</label>
@@ -74,6 +77,7 @@
             <div class="legend-row"><span class="lg-dot" style="background:#1d4ed8"></span> Valve terbuka</div>
             <div class="legend-row"><span class="lg-dot" style="background:#ef4444"></span> Valve tertutup</div>
             <div class="legend-row"><span class="lg-dot" style="background:#eab308"></span> Pompa · <span class="lg-dot" style="background:#14b8a6"></span> Reservoir · <span class="lg-dot" style="background:#f97316"></span> Hydrant</div>
+            <div class="legend-row"><span style="color:#0284c7;font-weight:700">➜</span> Arah aliran (BFS dari sumber)</div>
         </div>
 
         <div class="side-card" id="sel-card">
@@ -169,6 +173,7 @@
     const groups = {
         pipes: L.layerGroup().addTo(map),
         nodes: L.layerGroup().addTo(map),
+        flows: L.layerGroup().addTo(map),
         dmas: L.layerGroup(),
         impact: L.layerGroup().addTo(map),
         customers: L.layerGroup(),
@@ -189,7 +194,7 @@
 
     function drawLayers(data) {
         layers = data;
-        ['pipes', 'nodes', 'dmas'].forEach(g => groups[g].clearLayers());
+        ['pipes', 'nodes', 'flows', 'dmas'].forEach(g => groups[g].clearLayers());
         (data.pipes || []).forEach((f) => {
             const line = L.polyline((f.geometry.coordinates || []).map(toLL), pipeStyle(f)).addTo(groups.pipes);
             line.on('click', (e) => { L.DomEvent.stopPropagation(e); select('pipe', f); });
@@ -212,6 +217,19 @@
             const ring = ((f.geometry.coordinates || [[]])[0]).map(toLL);
             L.polygon(ring, { color: '#0891b2', weight: 1.6, fillColor: '#06b6d4', fillOpacity: .05 })
                 .addTo(groups.dmas).bindPopup('DMA: ' + (f.properties.name || ''));
+        });
+        const nodePos = {};
+        (data.nodes || []).forEach(n => { (n.geometry?.coordinates || []).length >= 2 && (nodePos[n.properties.feature_id] = [n.geometry.coordinates[1], n.geometry.coordinates[0]]); });
+        (data.edges || []).forEach((ed) => {
+            if (!ed.flow) return;
+            const a = nodePos[ed.flow.from], b = nodePos[ed.flow.to];
+            if (!a || !b || (a[0] === b[0] && a[1] === b[1])) return;
+            const ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
+            const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+            L.marker(mid, {
+                icon: L.divIcon({ className: 'flow-arrow', html: '<span style="transform:translate(-50%,-50%) rotate(' + ang.toFixed(1) + 'deg)">➜</span>', iconSize: [14, 14], iconAnchor: [0, 0] }),
+                interactive: false, keyboard: false,
+            }).addTo(groups.flows);
         });
         $('c-pipes').textContent = (data.pipes || []).length;
         $('c-rusak').textContent = (data.pipes || []).filter(p => p.properties.status === 'rusak').length;
@@ -318,7 +336,7 @@
     });
 
     // ── Layer toggles ──────────────────────────────────────────────────────
-    const toggleMap = { 'lay-pipes': 'pipes', 'lay-nodes': 'nodes', 'lay-dma': 'dmas', 'lay-impact': 'impact', 'lay-customers': 'customers' };
+    const toggleMap = { 'lay-pipes': 'pipes', 'lay-nodes': 'nodes', 'lay-flow': 'flows', 'lay-dma': 'dmas', 'lay-impact': 'impact', 'lay-customers': 'customers' };
     Object.entries(toggleMap).forEach(([id, g]) => $(id).addEventListener('change', () =>
         $(id).checked ? groups[g].addTo(map) : map.removeLayer(groups[g])));
 

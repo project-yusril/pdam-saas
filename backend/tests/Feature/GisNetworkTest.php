@@ -20,7 +20,9 @@ use Tests\TestCase;
 
 /**
  * GIS Jaringan Perpipaan (dashboard direktur/admin/teknis):
- * - isolasi ruas bocor: valve yang harus ditutup, cabang mati, valve CLOSED memutus.
+ * - GRAF TERARAH: orientasi aliran BFS dari sumber; panah arah di layers.json.
+ * - isolasi bocor = SIMULASI tutup valve minimal: cabang tetap teraliri via
+ *   jalur lain tidak ikut terpotong; klaster yatim tidak dihitung terdampak.
  * - pelanggan terdampak via convex hull segmen mati.
  * - insiden → WorkOrder (pipa ditandai rusak).
  * - editor: auto-wiring pipa baru, delete cascade edge, toggle valve.
@@ -120,23 +122,29 @@ class GisNetworkTest extends TestCase
         $this->assertContains($n['pmp']->id, array_column($res['reached_sources'], 'id'), 'sebelum V1 masih tersambung pompa');
         $pipes = array_column($res['isolated_pipes'], 'id');
         $this->assertContains($n['p1']->id, $pipes);
-        $this->assertNotContains($n['p2']->id, $pipes, 'ruas di balik V1 tidak ikut mati');
+        // Jujur secara fisika: satu-satunya sumber chain ini adalah pompa — menutup V1
+        // benar-benar membuat SEMUA hilir mati. Graf terarah tidak lagi berpura-pura
+        // cabang di balik valve aman tanpa ada jalur pasokan lain.
+        $this->assertContains($n['p2']->id, $pipes);
     }
 
-    public function test_isolating_mid_pipe_closes_bordering_valves_and_dead_branch(): void
+    public function test_isolating_mid_pipe_minimal_valve_and_drains_downstream(): void
     {
         $n = $this->makeNetwork();
         $res = $this->graph->isolate($n['p2']->id);
 
         $valves = array_column($res['valves_to_close'], 'id');
-        $this->assertEqualsCanonicalizing([$n['v1']->id, $n['v3']->id], $valves);
+        // Cut MINIMAL: hanya V1 yang memutus suplai ke ruas bocor; V3 hanya valve
+        // hilir buntu (tidak ada pasokan dari sisinya) → tidak perlu ditutup.
+        $this->assertSame([$n['v1']->id], $valves);
 
         $pipes = array_column($res['isolated_pipes'], 'id');
-        $this->assertContains($n['p2']->id, $pipes);
-        $this->assertContains($n['p3']->id, $pipes, 'ruas sebelum V3 ikut kena');
+        $this->assertContains($n['p2']->id, $pipes, 'ruas bocor sendiri');
+        $this->assertContains($n['p3']->id, $pipes, 'ruas sebelum V3 ikut kering (drain stub)');
         $this->assertContains($n['pl']->id, $pipes, 'lateral ke hydrant ikut mati (buntu)');
-        $this->assertNotContains($n['p4']->id, $pipes);
-        $this->assertNotContains($n['p5']->id, $pipes);
+        // Rantai tunggal tanpa loop: sisi V3 juga kehilangan pasokan V1 — jujur.
+        $this->assertContains($n['p4']->id, $pipes);
+        $this->assertContains($n['p5']->id, $pipes);
         $this->assertSame([], $res['reached_sources']);
         $this->assertTrue($res['ok']);
     }
@@ -165,6 +173,81 @@ class GisNetworkTest extends TestCase
         $res = $this->graph->isolate($burst->id);
         $this->assertNotEmpty($res['reached_sources'], 'tanpa valve di hulu → masih tersambung pompa');
         $this->assertEmpty(array_column($res['valves_to_close'], 'id'));
+    }
+
+    /** Loop + pasokan alternatif: valve minimal & rumah yang masih teraliri aman. */
+    private function makeLoopNetwork(): array
+    {
+        $pmp = $this->node('pump', 109.300, 1.350);
+        $v1 = $this->node('valve', 109.310, 1.355);
+        $j1 = $this->node('junction', 109.320, 1.360);
+        $j2 = $this->node('junction', 109.330, 1.365);
+        $v3 = $this->node('valve', 109.340, 1.370);
+        $s2 = $this->node('reservoir', 109.350, 1.375);
+        $v2 = $this->node('valve', 109.335, 1.355);
+        $hy3 = $this->node('hydrant', 109.340, 1.350);
+        $s3 = $this->node('intake', 109.345, 1.345);
+
+        return [
+            'pmp' => $pmp, 'v1' => $v1, 'j1' => $j1, 'j2' => $j2, 'v3' => $v3, 's2' => $s2,
+            'v2' => $v2, 'hy3' => $hy3, 's3' => $s3,
+            'e1' => $this->pipe($pmp, $v1),   // hulu: pompa → V1
+            'e0' => $this->pipe($v1, $j1),    // V1 → J1 (ruas aman dekat valve)
+            'lp' => $this->pipe($j1, $j2),    // RUAAS BOCOR tengah loop
+            'e4' => $this->pipe($s2, $v3),    // reservoir → V3
+            'e3' => $this->pipe($v3, $j2),    // pasokan loop dari reservoir
+            'e2' => $this->pipe($j2, $v2),    // cabang hilir buntu
+            'eh' => $this->pipe($v2, $hy3),
+            'es3' => $this->pipe($s3, $hy3),  // pasokan alternatif hydrant (tanpa valve)
+        ];
+    }
+
+    public function test_loop_isolation_uses_minimal_valves_and_spares_alt_supply(): void
+    {
+        $n = $this->makeLoopNetwork();
+        $res = $this->graph->isolate($n['lp']->id);
+
+        $closed = array_column($res['valves_to_close'], 'id');
+        $this->assertEqualsCanonicalizing([$n['v1']->id, $n['v3']->id], $closed,
+            'hanya valve hulu nyata; V2 cabang hilir TIDAK perlu ditutup (cut minimal)');
+
+        $pipes = array_column($res['isolated_pipes'], 'id');
+        $this->assertContains($n['lp']->id, $pipes);
+        $this->assertContains($n['e0']->id, $pipes, 'stub hulu V1→J1 ikut kering (sisa di sisi valve tertutup)');
+        $this->assertContains($n['e3']->id, $pipes, 'stub hulu V3→J2 ikut kering');
+        $this->assertNotContains($n['e2']->id, $pipes);
+        $this->assertNotContains($n['eh']->id, $pipes, 'ruas V2→HY3 masih di-supply intake S3 → TIDAK ikut terisolasi');
+        $this->assertNotContains($n['es3']->id, $pipes);
+        $this->assertNotContains($n['hy3']->id, array_column($res['isolated_nodes'], 'id'));
+        $this->assertContains($n['j2']->id, array_column($res['isolated_nodes'], 'id'));
+        $this->assertTrue($res['ok']);
+    }
+
+    public function test_orphan_cluster_never_counted_as_isolated(): void
+    {
+        $n = $this->makeNetwork();
+        // klaster "4 yatim": node + pipa tanpa koneksi ke sumber mana pun
+        $c1 = $this->node('junction', 109.90, 1.90);
+        $c2 = $this->node('junction', 109.91, 1.91);
+        $cp = $this->pipe($c1, $c2);
+
+        $res = $this->graph->isolate($n['p2']->id);
+        $pipes = array_column($res['isolated_pipes'], 'id');
+        $nodes = array_column($res['isolated_nodes'], 'id');
+        $this->assertNotContains($cp->id, $pipes, 'pipa klaster yatim bukan DAMPAK penutupan valve');
+        $this->assertNotContains($c1->id, $nodes);
+        $this->assertNotContains($c2->id, $nodes);
+    }
+
+    public function test_layers_expose_flow_orientation(): void
+    {
+        $n = $this->makeNetwork();
+        $json = $this->actingAs($this->admin, 'sanctum')->getJson('/admin/network/layers.json')->assertOk()->json();
+        $byPipe = collect($json['edges'])->keyBy('pipe_feature_id');
+        $flow = $byPipe[$n['p1']->id]['flow'] ?? null;
+        $this->assertNotNull($flow, 'edge punya orientasi aliran');
+        $this->assertSame($n['pmp']->id, $flow['from'], 'hulu edge pertama = pompa');
+        $this->assertSame($n['v1']->id, $flow['to']);
     }
 
     public function test_affected_customers_by_hull(): void

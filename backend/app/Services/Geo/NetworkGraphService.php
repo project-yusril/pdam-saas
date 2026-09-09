@@ -8,18 +8,22 @@ use App\Models\GisNetworkEdge;
 use Illuminate\Support\Collection;
 
 /**
- * NetworkGraphService — graf jaringan perpipaan untuk dashboard GIS.
+ * NetworkGraphService — graf jaringan perpipaan BERARAH untuk dashboard GIS.
  *
  * Konsep:
  *  - Node = GisFeature Point  (valve | junction | hydrant | pump | reservoir | intake)
  *  - Edge = GisNetworkEdge    (from_node ↔ to_node, opsional pipe_feature_id → ruas pipa LineString)
- *  - Sumber air = node dengan tipe pump/reservoir/intake (tidak dilewati flood, jadi batas).
+ *  - ARAH ALIRAN: edge diorientasikan upstream→downstream lewat BFS mulai dari
+ *    node sumber (pump/reservoir/intake/treatment). Grafik loop tak berarah di-
+ *    orientasikan mengikuti pohon BFS (edge silang diarahkan dari hulu→hilir).
+ *  - Sumber air = batas hulu alami (tidak dilewati flood).
  *  - Valve terbuka  = barrier yang DIISOLASI (harus ditutup).
  *  - Valve tertutup = barrier yang sudah memutus aliran (tidak dihitung).
  *
- * isolate(): cari valve minimal di SEKITAR titik kebocoran yang harus ditutup
- * agar ruas bocor terpotong dari semua sumber, lalu kumpulkan semua segmen
- * jaringan ikut terisolasi (kehilangan suplai).
+ * isolate(): (1) temukan valve frontier di kedua sisi ruas bocor lewat walk
+ * terarah, (2) SIMULASI tutup valve-valve itu pada graf terarah, (3) wilayah
+ * terdampak = node/pipa yang sebelumnya teraliri kini kehilangan air —
+ * rumah yang masih teraliri via jalur lain TIDAK ikut terpotong.
  *
  * affectedCustomersInRegion(): ambil hull dari geometri segmen terdampak, lalu
  * point-in-polygon ke koordinat pelanggan.
@@ -32,7 +36,14 @@ class NetworkGraphService
     public const BARRIER_TYPES = ['valve'];
 
     /**
-     * Isolasian ruas pipa (atau node) yang rusak/bocor.
+     * Isolasian ruas pipa (atau node) yang rusak/bocor dengan SIMULASI penutupan
+     * valve pada graf terarah (arah aliran = BFS dari sumber).
+     *
+     * 1. Walk frontier dua arah dari ruas bocor: valve boundary yang harus ditutup
+     *    + sumber yang (bahaya) masih menempel tanpa valve.
+     * 2. Simulasi: jaringan air sebelum vs sesudah valve frontier ditutup.
+     * 3. Terdampak = yang sebelumnya teraliri dan sesudah penutupan KEHILANGAN
+     *    air — cabang yang masih teraliri via jalur lain TIDAK ikut terpotong.
      *
      * @return array{ok:bool, valves_to_close:array<int,array>, valves_closed:array<int,array>,
      *               isolated_pipes:array<int,array>, isolated_nodes:array<int,array>,
@@ -47,144 +58,335 @@ class NetworkGraphService
 
         $nodes = GisFeature::whereIn('feature_type', ['valve', 'junction', 'hydrant', 'pump', 'reservoir', 'intake', 'treatment'])
             ->get()->keyBy('id');
-
-        $edges = GisNetworkEdge::get()->map(fn ($e) => (object) [
-            'id' => $e->id, 'pipe' => $e->pipe_feature_id,
-            'from' => $e->from_node_id, 'to' => $e->to_node_id,
-        ]);
-
         $pipes = GisFeature::where('feature_type', 'pipe')->get()->keyBy('id');
+        $edges = $this->loadEdges();
+        $orientation = $this->orient($edges, $nodes);
 
         $seeds = [];
+        $leakEdgeIds = [];
         if ($burst->feature_type === 'pipe') {
             foreach ($edges as $e) {
                 if ($e->pipe === $featureId) {
-                    $seeds = [$e->from, $e->to];
-                    break;
+                    $seeds = array_values(array_filter([$e->from, $e->to]));
+                    $leakEdgeIds[$e->id] = true;
                 }
             }
         }
         if ($seeds === [] && $nodes->has($featureId)) {
             $seeds = [$featureId];
+            foreach ($edges as $e) {
+                if ($e->from === $featureId || $e->to === $featureId) {
+                    $leakEdgeIds[$e->id] = true;
+                }
+            }
         }
         if ($seeds === []) {
             return $this->emptyResult('Pipa belum terhubung ke jaringan (buat edge/sambungkan ke node lewat editor).');
         }
 
-        $adj = $this->buildAdjacency($edges);
-
-        $valves = [];
+        // (1) valve frontier + sumber yang menempel (di luar zona bocor).
+        $valvesToClose = [];
         $alreadyClosed = [];
-        $isolatedPipeIds = [$featureId => true];
-        $isolatedNodeIds = [];
         $reachedSources = [];
-
         foreach ($seeds as $seed) {
-            $walk = $this->floodFrom($seed, $adj, $nodes);
-            foreach ($walk['valves_to_close'] as $v) {
-                $valves[$v] = true;
+            $this->collectFrontiers($seed, $edges, $nodes, $leakEdgeIds, $valvesToClose, $alreadyClosed, $reachedSources);
+        }
+        // Minimalisasi: valve ikut-ikutan (mis. cabang hilir buntu) TIDAK usah ditutup.
+        $valvesToClose = array_fill_keys(
+            $this->minimizeCut(array_keys($valvesToClose), $seeds, $edges, $orientation, $nodes, array_keys($leakEdgeIds)),
+            true
+        );
+
+        // (2)+(3) simulasi: operasi normal (fedBefore) vs sesudah valve frontier
+        // ditutup DAN ruas bocor diangkat (fedAfter). starved = dulu teraliri,
+        // sekarang tidak — cabang yang tetap teraliri via jalur lain dikecualikan.
+        $fedBefore = $this->flowReachable($edges, $orientation, $nodes, [], []);
+        $fedAfter = $this->flowReachable($edges, $orientation, $nodes, array_keys($leakEdgeIds), array_keys($valvesToClose));
+        $starved = array_values(array_filter(array_keys($fedBefore), fn ($n) => ! isset($fedAfter[$n])));
+        $starvedSet = array_flip($starved);
+
+        $isolatedNodeIds = array_values(array_unique(array_merge($seeds, $starved)));
+
+        $isolatedPipeIds = [$featureId => true];
+        $seedSet = array_flip($seeds);
+        $noWater = fn (int $id): bool => ! isset($fedAfter[$id]);
+        foreach ($edges as $e) {
+            if (! $e->pipe || isset($leakEdgeIds[$e->id])) {
+                continue;
             }
-            foreach ($walk['valves_closed'] as $v) {
-                $alreadyClosed[$v] = true;
-            }
-            foreach ($walk['pipes'] as $p) {
-                $isolatedPipeIds[$p] = true;
-            }
-            foreach ($walk['nodes'] as $n) {
-                $isolatedNodeIds[$n] = true;
-            }
-            foreach ($walk['sources'] as $s) {
-                $reachedSources[$s] = true;
+            // segmen mati bila kedua ujungnya tanpa air dan minimal satu ujung
+            // memang TERDAMPAK penutupan (bukan klaster yatim dari awal).
+            $touchedByStarvation = (isset($starvedSet[$e->from]) || isset($starvedSet[$e->to]))
+                || (isset($seedSet[$e->from]) && isset($seedSet[$e->to]));
+            if ($noWater($e->from) && $noWater($e->to) && $touchedByStarvation) {
+                $isolatedPipeIds[$e->pipe] = true;
             }
         }
+        $isolatedPipeIds = array_filter($isolatedPipeIds, fn ($p, $pid) => $pid !== 0 && $pipes->has($pid), ARRAY_FILTER_USE_BOTH);
 
-        $note = $reachedSources === []
-            ? 'Ruas terisolasi penuh oleh valve.'
-            : 'Masih terhubung ke sumber tanpa valve pemutus — periksa node sumber / tambah valve.';
+        $note = null;
+        $stillFed = array_values(array_filter($seeds, fn ($s) => isset($fedAfter[$s]) || in_array($nodes->get($s)?->feature_type ?? '', self::SOURCE_TYPES, true)));
+        if ($valvesToClose === [] && $reachedSources !== []) {
+            $note = 'Tidak ada valve pemutus ke sumber — matikan pompa/sumber sepihak utk ruas ini.';
+        } elseif ($stillFed !== []) {
+            $note = 'Valve zona sudah ditutup, tapi masih ada sisi ruas menempel ke sumber — matikan pompa utk kerja aman.';
+        } elseif ($valvesToClose === [] && $starved === []) {
+            $note = 'Zona sekitar bocor sudah terlanjur mati (tidak teraliri sumber aktif) — periksa valve hulu / integritas sambungan.';
+        } elseif ($starved === []) {
+            $note = 'Valve frontier ditemukan, tapi tidak ada segmen yang kehilangan air — cek arah aliran / jalur lain.';
+        }
+        if ($note === null) {
+            $note = sprintf(
+                '%d valve ditutup → %d segmen tambahan kehilangan suplai (yang masih teraliri via jalur lain dikecualikan).',
+                count($valvesToClose),
+                max(0, count($isolatedPipeIds) - 1)
+            );
+        }
 
         $featureInfo = fn ($id) => optional($nodes->get($id) ?? $pipes->get($id), fn ($f) => [
             'id' => $f->id, 'name' => $f->name, 'type' => $f->feature_type, 'status' => $f->status,
         ]);
 
         return [
-            'ok' => $valves !== [] || $reachedSources === [],
-            'valves_to_close' => array_values(array_filter(array_map($featureInfo, array_keys($valves)))),
+            'ok' => $valvesToClose !== [] || $reachedSources === [],
+            'valves_to_close' => array_values(array_filter(array_map($featureInfo, array_keys($valvesToClose)))),
             'valves_closed' => array_values(array_filter(array_map($featureInfo, array_keys($alreadyClosed)))),
             'isolated_pipes' => array_values(array_filter(array_map($featureInfo, array_keys($isolatedPipeIds)))),
-            'isolated_nodes' => array_values(array_filter(array_map($featureInfo, array_keys($isolatedNodeIds)))),
+            'isolated_nodes' => array_values(array_filter(array_map($featureInfo, $isolatedNodeIds))),
             'reached_sources' => array_values(array_filter(array_map($featureInfo, array_keys($reachedSources)))),
-            'isolated_pipe_id_list' => array_keys($isolatedPipeIds),
+            'isolated_pipe_id_list' => array_values(array_keys($isolatedPipeIds)),
             'note' => $note,
         ];
     }
 
-    /**
-     * Flood plain DFS dari satu seed node: kumpulkan segmen/node terdampak,
-     * valve pemutus, dan sumber yang (bahaya) masih nyambung.
-     *
-     * @return array{valves_to_close:array<int>, valves_closed:array<int>, pipes:array<int>, nodes:array<int>, sources:array<int>}
-     */
-    private function floodFrom(int $seed, array $adj, Collection $nodes): array
+    /** @return Collection<int, object{id:int, pipe:int|null, from:int, to:int}> */
+    private function loadEdges(): Collection
     {
-        $out = ['valves_to_close' => [], 'valves_closed' => [], 'pipes' => [], 'nodes' => [$seed], 'sources' => []];
-        $visited = [$seed => true];
-        $queue = [$seed];
-
-        while ($queue) {
-            $nodeId = array_shift($queue);
-            $node = $nodes->get($nodeId);
-            $type = $node?->feature_type ?? 'junction';
-
-            // masuk valve → ditutup (barrier); sudah closed juga jadi barrier.
-            if ($node && in_array($type, self::BARRIER_TYPES, true)) {
-                if (($node->status ?? 'active') === 'closed') {
-                    $out['valves_closed'][] = $nodeId;
-                } else {
-                    $out['valves_to_close'][] = $nodeId;
-                }
-
-                continue;
-            }
-            // sumber air → stop, tandai peringatan bila tanpa valve.
-            if ($node && in_array($type, self::SOURCE_TYPES, true)) {
-                $out['sources'][] = $nodeId;
-
-                continue;
-            }
-
-            foreach ($adj[$nodeId] ?? [] as $link) {
-                $out['pipes'][] = $link['pipe'];
-                $out['nodes'][] = $link['to'];
-                if (isset($visited[$link['to']])) {
-                    continue;
-                }
-                $visited[$link['to']] = true;
-                $queue[] = $link['to'];
-            }
-        }
-
-        foreach (['valves_to_close', 'valves_closed', 'pipes', 'nodes', 'sources'] as $k) {
-            $out[$k] = array_values(array_unique(array_filter($out[$k])));
-        }
-
-        return $out;
+        return GisNetworkEdge::get()->map(fn ($e) => (object) [
+            'id' => $e->id, 'pipe' => $e->pipe_feature_id,
+            'from' => $e->from_node_id, 'to' => $e->to_node_id,
+        ]);
     }
 
-    /** @return array<int, array<int, array{to:int, pipe:int|null}>> */
-    private function buildAdjacency(Collection $edges): array
+    /** Arah aliran semua edge (keyed edge id) — utk layer panah peta & validator. */
+    public function edgeOrientations(): array
+    {
+        $nodes = GisFeature::whereIn('feature_type', ['valve', 'junction', 'hydrant', 'pump', 'reservoir', 'intake', 'treatment'])
+            ->get()->keyBy('id');
+
+        return $this->orient($this->loadEdges(), $nodes);
+    }
+
+    /**
+     * Orientasi arah aliran: BFS multi-sumber pada graf fisik; edge pohon BFS
+     * diarah parent→child (hulu→hilir), edge silang dari depth lebih dangkal.
+     * Node tak terjangkau sumber (klaster yatim) → pakai urutan aslinya.
+     *
+     * @param  Collection  $edges
+     * @param  Collection  $nodes
+     * @return array<int, array{from:int, to:int}>  keyed edge id
+     */
+    public function orient(Collection $edges, Collection $nodes): array
     {
         $adj = [];
         foreach ($edges as $e) {
             if (! $e->from || ! $e->to) {
                 continue;
             }
-            $adj[$e->from][] = ['to' => $e->to, 'pipe' => $e->pipe];
-            $adj[$e->to][] = ['to' => $e->from, 'pipe' => $e->pipe];
+            $adj[$e->from][] = ['to' => $e->to, 'edge' => $e->id];
+            $adj[$e->to][] = ['to' => $e->from, 'edge' => $e->id];
         }
 
-        return $adj;
+        $depth = [];
+        $queue = [];
+        foreach ($nodes as $id => $node) {
+            if (in_array($node->feature_type, self::SOURCE_TYPES, true)) {
+                $depth[$id] = 0;
+                $queue[] = $id;
+            }
+        }
+
+        $orient = [];
+        while ($queue) {
+            $nid = array_shift($queue);
+            foreach ($adj[$nid] ?? [] as $link) {
+                if (isset($orient[$link['edge']])) {
+                    continue;
+                }
+                if (! isset($depth[$link['to']])) {
+                    $depth[$link['to']] = ($depth[$nid] ?? 0) + 1;
+                    $orient[$link['edge']] = ['from' => $nid, 'to' => $link['to']];
+                    $queue[] = $link['to'];
+                }
+            }
+        }
+
+        // edge silang (cycle) → dangkal→dalam; edge di komponen tanpa sumber → urutan asli.
+        foreach ($edges as $e) {
+            if (isset($orient[$e->id])) {
+                continue;
+            }
+            $df = $depth[$e->from] ?? null;
+            $dt = $depth[$e->to] ?? null;
+            $orient[$e->id] = match (true) {
+                $df !== null && $dt !== null && $df > $dt => ['from' => $e->to, 'to' => $e->from],
+                default => ['from' => $e->from, 'to' => $e->to],
+            };
+        }
+
+        return $orient;
     }
 
+    /**
+     * Jalan kaki frontier dari satu seed: temui valve (butuh tutup / sudah
+     * tertutup) atau sumber → berhenti di situ; selain itu terus menyusuri
+     * jaringan fisik (dua arah, valve tidak dilewati).
+     *
+     * @param  Collection  $edges
+     * @param  Collection  $nodes
+     * @param  array<int,bool>  $leakEdgeIds
+     */
+    private function collectFrontiers(int $seed, Collection $edges, Collection $nodes, array $leakEdgeIds, array &$valvesToClose, array &$valvesClosed, array &$sources): void
+    {
+        $check = function (int $id) use ($nodes, &$valvesToClose, &$valvesClosed, &$sources): ?string {
+            $node = $nodes->get($id);
+            $type = $node?->feature_type ?? '';
+            if (in_array($type, self::BARRIER_TYPES, true)) {
+                if (($node->status ?? 'active') === 'closed') {
+                    $valvesClosed[$id] = true;
+                } else {
+                    $valvesToClose[$id] = true;
+                }
+
+                return 'valve';
+            }
+            if (in_array($type, self::SOURCE_TYPES, true)) {
+                $sources[$id] = true;
+
+                return 'source';
+            }
+
+            return null;
+        };
+
+        if ($check($seed) !== null) {
+            return;
+        }
+
+        $visited = [$seed => true];
+        $queue = [$seed];
+        while ($queue) {
+            $nid = array_shift($queue);
+            foreach ($edges as $e) {
+                if (isset($leakEdgeIds[$e->id])) {
+                    continue;
+                }
+                $other = $e->from === $nid ? $e->to : ($e->to === $nid ? $e->from : null);
+                if ($other === null || isset($visited[$other])) {
+                    continue;
+                }
+                $visited[$other] = true;
+                if ($check($other) === null) {
+                    $queue[] = $other;
+                }
+            }
+        }
+    }
+
+    /**
+     * Node yang TERALIRI air: BFS dari seluruh sumber mengikuti arah aliran;
+     * valve yang ditutup ($closeValveIds) atau berstatus closed jadi batas;
+     * edge di $removeEdgeIds (ruas bocor/servis) tidak dialiri.
+     *
+     * @param  Collection  $edges
+     * @param  array<int, array{from:int,to:int}>  $orientation
+     * @param  Collection  $nodes
+     * @param  array<int>  $removeEdgeIds  list edge id yang diangkat (ruas bocor)
+     * @return array<int, true>  node id => true
+     */
+    private function flowReachable(Collection $edges, array $orientation, Collection $nodes, array $removeEdgeIds, array $closeValveIds): array
+    {
+        $down = [];
+        foreach ($edges as $e) {
+            if (in_array($e->id, $removeEdgeIds, true) || ! isset($orientation[$e->id])) {
+                continue;
+            }
+            $o = $orientation[$e->id];
+            $down[$o['from']][] = $o['to'];
+        }
+
+        $isBarrier = function (int $id) use ($nodes, $closeValveIds): bool {
+            if (in_array($id, $closeValveIds, true)) {
+                return true;
+            }
+            $node = $nodes->get($id);
+
+            return $node && $node->feature_type === 'valve' && ($node->status ?? 'active') === 'closed';
+        };
+
+        $fed = [];
+        $queue = [];
+        foreach ($nodes as $id => $node) {
+            if (in_array($node->feature_type, self::SOURCE_TYPES, true) && ! isset($fed[$id])) {
+                $fed[$id] = true;
+                $queue[] = $id;
+            }
+        }
+
+        while ($queue) {
+            $nid = array_shift($queue);
+            foreach ($down[$nid] ?? [] as $next) {
+                if ($isBarrier($next) || isset($fed[$next])) {
+                    continue;
+                }
+                $fed[$next] = true;
+                $queue[] = $next;
+            }
+        }
+
+        return $fed;
+    }
+
+    /**
+     * Buang valve tak genting dari candidato rim: suatu valve tetap diperlukan
+     * hanya jika TANPA dia masih ada seed ruas bocor yang kebagian air. Kalau
+     * set penuh pun tidak mengisolasi (mis. sumber nempel langsung ke ruas),
+     * kembalikan utuh — peringatan ditangani note/reached_sources.
+     *
+     * @param  array<int>  $cut
+     * @param  array<int>  $seeds
+     * @param  Collection  $edges
+     * @param  array<int, array{from:int,to:int}>  $orientation
+     * @param  Collection  $nodes
+     * @param  array<int>  $removeEdgeIds
+     * @return array<int>
+     */
+    private function minimizeCut(array $cut, array $seeds, Collection $edges, array $orientation, Collection $nodes, array $removeEdgeIds): array
+    {
+        $isolates = function (array $candidate) use ($seeds, $edges, $orientation, $nodes, $removeEdgeIds): bool {
+            $fed = $this->flowReachable($edges, $orientation, $nodes, $removeEdgeIds, $candidate);
+            foreach ($seeds as $s) {
+                if (isset($fed[$s])) {
+                    return false;
+                }
+            }
+
+            return true;
+        };
+
+        if ($cut === [] || ! $isolates($cut)) {
+            return $cut;
+        }
+
+        foreach ($cut as $valveId) {
+            $without = array_values(array_filter($cut, fn ($v) => $v !== $valveId));
+            if ($isolates($without)) {
+                $cut = $without;
+            }
+        }
+
+        return $cut;
+    }
     /**
      * Pelanggan terdampak = yang koodinatnya di dalam polygon pembatas
      * (convex hull) dari segmen terisolasi.
