@@ -376,7 +376,6 @@ class NetworkWebController extends Controller
      * Inti pembuatan WO jaringan + pipa ditandai rusak + log. Dipakai tombol
      * "Insiden → WO" dan "Dispatch petugas terdekat" (satu jalur audit).
      *
-     * @param  GisFeature|null  $feature
      * @return array{0:WorkOrder,1:WorkOrderLog}
      */
     private function createNetworkWorkOrder(
@@ -542,8 +541,8 @@ class NetworkWebController extends Controller
                 'to' => ['lat' => $lat, 'lng' => $lng],
             ] : null,
             'note' => 'Rute OSRM dari petugas → insiden. Dispatch '
-                . ($nearest['name'] ?? '#'.$nearest['user_id'])
-                . ' ('.round($nearest['distance_m']).' m lurus).',
+                .($nearest['name'] ?? '#'.$nearest['user_id'])
+                .' ('.round($nearest['distance_m']).' m lurus).',
         ], 201);
     }
 
@@ -557,6 +556,25 @@ class NetworkWebController extends Controller
             'period' => $period,
             'dmas' => $this->nrw->summary($period),
         ]);
+    }
+
+    /** MNF / debit malam 02:00–04:00 per DMA — indikator bocor halus. */
+    public function mnf(Request $request): JsonResponse
+    {
+        $days = $request->input('days') ? max(1, (int) $request->input('days')) : null;
+        $to = now();
+        $from = $days !== null ? $to->copy()->subDays($days)->startOfDay() : null;
+
+        return response()->json(['items' => $this->nrw->nightFlowAnalysis($from, $to)]);
+    }
+
+    /** Tren NRW bulanan per DMA (dari nrw_balances tersimpan). */
+    public function nrwTrend(Request $request): JsonResponse
+    {
+        $months = max(2, min(24, (int) $request->input('months', 6)));
+        $dmaId = $request->input('dma_id') ? (int) $request->input('dma_id') : null;
+
+        return response()->json(['dmas' => $this->nrw->trend($dmaId, $months)]);
     }
 
     public function nrwCalculate(Request $request, DmaZone $dma): JsonResponse

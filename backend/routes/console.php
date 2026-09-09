@@ -6,6 +6,7 @@ use App\Console\Commands\EscalateInstallationPayments;
 use App\Console\Commands\HealthCheck;
 use App\Console\Commands\InstallmentReminder;
 use App\Console\Commands\MarkOverdueBills;
+use App\Console\Commands\NrwMonthly;
 use App\Console\Commands\PaymentReconciliation;
 use App\Console\Commands\RecurringJournal;
 use App\Console\Commands\SendBillingNotifications;
@@ -27,6 +28,7 @@ Artisan::command('inspire', function () {
  * - Auto-isolir pelanggan menunggak: tgl 1 jam 02.00
  * - Pengingat cicilan: harian jam 07.00
  * - Rekonsiliasi pembayaran: tiap 6 jam
+ * - Hitung NRW bulanan utk tren DMA: tgl 1 jam 04.00 (pdam:nrw-monthly)
  */
 Schedule::command(SendBillingNotifications::class)->cron('0 8 23-25 * *');
 Schedule::command(MarkOverdueBills::class)->cron('0 6 26 * *');
@@ -39,3 +41,5 @@ Schedule::command(SubscriptionCheck::class)->dailyAt('01:00');
 Schedule::command(RecurringJournal::class)->dailyAt('03:00');
 Schedule::command(HealthCheck::class)->everyFiveMinutes();
 Schedule::command(DispatchScheduledReports::class)->everyMinute()->withoutOverlapping();
+// NRW otomatis tiap awal bulan — isi nrw_balances utk tren di panel GIS.
+Schedule::command(NrwMonthly::class)->monthlyOn(1, '04:00')->withoutOverlapping();

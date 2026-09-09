@@ -136,10 +136,19 @@
         <div class="side-card">
             <h2>NRW per DMA <button type="button" class="btn-xs" id="btn-nrw-refresh" style="float:right">↻</button></h2>
             <table class="nrw-table">
-                <thead><tr><th>DMA</th><th>Periode</th><th>Suplai m³</th><th>Terbaca m³</th><th>NRW%</th></tr></thead>
-                <tbody id="nrw-body"><tr><td colspan="5" class="muted">memuat…</td></tr></tbody>
+                <thead><tr><th>DMA</th><th>Periode</th><th>Suplai m³</th><th>Terbaca m³</th><th>NRW%</th><th>Tren 6 bln</th></tr></thead>
+                <tbody id="nrw-body"><tr><td colspan="6" class="muted">memuat…</td></tr></tbody>
             </table>
-            <p class="muted">Hitung otomatis dari suplai (rata-rata flow DMA) vs konsumsi tagihan pelanggan dalam polygon. Status: ≤20% baik · 20–30% waspada · &gt;30% kritis.</p>
+            <p class="muted">Hitung otomatis dari suplai (rata-rata flow DMA) vs konsumsi tagihan pelanggan dalam polygon. Status: ≤20% baik · 20–30% waspada · &gt;30% kritis. Tren dari <code>nrw_balances</code> (cron <code>pdam:nrw-monthly</code> tgl 1).</p>
+        </div>
+
+        <div class="side-card">
+            <h2>MNF — bocor malam <button type="button" class="btn-xs" id="btn-mnf-refresh" style="float:right">↻</button></h2>
+            <table class="nrw-table">
+                <thead><tr><th>DMA</th><th>Flow 02–04</th><th>m³/hari</th><th>% baseline</th><th>L/kon/hari</th></tr></thead>
+                <tbody id="mnf-body"><tr><td colspan="5" class="muted">memuat…</td></tr></tbody>
+            </table>
+            <p class="muted">Minimum Night Flow jam&nbsp;02:00–04:00 (7&nbsp;bln terakhir) vs baseline DMA. Ambang <b id="mnf-threshold">15</b>%: di atas = <b style="color:#b45309">waspada</b>, &gt;2× = <b style="color:#b91c1c">merah</b> (polygon DMA ikut berwarna saat layer DMA aktif). DMA merah → suspect bocor halus / sambungan ilegal.</p>
         </div>
     </aside>
 </div>
@@ -191,6 +200,8 @@
     let selected = null;        // {kind:'pipe'|'node', feature}
     let lastIsolate = null;
     let officersLive = [];      // cache technicians.json utk marker + daftar
+    let mnfStatus = {};         // dma_id → {status, pct_of_base, ...} dari mnf.json
+    let trendByDma = {};        // dma_id → periods[] dari nrw-trend.json
 
     const COLORS = { valve: '#1d4ed8', junction: '#94a3b8', hydrant: '#f97316', pump: '#eab308', reservoir: '#14b8a6', intake: '#0ea5e9', treatment: '#a78bfa' };
     const pipeStyle = (p) => {
@@ -225,8 +236,15 @@
         });
         (data.dmas || []).forEach((f) => {
             const ring = ((f.geometry.coordinates || [[]])[0]).map(toLL);
-            L.polygon(ring, { color: '#0891b2', weight: 1.6, fillColor: '#06b6d4', fillOpacity: .05 })
-                .addTo(groups.dmas).bindPopup('DMA: ' + (f.properties.name || ''));
+            const id = f.properties.feature_id, m = mnfStatus[id];
+            const style = (m && m.status === 'merah') ? { color: '#b91c1c', fillColor: '#ef4444', fillOpacity: .16 }
+                : (m && m.status === 'waspada') ? { color: '#d97706', fillColor: '#f59e0b', fillOpacity: .10 }
+                : { color: '#0891b2', fillColor: '#06b6d4', fillOpacity: .05 };
+            L.polygon(ring, Object.assign(style, { weight: 1.6 }))
+                .addTo(groups.dmas)
+                .bindPopup('DMA: ' + (f.properties.name || '') + (m && m.pct_of_base !== null
+                    ? '<br>MFN 02–04: ' + m.mnf_m3day + ' m³/hari = <b>' + m.pct_of_base + '%</b> baseline → ' + m.status
+                    : ''));
         });
         const nodePos = {};
         (data.nodes || []).forEach(n => { (n.geometry?.coordinates || []).length >= 2 && (nodePos[n.properties.feature_id] = [n.geometry.coordinates[1], n.geometry.coordinates[0]]); });
@@ -465,28 +483,72 @@
     async function loadNrw() {
         const { ok, json } = await api('nrw.json');
         const body = $('nrw-body');
-        if (!ok) { body.innerHTML = '<tr><td colspan="5" class="muted">gagal</td></tr>'; return; }
+        if (!ok) { body.innerHTML = '<tr><td colspan="6" class="muted">gagal</td></tr>'; return; }
         const rows = json.dmas || [];
-        if (!rows.length) { body.innerHTML = '<tr><td colspan="5" class="muted">Belum ada DMA aktif — gambar polygon DMA.</td></tr>'; return; }
+        if (!rows.length) { body.innerHTML = '<tr><td colspan="6" class="muted">Belum ada DMA aktif — gambar polygon DMA.</td></tr>'; applyTrends(); return; }
         body.innerHTML = rows.map(d => `<tr>
             <td><b>${d.code}</b> ${d.name || ''} <button class="btn-xs" data-nrw="${d.dma_id}" title="Hitung ulang NRW dari data tagihan + reading">${d.has_boundary ? 'polygon' : 'zona'} · ✦ hitung</button></td>
             <td>${d.period || '—'}</td><td>${num(d.system_input_m3)}</td><td>${num(d.billed_metered_m3)}</td>
             <td>${d.nrw_percentage === null || d.nrw_percentage === undefined ? '<span class="badge-s b-nihil">belum</span>'
-                : `<span class="badge-s ${d.status === 'baik' ? 'b-baik' : d.status === 'waspada' ? 'b-waspada' : 'b-kritis'}">${d.nrw_percentage}%</span>`}</td></tr>`).join('');
+                : `<span class="badge-s ${d.status === 'baik' ? 'b-baik' : d.status === 'waspada' ? 'b-waspada' : 'b-kritis'}">${d.nrw_percentage}%</span>`}</td>
+            <td data-trend="${d.dma_id}" class="muted">…</td></tr>`).join('');
+        applyTrends();
         body.querySelectorAll('[data-nrw]').forEach(btn => btn.onclick = async () => {
             const p = (json.period || '').toString(); const { ok: o, json: j } = await api(`dmas/${btn.dataset.nrw}/nrw`, { method: 'POST', body: { period: p } });
-            toast(o ? `NRW ${j.nrw_percent}% (${j.supply_m3} vs ${j.billed_m3} m³)` : ((j && j.error) || 'Gagal'), o); await loadNrw();
+            toast(o ? `NRW ${j.nrw_percent}% (${j.supply_m3} vs ${j.billed_m3} m³)` : ((j && j.error) || 'Gagal'), o); await Promise.all([loadNrw(), loadTrend()]);
         });
     }
     $('btn-nrw-refresh').onclick = loadNrw;
 
+    // ── MNF (debit malam) + tren NRW ───────────────────────────────────────
+    function spark(vals) {
+        const pts = vals.filter(v => v !== null && v !== undefined).map(Number);
+        if (!pts.length) return '<span class="muted">–</span>';
+        const w = 76, h = 18, max = Math.max(35, ...pts);
+        const xy = pts.map((v, i) => [2 + i * (w / Math.max(1, pts.length - 1)), h + 1 - (v / max) * h]);
+        const last = pts[pts.length - 1];
+        const col = last > 30 ? '#b91c1c' : last > 20 ? '#b45309' : '#15803d';
+        return `<svg width="${w + 4}" height="${h + 4}" style="vertical-align:middle"><polyline points="${xy.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="none" stroke="${col}" stroke-width="1.7"/></svg> <b style="color:${col};font-size:.72rem">${last}%</b>`;
+    }
+    function applyTrends() {
+        document.querySelectorAll('[data-trend]').forEach(td => {
+            const t = trendByDma[td.dataset.trend];
+            td.innerHTML = t && t.length ? spark(t.map(p => p.nrw_percentage)) : '<span class="muted">–</span>';
+        });
+    }
+    async function loadTrend() {
+        const { ok, json } = await api('nrw-trend.json?months=6'); if (!ok) return;
+        trendByDma = {};
+        (json.dmas || []).forEach(d => { trendByDma[d.dma_id] = d.periods || []; });
+        applyTrends();
+    }
+    async function loadMnf() {
+        const { ok, json } = await api('mnf.json');
+        const body = $('mnf-body');
+        if (!ok) { body.innerHTML = '<tr><td colspan="5" class="muted">gagal</td></tr>'; return; }
+        const items = json.items || [];
+        if (!items.length) { body.innerHTML = '<tr><td colspan="5" class="muted">Belum ada DMA aktif.</td></tr>'; return; }
+        mnfStatus = {};
+        items.forEach(m => { mnfStatus[m.dma_id] = m; });
+        $('mnf-threshold').textContent = items[0].alert_pct;
+        body.innerHTML = items.map(m => {
+            const badge = m.status === 'merah' ? '<span class="badge-s b-kritis">merah</span>'
+                : m.status === 'waspada' ? '<span class="badge-s b-waspada">waspada</span>'
+                : m.status === 'baik' ? '<span class="badge-s b-baik">baik</span>' : '<span class="badge-s b-nihil">nihil</span>';
+            return `<tr><td><b>${m.code}</b></td><td>${m.mnf_m3h ?? '–'} m³/j${m.n_samples ? ' <span class="muted">(' + m.n_samples + ' baca)</span>' : ''}</td><td>${m.mnf_m3day ?? '–'}</td>
+                <td class="${m.status === 'merah' ? 'b-kritis' : ''}">${m.pct_of_base ?? '–'}% ${badge}${m.base_source === 'estimasi_koneksi' ? ' <span class="muted">≈est</span>' : ''}</td><td>${m.per_conn_lph ?? '–'}</td></tr>`;
+        }).join('');
+        if (layers) drawLayers(layers); // warnai polygon DMA
+    }
+    $('btn-mnf-refresh').onclick = () => loadMnf();
+
     // ── util buttons ───────────────────────────────────────────────────────
-    $('btn-refresh').onclick = () => { loadLayers(); loadNrw(); loadOfficersLive(); };
+    $('btn-refresh').onclick = () => { loadLayers(); loadNrw(); loadTrend(); loadOfficersLive(); loadMnf(); };
     $('btn-fit').onclick = fitNetwork;
 
     // ── boot ───────────────────────────────────────────────────────────────
     loadLayers().then(() => window.setTimeout(fitNetwork, 300));
-    loadNrw(); loadOfficers(); loadOfficersLive();
+    loadNrw(); loadOfficers(); loadOfficersLive(); loadTrend(); loadMnf();
     setInterval(loadOfficersLive, 30000); // petugas live refresh 30 detik
 })();
 </script>

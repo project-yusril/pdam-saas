@@ -8,6 +8,7 @@ use App\Models\DistributionReading;
 use App\Models\DmaZone;
 use App\Models\GisFeature;
 use App\Models\NrwBalance;
+use Carbon\Carbon;
 
 /**
  * NrwAnalysisService — hitung NRW IWA per DMA dari data transaksi riil:
@@ -15,9 +16,16 @@ use App\Models\NrwBalance;
  *  - Billed Metered = Σ consumption tagihan periode tsb untuk pelanggan
  *    yang koordinatnya di dalam polygon DMA (fallback: zone_id / semua aktif).
  *  + total pipa dalam DMA untuk metrik ILI (lost connections per day per km pipa).
+ *
+ * PLUS (Analisis Jaringan Lanjutan — PDAM asli):
+ *  - nightFlowAnalysis(): MNF / debit malam 02:00–04:00 per DMA vs baseline.
+ *  - trend(): tren NRW per DMA dari saldo bulan-bulan tersimpan.
  */
 class NrwAnalysisService
 {
+    /** Jam jendela Minimum Night Flow (02:00–04:00). */
+    public const MNF_HOURS = [2, 3];
+
     public function __construct(private NetworkGraphService $graph) {}
 
     /** @return array{ok:bool, balance?:NrwBalance, supply_m3?:float, billed_m3?:float, error?:string} */
@@ -129,6 +137,118 @@ class NrwAnalysisService
     }
 
     // ── internal ───────────────────────────────────────────────────────────
+
+    /**
+     * MNF / debit malam per DMA (praktik nyata PDAM cari bocor halus):
+     * rata-rata flow 02:00–04:00 dari distribution_readings jam-jaman,
+     * bandingkan dgn baseline base_demand_m3day (fallback estimasi
+     * koneksi × konsumsi liter/koneksi/hari dari config) → % dari baseline.
+     * level: ≤ alert 'baik' · ≤ 2× alert 'waspada' · di atasnya 'merah'.
+     *
+     * @return array<int,array> satu baris per DMA aktif
+     */
+    public function nightFlowAnalysis(?Carbon $from = null, ?Carbon $to = null): array
+    {
+        $alertPct = (float) config('business.gis.mnf_alert_pct', 15);
+        $lookback = max(1, (int) config('business.gis.mnf_lookback_days', 7));
+        $lpcd = (float) config('business.gis.mnf_default_lpcd', 0.8);
+        $to = $to ?? now();
+        $from = $from ?? $to->copy()->subDays($lookback)->startOfDay();
+
+        return DmaZone::where('is_active', true)->get()->map(function (DmaZone $dma) use ($from, $to, $alertPct, $lpcd) {
+            $flows = [];
+            DistributionReading::query()
+                ->where('dma_zone_id', $dma->id)
+                ->whereBetween('reading_at', [$from, $to])
+                ->cursor()
+                ->each(function (DistributionReading $r) use (&$flows) {
+                    if (in_array((int) $r->reading_at->format('G'), self::MNF_HOURS, true) && $r->flow_rate_m3h !== null) {
+                        $flows[] = (float) $r->flow_rate_m3h;
+                    }
+                });
+
+            $mnfM3h = $flows ? round(array_sum($flows) / count($flows), 3) : null;
+            $base = $dma->base_demand_m3day !== null ? (float) $dma->base_demand_m3day : null;
+            $baseSource = $base !== null && $base > 0 ? 'baseline_dma' : null;
+            if ($baseSource === null && (int) $dma->total_connections > 0) {
+                $base = round((int) $dma->total_connections * $lpcd, 2);
+                $baseSource = 'estimasi_koneksi';
+            }
+
+            $pct = null;
+            $level = 'belum_data';
+            if ($mnfM3h !== null && $base && $base > 0) {
+                $pct = round($mnfM3h * 24 / $base * 100, 1);
+                $level = match (true) {
+                    $pct > 2 * $alertPct => 'merah',
+                    $pct > $alertPct => 'waspada',
+                    default => 'baik',
+                };
+            }
+
+            $connections = max(1, (int) ($dma->total_connections ?: 0));
+
+            return [
+                'dma_id' => (int) $dma->id,
+                'code' => $dma->code,
+                'name' => $dma->name,
+                'window' => '02:00-04:00',
+                'period' => $from->toDateString().'..'.$to->toDateString(),
+                'n_samples' => count($flows),
+                'mnf_m3h' => $mnfM3h,
+                'mnf_m3day' => $mnfM3h !== null ? round($mnfM3h * 24, 1) : null,
+                'base_m3day' => $base,
+                'base_source' => $baseSource,
+                'pct_of_base' => $pct,
+                'alert_pct' => $alertPct,
+                'per_conn_lph' => $mnfM3h !== null ? round($mnfM3h / $connections * 1000, 1) : null,
+                'status' => $level,
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * Tren NRW per DMA (bulanan) dari nrw_balances yang tersimpan —
+     * bahan grafik panel + evaluasi hasil perbaikan bocor.
+     *
+     * @return array<int,array> per DMA: periods[] terurut lama→baru
+     */
+    public function trend(?int $dmaId = null, int $months = 6): array
+    {
+        $dmaIds = $dmaId
+            ? collect([$dmaId])
+            : DmaZone::where('is_active', true)->pluck('id');
+
+        $rows = NrwBalance::query()
+            ->whereIn('dma_zone_id', $dmaIds)
+            ->orderBy('period')
+            ->get(['pdam_org_id', 'dma_zone_id', 'period', 'system_input_m3', 'billed_metered_m3', 'water_losses_m3', 'nrw_percentage', 'ili']);
+
+        $byDma = [];
+        foreach ($rows as $b) {
+            $byDma[$b->dma_zone_id][] = [
+                'period' => $b->period,
+                'system_input_m3' => (float) $b->system_input_m3,
+                'billed_metered_m3' => (float) $b->billed_metered_m3,
+                'water_losses_m3' => (float) $b->water_losses_m3,
+                'nrw_percentage' => $b->nrw_percentage !== null ? (float) $b->nrw_percentage : null,
+                'ili' => $b->ili !== null ? (float) $b->ili : null,
+            ];
+        }
+
+        $dmas = DmaZone::query()->whereIn('id', array_keys($byDma))->get()->keyBy('id');
+
+        return collect($byDma)->map(function (array $periods, $id) use ($dmas, $months) {
+            $dma = $dmas->get($id);
+
+            return [
+                'dma_id' => (int) $id,
+                'code' => $dma?->code ?? ('#'.$id),
+                'name' => $dma?->name,
+                'periods' => array_slice($periods, -1 * max(1, $months)),
+            ];
+        })->values()->all();
+    }
 
     /** @return array<int,int> */
     private function customerIdsInDma(DmaZone $dma): array

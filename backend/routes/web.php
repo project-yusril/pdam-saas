@@ -39,6 +39,8 @@ Route::middleware(['auth:sanctum', 'tenant'])->prefix('admin')->group(function (
         Route::get('layers.json', [NetworkWebController::class, 'layers'])->middleware('permission:gis.feature.view')->name('layers');
         Route::get('officers.json', [NetworkWebController::class, 'officers'])->middleware('permission:gis.feature.view')->name('officers');
         Route::get('nrw.json', [NetworkWebController::class, 'nrwSummary'])->middleware('permission:gis.feature.view')->name('nrw');
+        Route::get('nrw-trend.json', [NetworkWebController::class, 'nrwTrend'])->middleware('permission:gis.feature.view')->name('nrw-trend');
+        Route::get('mnf.json', [NetworkWebController::class, 'mnf'])->middleware('permission:gis.feature.view')->name('mnf');
         Route::post('features', [NetworkWebController::class, 'storeFeature'])->middleware('permission:gis.feature.create')->name('features.store');
         Route::patch('features/{feature}', [NetworkWebController::class, 'updateFeature'])->middleware('permission:gis.feature.update')->name('features.update');
         Route::delete('features/{feature}', [NetworkWebController::class, 'destroyFeature'])->middleware('permission:gis.feature.delete')->name('features.destroy');

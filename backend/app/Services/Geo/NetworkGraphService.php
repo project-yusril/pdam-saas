@@ -182,9 +182,7 @@ class NetworkGraphService
      * diarah parent→child (hulu→hilir), edge silang dari depth lebih dangkal.
      * Node tak terjangkau sumber (klaster yatim) → pakai urutan aslinya.
      *
-     * @param  Collection  $edges
-     * @param  Collection  $nodes
-     * @return array<int, array{from:int, to:int}>  keyed edge id
+     * @return array<int, array{from:int, to:int}> keyed edge id
      */
     public function orient(Collection $edges, Collection $nodes): array
     {
@@ -242,8 +240,6 @@ class NetworkGraphService
      * tertutup) atau sumber → berhenti di situ; selain itu terus menyusuri
      * jaringan fisik (dua arah, valve tidak dilewati).
      *
-     * @param  Collection  $edges
-     * @param  Collection  $nodes
      * @param  array<int,bool>  $leakEdgeIds
      */
     private function collectFrontiers(int $seed, Collection $edges, Collection $nodes, array $leakEdgeIds, array &$valvesToClose, array &$valvesClosed, array &$sources): void
@@ -298,11 +294,9 @@ class NetworkGraphService
      * valve yang ditutup ($closeValveIds) atau berstatus closed jadi batas;
      * edge di $removeEdgeIds (ruas bocor/servis) tidak dialiri.
      *
-     * @param  Collection  $edges
      * @param  array<int, array{from:int,to:int}>  $orientation
-     * @param  Collection  $nodes
      * @param  array<int>  $removeEdgeIds  list edge id yang diangkat (ruas bocor)
-     * @return array<int, true>  node id => true
+     * @return array<int, true> node id => true
      */
     private function flowReachable(Collection $edges, array $orientation, Collection $nodes, array $removeEdgeIds, array $closeValveIds): array
     {
@@ -355,9 +349,7 @@ class NetworkGraphService
      *
      * @param  array<int>  $cut
      * @param  array<int>  $seeds
-     * @param  Collection  $edges
      * @param  array<int, array{from:int,to:int}>  $orientation
-     * @param  Collection  $nodes
      * @param  array<int>  $removeEdgeIds
      * @return array<int>
      */
@@ -387,6 +379,7 @@ class NetworkGraphService
 
         return $cut;
     }
+
     /**
      * Pelanggan terdampak = yang koodinatnya di dalam polygon pembatas
      * (convex hull) dari segmen terisolasi.

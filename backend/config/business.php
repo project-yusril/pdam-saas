@@ -63,6 +63,13 @@ return [
     'gis' => [
         'officer_stale_minutes' => (int) env('PDAM_GIS_OFFICER_STALE_MINUTES', 30),
         'officer_roles' => ['field_technician', 'maintenance_technician', 'installer_technician', 'field_dispatcher'],
+
+        // MNF / debit malam (deteksi bocor halus per DMA). Jendela tetap 02:00–04:00.
+        // DMA 'merah' bila debit malam > 2× ambang; 'waspada' > ambang.
+        'mnf_alert_pct' => (float) env('PDAM_MNF_ALERT_PCT', 15),
+        'mnf_lookback_days' => (int) env('PDAM_MNF_LOOKBACK_DAYS', 7),
+        // Fallback baseline bila base_demand_m3day DMA belum diisi: liter/koneksi/hari.
+        'mnf_default_lpcd' => (float) env('PDAM_MNF_DEFAULT_LPCD', 0.8),
     ],
 
     // ── BELUM ADA KUNSUMEN (decision PRD §23; JANGAN dibaca sebagai switch) ──

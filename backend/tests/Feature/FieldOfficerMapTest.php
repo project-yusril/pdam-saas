@@ -31,9 +31,13 @@ class FieldOfficerMapTest extends TestCase
     use RefreshDatabase;
 
     private int $orgId;
+
     private User $admin;
+
     private User $tech1;
+
     private User $tech2;
+
     private FieldLocationService $field;
 
     protected function setUp(): void
