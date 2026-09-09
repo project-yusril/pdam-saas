@@ -58,6 +58,13 @@ return [
         'inventory_account' => env('PDAM_INVENTORY_ACCOUNT', '1-003'),
     ],
 
+    // GIS Jaringan — petugas lapangan live di peta (NetworkWebController::technicians,
+    // FieldLocationService). Titik dianggap ONLINE bila lapor GPS dalam N menit.
+    'gis' => [
+        'officer_stale_minutes' => (int) env('PDAM_GIS_OFFICER_STALE_MINUTES', 30),
+        'officer_roles' => ['field_technician', 'maintenance_technician', 'installer_technician', 'field_dispatcher'],
+    ],
+
     // ── BELUM ADA KUNSUMEN (decision PRD §23; JANGAN dibaca sebagai switch) ──
     // harga tier final | siklus tagihan SaaS | denda flat/persen (BillingSetting
     // sudah menyimpannya — lihat App\Models\BillingSetting) | batas isolir

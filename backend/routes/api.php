@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\Tenant\AddressController;
 use App\Http\Controllers\Api\Tenant\AssetCategoryController;
 use App\Http\Controllers\Api\Tenant\AssetOpnameController;
 use App\Http\Controllers\Api\Tenant\AttendanceController;
+use App\Http\Controllers\Api\Tenant\FieldLocationController;
 use App\Http\Controllers\Api\Tenant\BiController;
 use App\Http\Controllers\Api\Tenant\BillAdjustmentController;
 use App\Http\Controllers\Api\Tenant\BillingController;
@@ -149,6 +150,9 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
     // ── File privat — signed URL ──────────────────────────────────────
     Route::post('files/upload', [FileController::class, 'upload']);
     Route::post('files/signed-url', [FileController::class, 'signedUrl']);
+
+    // ── GIS: titik petugas lapangan LIVE (mobile → peta jaringan) ──────
+    Route::post('field/location', [FieldLocationController::class, 'store']);
 
     // ── Master Alamat Berjenjang (CRUD + dropdown) ────────────────────
     Route::get('address/provinces', [AddressController::class, 'provinces']);

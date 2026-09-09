@@ -46,6 +46,8 @@ Route::middleware(['auth:sanctum', 'tenant'])->prefix('admin')->group(function (
         Route::delete('edges/{edge}', [NetworkWebController::class, 'destroyEdge'])->middleware('permission:gis.feature.delete')->name('edges.destroy');
         Route::post('isolate', [NetworkWebController::class, 'isolate'])->middleware('permission:gis.feature.view')->name('isolate');
         Route::post('incidents', [NetworkWebController::class, 'storeIncidentWorkOrder'])->middleware('permission:gis.feature.create')->name('incidents.store');
+        Route::get('technicians.json', [NetworkWebController::class, 'technicians'])->middleware('permission:gis.feature.view')->name('technicians');
+        Route::post('dispatch', [NetworkWebController::class, 'dispatch'])->middleware('permission:gis.feature.create')->name('dispatch');
         Route::post('dmas', [NetworkWebController::class, 'storeDma'])->middleware('permission:gis.feature.create')->name('dmas.store');
         Route::patch('dmas/{dma}', [NetworkWebController::class, 'updateDma'])->middleware('permission:gis.feature.update')->name('dmas.update');
         Route::delete('dmas/{dma}', [NetworkWebController::class, 'destroyDma'])->middleware('permission:gis.feature.delete')->name('dmas.destroy');

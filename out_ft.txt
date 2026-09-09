@@ -1,0 +1,52 @@
+﻿00:00 +0: loading C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/cache/sync_service_test.dart
+00:00 +0: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/cache/sync_service_test.dart: SyncService reconciliation reconciles mixed meter and survey results independently
+00:00 +1: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/cache/sync_service_test.dart: SyncService reconciliation retains failed row and retries it on next invocation
+00:00 +2: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/cache/sync_service_test.dart: SyncService reconciliation whole request failure retains and counts every submitted row
+00:00 +3: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/cache/sync_service_test.dart: SyncService reconciliation no connection does not read queues or call transport
+00:00 +4: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/cache/sync_service_test.dart: SyncService reconciliation malformed response fails all submitted rows without deletion
+00:00 +5: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/cache/sync_service_test.dart: SyncService reconciliation missing result is failed and retained
+00:00 +6: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/cache/sync_service_test.dart: SyncService reconciliation unknown result never deletes or overcounts submitted rows
+00:00 +7: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/cache/sync_service_test.dart: SyncService reconciliation duplicate result rows fail once and retain item
+00:00 +8: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/cache/sync_service_test.dart: SyncService reconciliation malformed rows cannot acknowledge submitted items
+00:00 +9: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/cache/sync_service_test.dart: SyncService reconciliation meter payload includes backend-required offline reading type
+00:00 +10: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/cache/sync_service_test.dart: SyncService reconciliation duplicate UUIDs in local queue fail safely before request
+00:00 +11: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/base_url_policy_test.dart: production accepts HTTPS and removes trailing slash
+00:00 +12: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/base_url_policy_test.dart: production rejects cleartext URL
+00:00 +13: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/base_url_policy_test.dart: debug may explicitly use emulator cleartext URL
+00:00 +14: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/base_url_policy_test.dart: rejects relative URLs and URL credentials
+00:00 +15: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/base_url_policy_test.dart: release Android manifest and config prohibit cleartext
+00:00 +16: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/base_url_policy_test.dart: debug cleartext exception is scoped to emulator host
+00:00 +17: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/certificate_pinning_test.dart: pin config parses canonical SHA-256 pins
+00:00 +18: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/certificate_pinning_test.dart: pin config rejects missing, malformed, and non-SHA-256 pins
+00:00 +19: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/certificate_pinning_test.dart: SPKI matcher extracts and matches the primary or backup SPKI pin
+00:00 +20: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/certificate_pinning_test.dart: SPKI matcher rejects an unmatched SPKI and malformed certificate DER
+00:00 +21: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/certificate_pinning_test.dart: adapter wires leaf validation without overriding platform TLS trust
+00:01 +22: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/endpoints_test.dart: KTP OCR uses the multipart upload endpoint
+00:01 +23: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/endpoints_test.dart: endpoint builders produce tenant-neutral relative paths
+00:01 +24: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/endpoints_test.dart: endpoint builders reject zero IDs
+00:01 +25: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/endpoints_test.dart: endpoint builders reject negative IDs
+00:01 +26: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/endpoints_test.dart: paths contain neither tenant host nor unresolved placeholders
+00:01 +27: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/endpoints_test.dart: meter submit collection path has no ignored reading ID contract
+00:01 +28: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/safe_api_logging_test.dart: safe API logger removes host, query values, and resource IDs
+00:01 +29: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/core/network/safe_api_logging_test.dart: safe API logger masks UUID and opaque path identifiers
+00:02 +30: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/auth/auth_contract_test.dart: auth request contract login sends tenant code, credentials, and device name
+00:02 +31: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/auth/auth_contract_test.dart: auth request contract refresh uses bearer context and sends no refresh-token body
+00:02 +32: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/auth/auth_contract_test.dart: auth request contract refresh rejects missing token and does not update auth
+00:02 +33: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/auth/auth_contract_test.dart: auth response contract parses flat login response and nested user roles
+00:02 +34: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/auth/auth_contract_test.dart: auth response contract parses top-level roles fallback
+00:02 +35: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/auth/auth_contract_test.dart: auth response contract missing token is an unsuccessful login response
+00:02 +36: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_response_parser_test.dart: normalizes parsed values and preserves upload metadata
+00:02 +37: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_response_parser_test.dart: allows absent optional upload metadata
+00:02 +38: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_response_parser_test.dart: rejects non-object response
+00:02 +39: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_response_parser_test.dart: rejects missing data envelope
+00:02 +40: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_response_parser_test.dart: rejects empty parsed data
+00:02 +41: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_review_confirmation_test.dart: callback does not fire before explicit confirmation
+00:02 +42: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_review_confirmation_test.dart: callback does not fire before explicit confirmation
+00:02 +43: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_review_confirmation_test.dart: callback does not fire before explicit confirmation
+00:03 +44: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_review_confirmation_test.dart: callback does not fire before explicit confirmation
+00:03 +45: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_review_confirmation_test.dart: callback does not fire before explicit confirmation
+00:03 +46: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_review_confirmation_test.dart: callback does not fire before explicit confirmation
+00:03 +47: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_review_confirmation_test.dart: callback does not fire before explicit confirmation
+00:03 +48: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_review_confirmation_test.dart: confirmation returns edited and trimmed values
+00:03 +49: C:/Users/yusri/OneDrive/Documents/project-yusril/pdam/mobile/test/features/ocr/ktp_review_confirmation_test.dart: upload metadata is not rendered as editable input
+00:03 +50: All tests passed!

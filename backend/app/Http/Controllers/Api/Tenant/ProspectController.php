@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomerProspect;
 use App\Models\SurveyReport;
 use App\Services\FileUploadService;
+use App\Services\Geo\FieldLocationService;
 use App\Services\KtpOcrService;
 use App\Services\PaymentService;
 use App\Support\ApiResponse;
@@ -22,6 +23,8 @@ use RuntimeException;
  */
 class ProspectController extends Controller
 {
+    public function __construct(private FieldLocationService $fieldLocations) {}
+
     public function index(Request $request): JsonResponse
     {
         $perPage = min((int) $request->query('per_page', 20), 100);
@@ -225,6 +228,15 @@ class ProspectController extends Controller
             'location_source' => 'surveyor_verified',
             'location_accuracy' => $data['location_accuracy'] ?? null,
         ]);
+
+        // Piggyback: satu GPS nyata → titik petugas LIVE di peta jaringan
+        // (tanpa endpoint tambahan — satu sumber kebenaran koordinat lapangan).
+        $this->fieldLocations->report(
+            $request->user(),
+            (float) $data['latitude'],
+            (float) $data['longitude'],
+            $data['location_accuracy'] ?? null,
+        );
 
         return ApiResponse::message('Laporan survey terkirim.', $report, 201);
     }

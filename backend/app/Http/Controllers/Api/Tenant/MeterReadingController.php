@@ -9,6 +9,7 @@ use App\Models\MeterReading;
 use App\Models\MeterRoute;
 use App\Models\ReadingPeriod;
 use App\Services\FileUploadService;
+use App\Services\Geo\FieldLocationService;
 use App\Services\MeterOcrService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -22,6 +23,8 @@ use Illuminate\Support\Facades\DB;
  */
 class MeterReadingController extends Controller
 {
+    public function __construct(private FieldLocationService $fieldLocations) {}
+
     /**
      * Parse angka meter dari teks OCR (foto register meter).
      * Hasil dikembalikan untuk dikonfirmasi/dikoreksi petugas sebelum `store`.
@@ -140,6 +143,16 @@ class MeterReadingController extends Controller
             'flag_reason' => $flagReason ?? ($data['reading_type'] === 'estimated' ? 'estimated_reading' : null),
             'read_by' => $request->user()->id,
         ]);
+
+        // Piggyback: GPS nyata dari form baca → titik petugas LIVE di peta GIS.
+        if ($request->filled(['latitude', 'longitude'])) {
+            $this->fieldLocations->report(
+                $request->user(),
+                (float) $request->input('latitude'),
+                (float) $request->input('longitude'),
+                $request->input('accuracy') !== null ? (float) $request->input('accuracy') : null,
+            );
+        }
 
         return ApiResponse::message('Pembacaan tersimpan.', $reading, 201);
     }

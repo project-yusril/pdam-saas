@@ -66,6 +66,12 @@ class User extends Authenticatable
             ->withPivot('granted');
     }
 
+    /** Lokasi GPS terakhir petugas (bila pernah lapor / submitSurvey ber-koordinat). */
+    public function latestLocation()
+    {
+        return $this->hasOne(TechnicianLocation::class)->latestOfMany('updated_at');
+    }
+
     /** Cek apakah user punya salah satu role (by code). */
     public function hasRole(string ...$codes): bool
     {

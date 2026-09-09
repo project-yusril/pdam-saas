@@ -12,8 +12,11 @@ use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderLog;
 use App\Models\Zone;
+use App\Services\Geo\FieldLocationService;
 use App\Services\Geo\NetworkGraphService;
 use App\Services\Geo\NrwAnalysisService;
+use App\Services\Geo\OsrmService;
+use App\Services\NotificationChannelService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -24,12 +27,16 @@ use Illuminate\View\View;
  *  - isolasi kebocoran: hitung valve yang harus ditutup + segmen mati + pelanggan terdampak
  *  - insiden → WorkOrder (tipe leakage/repair) ter-link fitur GIS
  *  - analisis NRW per DMA otomatik dari tagihan + distribusi reading
+ *  - petugas lapangan LIVE di peta (dari GPS aplikasi mobile) → dispatch WO
  */
 class NetworkWebController extends Controller
 {
     public function __construct(
         private NetworkGraphService $graph,
         private NrwAnalysisService $nrw,
+        private FieldLocationService $officers,
+        private OsrmService $osrm,
+        private NotificationChannelService $notify,
     ) {}
 
     // ── Halaman utama ──────────────────────────────────────────────────────
@@ -352,40 +359,109 @@ class NetworkWebController extends Controller
             return response()->json(['error' => 'Fitur tidak ditemukan.'], 404);
         }
         $coords = $this->firstCoordinate($feature);
-        $priority = $data['priority'] ?? 'urgent';
-        $sla = ['urgent' => 2, 'high' => 6, 'low' => 48][$priority] ?? 24;
+        if ($coords === []) {
+            return response()->json(['error' => 'Fitur tidak punya koordinat.'], 422);
+        }
 
+        [$wo] = $this->createNetworkWorkOrder(
+            $request, $feature, (float) $coords['lat'], (float) $coords['lng'],
+            $data['priority'] ?? 'urgent', $data['assigned_to'] ?? null,
+            $data['description'] ?? null,
+        );
+
+        return response()->json($wo, 201);
+    }
+
+    /**
+     * Inti pembuatan WO jaringan + pipa ditandai rusak + log. Dipakai tombol
+     * "Insiden → WO" dan "Dispatch petugas terdekat" (satu jalur audit).
+     *
+     * @param  GisFeature|null  $feature
+     * @return array{0:WorkOrder,1:WorkOrderLog}
+     */
+    private function createNetworkWorkOrder(
+        Request $request,
+        ?GisFeature $feature,
+        float $lat,
+        float $lng,
+        string $priority,
+        ?int $assignedTo,
+        ?string $description = null
+    ): array {
+        $sla = ['urgent' => 2, 'high' => 6, 'low' => 48];
+        $slaHours = $sla[$priority] ?? 24;
         $wo = WorkOrder::create([
             'pdam_org_id' => $request->user()->pdam_org_id,
             'wo_number' => 'WO-'.now()->format('ym').'-NET'.strtoupper(substr(uniqid(), -4)),
-            'type' => $feature->feature_type === 'pipe' ? 'repair' : 'inspection',
+            'type' => ($feature && $feature->feature_type === 'pipe') ? 'repair' : ($assignedTo ? 'leakage' : 'inspection'),
             'priority' => $priority,
-            'zone_id' => $feature->zone_id,
-            'source_type' => 'gis_feature',
-            'source_id' => $feature->id,
-            'address' => 'Jaringan perpipaan — '.($feature->name ?? '#'.$feature->id),
-            'latitude' => $coords['lat'] ?? null,
-            'longitude' => $coords['lng'] ?? null,
-            'description' => $data['description'] ?? ('Insiden jaringan '.$feature->feature_type.' '.($feature->name ?? '#'.$feature->id).' — dibuat dari dashboard GIS Jaringan.'),
-            'status' => 'open',
-            'assigned_to' => $data['assigned_to'] ?? null,
-            'sla_due_at' => now()->addHours($sla),
+            'zone_id' => $feature?->zone_id,
+            'source_type' => $feature ? 'gis_feature' : null,
+            'source_id' => $feature?->id,
+            'address' => 'Jaringan perpipaan — '.$this->incidentLabel($feature, $lat, $lng),
+            'latitude' => $lat,
+            'longitude' => $lng,
+            'description' => $description ?? 'Insiden jaringan — dibuat dari dashboard GIS.',
+            'status' => $assignedTo ? 'assigned' : 'open',
+            'assigned_to' => $assignedTo,
+            'sla_due_at' => now()->addHours($slaHours),
         ]);
 
-        WorkOrderLog::create([
+        $toStatus = $assignedTo ? 'assigned' : 'open';
+        $log = WorkOrderLog::create([
             'pdam_org_id' => $wo->pdam_org_id,
             'work_order_id' => $wo->id,
-            'to_status' => 'open',
-            'action' => 'created',
+            'to_status' => $toStatus,
+            'action' => $assignedTo ? 'dispatched' : 'created',
             'user_id' => $request->user()->id,
         ]);
 
-        // tandai pipa rusak bila belum
-        if ($feature->feature_type === 'pipe' && $feature->status !== 'rusak') {
+        if ($assignedTo) {
+            $this->notify->send(
+                $assignedTo,
+                'WO Baru (GIS)',
+                "WO {$wo->wo_number} di-dispatch dari peta jaringan ke lokasi Anda.",
+                ['in_app', 'push']
+            );
+        }
+
+        if ($feature && $feature->feature_type === 'pipe' && $feature->status !== 'rusak') {
             $feature->update(['status' => 'rusak']);
         }
 
-        return response()->json($wo, 201);
+        return [$wo, $log];
+    }
+
+    /** Ambil titik insiden dari feature_id ATAU lat/lng manual (untuk dispatch). */
+    private function incidentPoint(Request $request, array $data): array
+    {
+        if (! empty($data['feature_id'])) {
+            $feature = GisFeature::find($data['feature_id']);
+            if (! $feature) {
+                return [null, null, null];
+            }
+            $coords = $this->firstCoordinate($feature);
+
+            return [
+                isset($coords['lat']) ? (float) $coords['lat'] : (isset($data['lat']) ? (float) $data['lat'] : null),
+                isset($coords['lng']) ? (float) $coords['lng'] : (isset($data['lng']) ? (float) $data['lng'] : null),
+                $feature,
+            ];
+        }
+        if (isset($data['lat'], $data['lng'])) {
+            return [(float) $data['lat'], (float) $data['lng'], null];
+        }
+
+        return [null, null, null];
+    }
+
+    private function incidentLabel(?GisFeature $feature, float $lat, float $lng): string
+    {
+        if ($feature && $feature->name) {
+            return $feature->name;
+        }
+
+        return 'titik '.round($lat, 5).','.round($lng, 5);
     }
 
     /** Daftar petugas yang bisa di-assign (bukan sekadar user lain). */
@@ -402,6 +478,73 @@ class NetworkWebController extends Controller
             ->values();
 
         return response()->json(['items' => $candidates]);
+    }
+
+    /** Titik petugas LIVE di peta (dari GPS aplikasi mobile) + status online. */
+    public function technicians(Request $request): JsonResponse
+    {
+        $orgId = $request->user()->pdam_org_id;
+
+        return response()->json([
+            'stale_minutes' => $this->officers->staleMinutes(),
+            'items' => $this->officers->activeOfficers($orgId),
+        ]);
+    }
+
+    /**
+     * Dispatch: dari fitur/lokasi insiden → carikan petugas ONLINE terdekat
+     * (haversine) + rute OSRM, buat WorkOrder ter-assign satu klik.
+     * Integrasi GIS↔mobile 2-arah: GPS nyata masuk peta → tombol keluar WO.
+     */
+    public function dispatch(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'feature_id' => ['nullable', 'integer'],
+            'lat' => ['nullable', 'numeric', 'between:-90,90'],
+            'lng' => ['nullable', 'numeric', 'between:-180,180'],
+            'priority' => ['sometimes', 'in:low,high,urgent'],
+        ]);
+
+        [$lat, $lng, $feature] = $this->incidentPoint($request, $data);
+        if ($lat === null) {
+            return response()->json(['error' => 'Titik insiden tidak diketahui (pilih fitur atau kirim lat/lng).'], 422);
+        }
+
+        $nearest = $this->officers->nearestOfficer($request->user()->pdam_org_id, $lat, $lng);
+        if (! $nearest) {
+            return response()->json([
+                'error' => 'Tidak ada petugas online dalam 24 jam terakhir. Lapor lokasi via mobile dahulu.',
+                'candidates' => $this->officers->rankedOfficers($request->user()->pdam_org_id, $lat, $lng)
+                    ->take(5)->values(),
+            ], 422);
+        }
+
+        [$wo, $log] = $this->createNetworkWorkOrder(
+            $request, $feature, $lat, $lng,
+            $data['priority'] ?? 'urgent',
+            $nearest['user_id'],
+        );
+
+        $route = $this->osrm->route(
+            [[$nearest['lat'], $nearest['lng']], [$lat, $lng]],
+            'driving'
+        );
+
+        return response()->json([
+            'ok' => true,
+            'work_order' => $wo,
+            'officer' => $nearest + ['user_id' => $nearest['user_id']],
+            'route' => $route ? [
+                'geometry' => $route['geometry'],
+                'distance_m' => round($route['distance'], 1),
+                'duration_s' => round($route['duration'], 0),
+                'from' => ['lat' => $nearest['lat'], 'lng' => $nearest['lng']],
+                'to' => ['lat' => $lat, 'lng' => $lng],
+            ] : null,
+            'note' => 'Rute OSRM dari petugas → insiden. Dispatch '
+                . ($nearest['name'] ?? '#'.$nearest['user_id'])
+                . ' ('.round($nearest['distance_m']).' m lurus).',
+        ], 201);
     }
 
     // ── NRW ────────────────────────────────────────────────────────────────
