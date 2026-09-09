@@ -60,6 +60,7 @@
             <label><input type="checkbox" id="lay-pipes" checked> Pipa</label>
             <label><input type="checkbox" id="lay-nodes" checked> Node</label>
             <label><input type="checkbox" id="lay-flow" checked> Arah aliran</label>
+            <label><input type="checkbox" id="lay-officers" checked> 👷 Petugas live</label>
             <label><input type="checkbox" id="lay-dma"> DMA</label>
             <label><input type="checkbox" id="lay-impact" checked> Area terdampak</label>
             <label><input type="checkbox" id="lay-customers"> Pelanggan</label>
@@ -117,12 +118,19 @@
             <div id="iso-body" style="font-size:.78rem"></div>
             <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.55rem;align-items:center">
                 <button type="button" class="btn-xs green" id="btn-wo">📋 Work Order darurat</button>
+                <button type="button" class="btn-xs" id="btn-dispatch" style="background:#16a34a;color:#fff;border-color:#16a34a">🚑 Dispatch petugas terdekat</button>
                 Prioritas <select class="net-select" id="wo-priority">
                     <option value="urgent">urgent</option><option value="high">high</option>
                     <option value="medium" selected>medium</option><option value="low">low</option>
                 </select>
                 Petugas <select class="net-select" id="wo-assign"><option value="">—</option></select>
             </div>
+        </div>
+
+        <div class="side-card" id="officer-card">
+            <h2>Petugas lapangan <button type="button" class="btn-xs" id="btn-officer-refresh" style="float:right">↻</button></h2>
+            <div id="officer-list"><span class="muted">memuat…</span></div>
+            <p class="muted">Titik GPS asli dari aplikasi mobile (lapor lokasi / submit survey / baca meter). Klik pipa → <b>Isolasi</b> atau <b>Dispatch</b>.</p>
         </div>
 
         <div class="side-card">
@@ -174,6 +182,7 @@
         pipes: L.layerGroup().addTo(map),
         nodes: L.layerGroup().addTo(map),
         flows: L.layerGroup().addTo(map),
+        officers: L.layerGroup().addTo(map),
         dmas: L.layerGroup(),
         impact: L.layerGroup().addTo(map),
         customers: L.layerGroup(),
@@ -181,6 +190,7 @@
     let layers = null;          // cache dari layers.json
     let selected = null;        // {kind:'pipe'|'node', feature}
     let lastIsolate = null;
+    let officersLive = [];      // cache technicians.json utk marker + daftar
 
     const COLORS = { valve: '#1d4ed8', junction: '#94a3b8', hydrant: '#f97316', pump: '#eab308', reservoir: '#14b8a6', intake: '#0ea5e9', treatment: '#a78bfa' };
     const pipeStyle = (p) => {
@@ -336,7 +346,7 @@
     });
 
     // ── Layer toggles ──────────────────────────────────────────────────────
-    const toggleMap = { 'lay-pipes': 'pipes', 'lay-nodes': 'nodes', 'lay-flow': 'flows', 'lay-dma': 'dmas', 'lay-impact': 'impact', 'lay-customers': 'customers' };
+    const toggleMap = { 'lay-pipes': 'pipes', 'lay-nodes': 'nodes', 'lay-flow': 'flows', 'lay-officers': 'officers', 'lay-dma': 'dmas', 'lay-impact': 'impact', 'lay-customers': 'customers' };
     Object.entries(toggleMap).forEach(([id, g]) => $(id).addEventListener('change', () =>
         $(id).checked ? groups[g].addTo(map) : map.removeLayer(groups[g])));
 
@@ -392,11 +402,63 @@
         await loadLayers();
     }
     $('btn-wo').onclick = () => selected && createWO(selected.f.properties.feature_id);
+    $('btn-dispatch').onclick = () => selected && dispatchNearest(selected.f.properties.feature_id);
     $('btn-incident').onclick = () => { $('wo-priority').value = 'urgent'; $('iso-card').style.display = 'block'; createWO(selected.f.properties.feature_id); };
+    $('btn-officer-refresh').onclick = loadOfficersLive;
 
     async function loadOfficers() {
         const { ok, json } = await api('officers.json'); if (!ok) return;
         $('wo-assign').innerHTML = '<option value="">—</option>' + (json.items || []).map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+    }
+
+    // ── Petugas lapangan LIVE (GPS dari mobile) + dispatch ─────────────────
+    const fmtAgo = (sec) => sec < 90 ? 'baru saja' : sec < 3600 ? Math.round(sec / 60) + ' mnt lalu' : Math.round(sec / 3600) + ' jam lalu';
+    async function loadOfficersLive() {
+        const { ok, json } = await api('technicians.json');
+        if (!ok) return;
+        officersLive = json.items || [];
+        drawOfficers(json.stale_minutes || 30);
+        renderOfficerList(json.stale_minutes || 30);
+    }
+    function drawOfficers(stale) {
+        groups.officers.clearLayers();
+        officersLive.forEach(o => {
+            const m = L.circleMarker([o.lat, o.lng], {
+                radius: 8, weight: 2, color: '#fff',
+                fillColor: o.online ? '#16a34a' : '#9ca3af', fillOpacity: .95,
+            }).addTo(groups.officers);
+            m.bindTooltip('👷 ' + o.name + ' · ' + fmtAgo(o.age_seconds) + (o.online ? ' (ONLINE)' : ' (offline)'), { direction: 'top' });
+            if (o.accuracy_m) L.circle([o.lat, o.lng], { radius: o.accuracy_m * 1.5, color: o.online ? '#16a34a' : '#94a3b8', weight: 1, fill: true, fillOpacity: .12, dashArray: '3 3' }).addTo(groups.officers);
+        });
+    }
+    function renderOfficerList(stale) {
+        const box = $('officer-list'); if (!box) return;
+        if (!officersLive.length) { box.innerHTML = '<span class="muted">Belum ada petugas pernah lapor GPS hari ini.</span>'; return; }
+        box.innerHTML = officersLive.map(o => `<div class="ins-kv">
+            <b style="color:${o.online ? '#15803d' : '#6b7280'}">👷 ${o.name}</b>
+            <span class="muted">· ${o.online ? 'online' : 'offline'} · ${fmtAgo(o.age_seconds)}${o.accuracy_m ? ' · ±' + Math.round(o.accuracy_m) + 'm' : ''}</span>
+        </div>`).join('') + '<div class="muted">Petugas dianggap online bila lapor &lt; ' + stale + ' menit.</div>';
+    }
+    async function dispatchNearest(featureId) {
+        if (!featureId) { toast('Klik pipa/ruas dulu', false); return; }
+        if (!confirm('Dispatch WO ke petugas ONLINE terdekat? Titik GPS dari aplikasi mobile.')) return;
+        const { ok, status, json } = await api('dispatch', { method: 'POST', body: { feature_id: featureId, priority: $('wo-priority').value } });
+        if (ok) {
+            toast((json.note || 'WO ter-assign') + ' · rute ' + Math.round(((json.route && json.route.distance_m) || 0)) + ' m');
+            if (json.route && json.route.geometry && json.route.geometry.coordinates) {
+                const pts = json.route.geometry.coordinates.map(c => [c[1], c[0]]);
+                L.polyline(pts, { color: '#16a34a', weight: 4, opacity: .85, dashArray: '7 5' }).addTo(groups.impact)
+                    .bindTooltip('Rute 🚑 ' + (json.officer && json.officer.name)).openTooltip();
+                L.marker([json.officer.lat, json.officer.lng], { icon: L.divIcon({ html: '🚑', iconSize: [18, 18] }) }).addTo(groups.impact);
+            }
+            await loadOfficersLive();
+        } else if (status === 422) {
+            const cands = (json.candidates || []).map(c => `${c.name} — ${c.distance_m} m (${c.online ? 'online' : 'offline'})`).join('<br>');
+            $('iso-card').style.display = 'block';
+            $('iso-body').innerHTML = '<div class="muted">' + (json.error || 'Gagal') + '</div>' + (cands ? '<div>' + cands + '</div>' : '');
+            toast(json.error || 'Tidak ada petugas online', false);
+        } else toast((json && (json.error || json.message)) || 'Gagal dispatch', false);
+        await loadLayers();
     }
 
     // ── NRW ────────────────────────────────────────────────────────────────
@@ -419,12 +481,13 @@
     $('btn-nrw-refresh').onclick = loadNrw;
 
     // ── util buttons ───────────────────────────────────────────────────────
-    $('btn-refresh').onclick = () => { loadLayers(); loadNrw(); };
+    $('btn-refresh').onclick = () => { loadLayers(); loadNrw(); loadOfficersLive(); };
     $('btn-fit').onclick = fitNetwork;
 
     // ── boot ───────────────────────────────────────────────────────────────
     loadLayers().then(() => window.setTimeout(fitNetwork, 300));
-    loadNrw(); loadOfficers();
+    loadNrw(); loadOfficers(); loadOfficersLive();
+    setInterval(loadOfficersLive, 30000); // petugas live refresh 30 detik
 })();
 </script>
 @endpush

@@ -46,7 +46,10 @@ class FieldLocationService
             ->withoutGlobalScopes()
             ->where('pdam_org_id', $orgId)
             ->where('is_active', true)
-            ->with(['roles:id,code', 'latestLocation'])
+            // Ambil role TANPA scope tenant: role per-tenant (produksi) maupun
+            // template global (org null, mis. dari seeder) harus konsisten terlihat
+            // agar daftar petugas tidak tergantung dari mana baris role dibuat.
+            ->with(['roles' => fn ($q) => $q->withoutGlobalScope('tenant'), 'latestLocation'])
             ->get()
             ->filter(fn (User $u) => $u->roles->whereIn('code', $roles)->isNotEmpty())
             ->map(function (User $u) use ($staleMinutes) {

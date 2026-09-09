@@ -483,7 +483,7 @@ class NetworkWebController extends Controller
     /** Titik petugas LIVE di peta (dari GPS aplikasi mobile) + status online. */
     public function technicians(Request $request): JsonResponse
     {
-        $orgId = $request->user()->pdam_org_id;
+        $orgId = (int) $request->user()->pdam_org_id;
 
         return response()->json([
             'stale_minutes' => $this->officers->staleMinutes(),
