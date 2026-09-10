@@ -4,13 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/format_helper.dart';
+import '../../../field/presentation/widgets/location_report_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_skeleton.dart';
 import '../../domain/models/survey_task.dart';
 import '../providers/survey_provider.dart';
-import '../../../field/presentation/widgets/location_report_button.dart';
 
 class SurveyTasksPage extends ConsumerStatefulWidget {
   const SurveyTasksPage({super.key});
@@ -45,8 +45,9 @@ class _SurveyTasksPageState extends ConsumerState<SurveyTasksPage> {
       appBar: AppBar(
         title: const Text('Tugas Survey'),
         actions: [
-          LocationReportButton(),
-          IconButton(onPressed: _onRefresh, icon: const Icon(Icons.refresh_rounded)),
+          const LocationReportButton(),
+          IconButton(
+              onPressed: _onRefresh, icon: const Icon(Icons.refresh_rounded)),
         ],
       ),
       body: Column(

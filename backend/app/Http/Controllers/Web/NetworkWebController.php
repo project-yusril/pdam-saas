@@ -15,6 +15,7 @@ use App\Models\WorkOrderLog;
 use App\Models\Zone;
 use App\Services\Geo\FieldLocationService;
 use App\Services\Geo\NetworkGraphService;
+use App\Services\Geo\NetworkStatusPdfService;
 use App\Services\Geo\NrwAnalysisService;
 use App\Services\Geo\OsrmService;
 use App\Services\Geo\PipeRiskService;
@@ -24,6 +25,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * NetworkWebController — GIS Jaringan Perpipaan lengkap untuk admin/direktur/teknis:
@@ -750,7 +752,7 @@ class NetworkWebController extends Controller
     }
 
     /** Unduhan PDF status jaringan server-side (dompdf) utk lampiran/surel. */
-    public function statusPdf(Request $request, \App\Services\Geo\NetworkStatusPdfService $pdfService): \Symfony\Component\HttpFoundation\Response
+    public function statusPdf(Request $request, NetworkStatusPdfService $pdfService): Response
     {
         $bytes = $pdfService->render($request->input('period') ?: null);
 

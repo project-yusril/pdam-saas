@@ -118,7 +118,8 @@ class WorkOrdersNotifier extends Notifier<WorkOrdersState> {
 
   Future<void> load({String? status}) async {
     final filter = status ?? state.statusFilter;
-    state = state.copyWith(dataState: WorkDataState.loading, statusFilter: filter);
+    state =
+        state.copyWith(dataState: WorkDataState.loading, statusFilter: filter);
     try {
       final items = await ref
           .read(workRemoteSourceProvider)

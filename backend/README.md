@@ -9,9 +9,9 @@ kredensial demo dimiliki [`SEED_DATA.md`](SEED_DATA.md); deployment production d
 [`DEPLOY.md`](DEPLOY.md); status verifikasi dimiliki [`../temuan2.md`](../temuan2.md).
 
 > **Sumber status saat ini:** [`../temuan2.md`](../temuan2.md), termasuk enam gate persetujuan production canonical.
-> Verifikasi 9 September 2026: backend SQLite **201/201 (1173 assertions)**; route registry **439 method rows —
+> Verifikasi 9 September 2026: backend SQLite **202/202 (1179 assertions)**; route registry **440 method rows —
 > 379 method endpoint `/api/v1` (302 URI unik) + 44 web admin Blade** (kanonis di [`../docs/COUNTS.json`](../docs/COUNTS.json), check
-> `php artisan pdam:counts`); Vitest 7 file/**13 test** + build lulus; Flutter **50/50** + analyze; ML
+> `php artisan pdam:counts`); Vitest 7 file/**13 test** + build lulus; Flutter **52/52** + analyze; ML
 > **29 test** (pytest; `test_calibration.py` gate §13 #6 — jalan di CI). Seeder kini router: production
 > hanya `ProductionKernelSeeder` dan `DemoGuard` memblokir **mutlak** fixture demo/akun `12345678`
 > (tanpa env escape; bukti `ProductionSeederIsolationTest`). Export menerima `csv|html|xlsx|pdf|docx` native.
@@ -35,7 +35,7 @@ kredensial demo dimiliki [`SEED_DATA.md`](SEED_DATA.md); deployment production d
 > **Tautan wajib:** [`README.md`](../README.md) · [`temuan2.md`](../temuan2.md) · [`02_flow.md`](../02_flow.md) · [`HANDOVER.md`](../HANDOVER.md) · [`SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) · [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · [`docs/COUNTS.json`](../docs/COUNTS.json) · [`ops/README.md`](../ops/README.md) · [`backend/README.md`](../README.md) · [`backend/DEPLOY.md`](DEPLOY.md) · [`backend/SEED_DATA.md`](SEED_DATA.md) · [`ml/README.md`](../ml/README.md) · [`docs/ML_CALIBRATION.md`](../docs/ML_CALIBRATION.md) · [`docs/BUSINESS_DECISIONS.md`](../docs/BUSINESS_DECISIONS.md)
 > <!-- doc-sync:links -->
 <!-- doc-sync:start verifikasi 9 Sept 2026 -->
-> **Verifikasi terintegrasi:** 201/201 (201 test backend, 1173 assertions — +74 tes GIS 9 Sept) · Vitest 13 · Flutter analyze 0 issue + 50/50 · ML 32 (CI) · 379 method /api/v1 (303 path registry; 44 web) · 66 migration · 29 seeder · 22 command · 168 tabel statis · 137 model · 2026-09-09. Kanoni angka: [`docs/COUNTS.json`](../docs/COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
+> **Verifikasi terintegrasi:** 202/202 (202 test backend, 1179 assertions — +74 tes GIS 9–10 Sept) · Vitest 13 · Flutter analyze 0 issue + 50/50 · ML 32 (CI) · 379 method /api/v1 (303 path registry; 44 web) · 66 migration · 29 seeder · 22 command · 168 tabel statis · 137 model · 2026-09-09. Kanoni angka: [`docs/COUNTS.json`](../docs/COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## 1. Tech Stack

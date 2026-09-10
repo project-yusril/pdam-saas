@@ -46,10 +46,13 @@ class _WorkOrdersPageState extends ConsumerState<WorkOrdersPage> {
             },
             itemBuilder: (_) => [
               const PopupMenuItem(value: '', child: Text('Semua')),
-              ..._statusOptions.map((e) => PopupMenuItem(value: e, child: Text(e))),
+              ..._statusOptions
+                  .map((e) => PopupMenuItem(value: e, child: Text(e))),
             ],
           ),
-          IconButton(onPressed: () => ref.read(workOrdersProvider.notifier).load(), icon: const Icon(Icons.refresh_rounded)),
+          IconButton(
+              onPressed: () => ref.read(workOrdersProvider.notifier).load(),
+              icon: const Icon(Icons.refresh_rounded)),
         ],
       ),
       body: loading
@@ -57,7 +60,9 @@ class _WorkOrdersPageState extends ConsumerState<WorkOrdersPage> {
           : state.dataState == WorkDataState.error
               ? Center(child: Text(state.errorMessage ?? 'Gagal memuat'))
               : RefreshIndicator(
-                  onRefresh: () async => ref.read(workOrdersProvider.notifier).load(status: _statusFilter),
+                  onRefresh: () async => ref
+                      .read(workOrdersProvider.notifier)
+                      .load(status: _statusFilter),
                   child: ListView.builder(
                     itemCount: state.items.length,
                     padding: const EdgeInsets.all(12),
@@ -67,15 +72,15 @@ class _WorkOrdersPageState extends ConsumerState<WorkOrdersPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         backgroundColor: AppColors.primary,
-        child: const Icon(Icons.local_shipping_outlined),
-        tooltip: 'Buat WO', // placeholder utk fitur tambahan nanti
+        tooltip: 'Buat WO',
+        child: const Icon(Icons.local_shipping_outlined), // placeholder utk fitur tambahan nanti
       ),
     );
   }
 
   Widget _buildItem(BuildContext context, WidgetRef ref, int index) {
     final state = ref.watch(workOrdersProvider);
-    final item = state.items[index] as WorkOrderModel;
+    final item = state.items[index];
     final isBusy = state.busyId == item.id;
 
     return Card(
@@ -86,29 +91,49 @@ class _WorkOrdersPageState extends ConsumerState<WorkOrdersPage> {
           padding: const EdgeInsets.all(10),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(item.typeLabel, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-                Text(item.woNumber, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                const SizedBox(height: 4),
-                Text(item.address, maxLines: 1, overflow: TextOverflow.ellipsis),
-                if (item.slaDueAt != null)
-                  Text(
-                    'SLA: ${item.slaDueAt}',
-                    style: TextStyle(fontSize: 11, color: item.priority == 'urgent' ? Colors.red : Colors.grey[700]),
-                  ),
-                if (item.gisFeatureId != null)
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.location_on_rounded, size: 14, color: AppColors.primary),
-                    const SizedBox(width: 4),
-                    Text('GIS #$item.sourceType', style: TextStyle(fontSize: 12, color: AppColors.secondary)),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.typeLabel,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(item.woNumber,
+                        style:
+                            TextStyle(color: Colors.grey[600], fontSize: 13)),
+                    const SizedBox(height: 4),
+                    Text(item.address,
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    if (item.slaDueAt != null)
+                      Text(
+                        'SLA: ${item.slaDueAt}',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: item.priority == 'urgent'
+                                ? Colors.red
+                                : Colors.grey[700]),
+                      ),
+                    if (item.gisFeatureId != null)
+                      Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.location_on_rounded,
+                            size: 14, color: AppColors.primary),
+                        const SizedBox(width: 4),
+                        Text('GIS #$item.sourceType',
+                            style: const TextStyle(
+                                fontSize: 12, color: AppColors.secondary)),
+                      ]),
                   ]),
-              ]),
             ),
             ElevatedButton(
-              onPressed: isBusy || !item.canStart ? null : () => _doStart(ref, item),
+              onPressed:
+                  isBusy || !item.canStart ? null : () => _doStart(ref, item),
               style: ElevatedButton.styleFrom(
-                backgroundColor: item.status == 'in_progress' ? AppColors.info : AppColors.success,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                backgroundColor: item.status == 'in_progress'
+                    ? AppColors.info
+                    : AppColors.success,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               ),
               child: isBusy
                   ? const SizedBox.shrink()
@@ -118,10 +143,16 @@ class _WorkOrdersPageState extends ConsumerState<WorkOrdersPage> {
             ),
             const SizedBox(width: 8),
             OutlinedButton.icon(
-              onPressed: isBusy || !item.canComplete ? null : () => _showCompleteDialog(context, ref, item),
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6)),
-              icon: Icon(isBusy ? Icons.sync_alt_rounded : Icons.check_rounded, color: AppColors.success),
-              label: item.canComplete ? const Text('Selesai') : const SizedBox(),
+              onPressed: isBusy || !item.canComplete
+                  ? null
+                  : () => _showCompleteDialog(context, ref, item),
+              style: OutlinedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6)),
+              icon: Icon(isBusy ? Icons.sync_alt_rounded : Icons.check_rounded,
+                  color: AppColors.success),
+              label:
+                  item.canComplete ? const Text('Selesai') : const SizedBox(),
             ),
           ]),
         ),
@@ -136,7 +167,8 @@ class _WorkOrdersPageState extends ConsumerState<WorkOrdersPage> {
     // show snackbar? Not needed — state refreshes on completion
   }
 
-  void _showCompleteDialog(BuildContext context, WidgetRef ref, WorkOrderModel item) async {
+  void _showCompleteDialog(
+      BuildContext context, WidgetRef ref, WorkOrderModel item) async {
     final controller = TextEditingController();
 
     await showDialog<bool>(
@@ -144,20 +176,29 @@ class _WorkOrdersPageState extends ConsumerState<WorkOrdersPage> {
       builder: (_) => AlertDialog(
         title: const Text('Selesaikan WO'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: controller, decoration: const InputDecoration(labelText: 'Hasil pekerjaan')),
+          TextField(
+              controller: controller,
+              decoration: const InputDecoration(labelText: 'Hasil pekerjaan')),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Batal')),
-          ElevatedButton(onPressed: () async {
-            final res = controller.text.trim();
-            if (res.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Isi hasil pekerjaan')));
-              return;
-            }
-            // Call provider.complete() via notifier
-            await ref.read(workOrdersProvider.notifier).complete(item.id, res);
-            Navigator.of(context).pop(true);
-          }, child: const Text('Simpan')),
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal')),
+          ElevatedButton(
+              onPressed: () async {
+                final res = controller.text.trim();
+                if (res.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Isi hasil pekerjaan')));
+                  return;
+                }
+                // Call provider.complete() via notifier
+                await ref
+                    .read(workOrdersProvider.notifier)
+                    .complete(item.id, res);
+                Navigator.of(context).pop(true);
+              },
+              child: const Text('Simpan')),
         ],
       ),
     );

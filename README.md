@@ -2,13 +2,31 @@
 
 Sistem Manajemen PDAM Multi-Tenant berbasis Laravel + Vue 3.
 
-> **Versi:** 3.7 | **Status:** GIS Jaringan Perpipaan + Peta Pelanggan terintegrasi penuh (peta Leaflet nyata, isolasi per rumah, NRW IWA per DMA), tooling gate §13 selesai; bukti environment produksi & decision PRD §23 masih terbuka | **Diperbarui:** 9 September 2026
+> **Versi:** 3.8 | **Status:** GIS Jaringan Perpipaan + Peta Pelanggan terintegrasi penuh (graf terarah, isolasi bocor simulasi valve, petugas LIVE GPS, dispatch WO terdekat, MNF malam deteksi bocor, tren NRW, validator kesehatan, risiko pipa, preventif MNT↔GIS, feasibility SR, GeoJSON e/impor, PDF server-side). **Mobile Flutter:** tombol Lapor Lokasi, layar WO Saya (list/start/complete). Tooling gate §13 selesai; bukti environment produksi & decision PRD §23 masih terbuka | **Diperbarui:** 10 September 2026
+
+> **Fitur Utama GIS + Mobile (9 Item Backend + A-C Mobile):**
+> 1. **Graf Terarah**: BFS aliran dari sumber (pump/reservoir), isolate() = simulasi tutup valve MINIMAL, rumah dengan pasokan loop lain tetap hidup, panah arah ➜ peta.
+> 2. **Petugas LIVE**: GPS mobile → POST `/field/location` → technician_locations; layer "👷 Petugas" di peta; dispatch tombol ke nearest officer (haversine + rute OSRM fallback).
+> 3. **MNF Malam**: flow jam 02:00–04:00 vs baseline `base_demand_m3day` (atau estimasi koneksi×liter/hari); status merah > ambang bocor halus, polygon DMA ikut berwarna.
+> 4. **Tren NRW**: cron harian `pdam:nrw-monthly` tgl 1 (simpan ke nrw_balances per DMA) → sparkline SVG panel `/admin/network`.
+> 5. **Validator Kesehatan**: health.json audit node menggantung, pipa tanpa edge, klaster yatim, ruas >400m tanpa valve, hydrant <2/DMA; skor 0–100.
+> 6. **Peta Risiko Pipa**: skor 0–100 = bahan (besia/cast tua vs HDPE baru) + umur + jumlah WO repair historis; garis warna kuning→merah; top prioritas ganti list.
+> 7. **GeoJSON Export/Import** + **PDF Server-side**: unduh semua layer (.geojson utk QGIS), impor FeatureCollection (auto-wire edges); lembar status A4 landscape via browser print → PDF; endpoint `/admin/network/status.pdf` bytes via dompdf.
+> 8. **Preventif Valve/Hydrant (MNT)**: jadwal preventif (cron `pdam:mnt-network`) due→WO inspeksi otomatis; panel schedule + execute due; idempotent per siklus.
+> 9. **Feasibility SR**: klik titik di peta → jarak ke pipa terdekat × route_factor; biaya = panjang × tarif `/meter` (config `PDAM_SR_PIPE_COST_PER_M`).
+> 
+> **Mobile:** 
+> A. Tombol **"Lapor Lokasi"** (GPS sekali kirim) di AppBar survey/meter; B. Layar **"WO Saya"** (list/filter mine=1 start/complete); C. Integration via new `lib/features/field/`.
+>
+> **Backend Routes:** `POST /api/v1/field/location`, `GET /work-orders?mine=1`, `POST /work-orders/{id}/{start,complete}`, `GET admin/network/{status.pdf,export.geojson,import.geojson,technicians.json,dispach}`, etc.
+> **Cron:** `pdam:nrw-monthly` (tgl 1 04:00), `pdam:mnt-network` (harian 05:00).
+> **Tests:** 202/202 backend SQLite (1179 assertions), 52/52 Flutter (analyze 0 issue), 440 route rows, 303 path / 380 method OpenAPI.
 
 >
 > **Sumber status saat ini:** [`temuan2.md`](temuan2.md), termasuk enam gate persetujuan production canonical. **Peta dokumentasi + fact sheet angka live:** [`docs/DOC_MAP.md`](docs/DOC_MAP.md). Inventaris tergenerasi: [`docs/COUNTS.json`](docs/COUNTS.json) (`php artisan pdam:counts`).
 
-<!-- doc-sync:start verifikasi 9 Sept 2026 -->
-> **Verifikasi terintegrasi:** 201/201 (201 test backend, 1173 assertions — +74 tes GIS jaringan 9 Sept) · Vitest 13 · Flutter analyze 0 issue + 50/50 · ML 32 (CI) · 439 method rows (380 API/303 path registry; 59 route web admin/GIS) · 66 migration · 29 seeder · 24 command · 168 tabel statis · 138 model · 2026-09-09. Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
+<!-- doc-sync:start verifikasi 10 Sept 2026 -->
+> **Verifikasi terintegrasi:** 202/202 (202 test backend, 1179 assertions — +74 tes GIS jaringan + 11 petugas LIVE + 10 MNF/tren/command + 16 modul lanjutan) · Vitest 13 · Flutter analyze 0 issue + **52/52** (termasuk test endpoints field/location + work-orders) · ML 32 (CI) · 440 method rows (380 API/303 path registry; 60 web admin/GIS panel) · 66 migration · 29 seeder · 24 command · 168 tabel statis · 138 model · 2026-09-10. Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## Documentation Map
@@ -286,7 +304,7 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 | Master data tenant | `/streets`, `/address` (Master Alamat), `/tariffs` | Tenant | CRUD master: Jalan, Master Alamat berjenjang (Provinsi→Kota→Kecamatan→Desa/Kelurahan), Golongan Tarif. Data alamat bersifat *global reference + override per tenant* (soft-delete + restore). |
 | Pelanggan | `/customers`, `/tariffs` | Tenant | Daftar & tambah pelanggan; golongan tarif. Form pelanggan memiliki cascade Wilayah→Rute→Jalan. |
 | Enterprise tenant | `/gis`, `/employees`, `/employee-self-service`, `/call-center`, `/tenders` | Tenant | UI modul enterprise; backend tetap menegakkan entitlement dan permission. `/gis` = **peta Leaflet nyata** (bundle npm) — 3.000 rumah Sambas warna status bayar (hijau/biru/kuning/oranye/merah/hitam), pipa 3-tier trunk/distribusi/**sambungan rumah (SR) yang menyambung ke setiap titik pelanggan** (data dari `gis_features`/`gis_network_edges`). |
-| GIS panel admin (Blade) | `/admin/gis/map`, `/admin/network` | Tenant (modul GIS) | **Peta Pelanggan OSM/Leaflet** (`/admin/gis/map`) + **GIS Jaringan Perpipaan** (`/admin/network`): editor pipa/DMA (gambar → auto-wire), valve buka/tutup, **isolasi bocor berbasis GRAF TERARAH** (arah aliran BFS dari sumber; simulasi tutup valve MINIMAL — rumah yang masih teraliri jalur lain tidak ikut terpotong + panah arah di peta), **petugas lapangan LIVE di peta** (GPS mobile via `/api/v1/field/location` + piggyback survey/meter) dengan **🚑 dispatch** WO ke petugas terdekat + rute OSRM, **MNF debit malam** 02:00–04:00 per DMA vs baseline (polygon merah = suspect bocor halus), **tren NRW** 6 bulan + cron `pdam:nrw-monthly`, **validator kesehatan jaringan** (node menggantung, klaster yatim, ruas tanpa valve, hydrant/DMA), **peta risiko pipa** (bahan+umur+riwayat WO → top prioritas ganti), **jadwal preventif valve/hydrant → WO** (cron `pdam:mnt-network`), **feasibility SR** (titik → pipa terdekat + tarif config), **ekspor/impor GeoJSON** (QGIS) & **lembar status cetak PDF** (`/admin/network/print`). Lihat [`backend/SEED_DATA.md`](backend/SEED_DATA.md) §10–11. |
+| GIS panel admin (Blade) | `/admin/gis/map`, `/admin/network` | Tenant (modul GIS) | **Peta Pelanggan OSM/Leaflet** (`/admin/gis/map`) + **GIS Jaringan Perpipaan** (`/admin/network`): editor pipa/DMA (gambar → auto-wire), valve buka/tutup, **isolasi bocor berbasis GRAF TERARAH** (arah aliran BFS dari sumber; simulasi tutup valve MINIMAL — rumah yang masih teraliri jalur lain tidak ikut terpotong + panah arah di peta), **petugas lapangan LIVE di peta** (GPS mobile via `/api/v1/field/location` + piggyback survey/meter) dengan **🚑 dispatch** WO ke petugas terdekat + rute OSRM, **MNF debit malam** 02:00–04:00 per DMA vs baseline (polygon merah = suspect bocor halus), **tren NRW** 6 bulan + cron `pdam:nrw-monthly`, **validator kesehatan jaringan** (node menggantung, klaster yatim, ruas tanpa valve, hydrant/DMA), **peta risiko pipa** (bahan+umur+riwayat WO → top prioritas ganti), **jadwal preventif valve/hydrant → WO** (cron `pdam:mnt-network`), **feasibility SR** (titik → pipa terdekat + tarif config), **ekspor/impor GeoJSON** (QGIS), **lembar status cetak** (`/admin/network/print`) & **PDF server-side** (`/admin/network/status.pdf`, dompdf — lampiran laporan/surel). Lihat [`backend/SEED_DATA.md`](backend/SEED_DATA.md) §10–11. |
 | Marketplace tenant | `/marketplace` | Tenant | Katalog/harga/dependency dari session tenant; purchase membuat order pending + URL Snap dan aktivasi menunggu settlement Midtrans terverifikasi. |
 | Dashboard role | `/dashboard/director`, `/dashboard/finance`, `/dashboard/technical`, `/dashboard/warehouse` | Tenant | Dashboard khusus role; kegagalan API ditampilkan melalui banner global. |
 | Laporan keuangan | `/finance/general-ledger`, `/finance/trial-balance`, `/finance/income-statement`, `/finance/balance-sheet`, `/finance/cash-flow` | Tenant | Buku Jurnal, Neraca Saldo, Laba Rugi, Neraca, Arus Kas; di-backend oleh `AccountingReportController` (`permission:core.report.view`). |
@@ -315,7 +333,7 @@ dalam tenant-nya); role lain diisi bertahap per fase modul.
 | Backend | Laravel 13, PHP 8.3, Sanctum |
 | Database | MySQL 8.0, Redis 7 |
 | Frontend | Vue 3, Vite, Tailwind CSS, PrimeVue (design system admin: **Public Sans + indigo `#7367F0` ala Vuexy**) |
-| Mobile | Flutter (Clean Architecture: auth, portal, meter reading, survey, OCR, offline sync) |
+| Mobile | Flutter (Clean Architecture: auth, portal, meter reading, survey, OCR, offline sync, **field: Lapor Lokasi GPS + layar WO Saya start/complete**) |
 | Payment | Midtrans Snap |
 | Queue | Redis |
 | Testing | PHPUnit 11, Vitest |
@@ -359,7 +377,7 @@ production-ready. Detail gap per area ada di `temuan2.md`.
 
 ## API
 
-Snapshot route registry: **439 method rows** (380 method endpoint `/api/v1` + 59 web admin/GIS; 303 URI
+Snapshot route registry: **440 method rows** (380 method endpoint `/api/v1` + 60 web admin/GIS; 303 URI
 API unik) — angka kanonis ada di [`docs/COUNTS.json`](docs/COUNTS.json), regenerasi lewat
 `php artisan pdam:counts --write`. Spek kontrak endpoint dari registry: `php artisan pdam:openapi`
 → **`docs/openapi.json`** (303 path; H-10 CI drift: codegen `tools/generate_dio_client.py` → `mobile/lib/api/generated/api_client.g.dart` + `openapi_surface.dart` + diff `git diff --exit-code`). Swagger anotasi & Postman
@@ -388,12 +406,12 @@ bash -n ops/**/*.sh                 # syntax ops; CI menjalankan drill ops/backu
 ```
 
 Status verifikasi 9 September 2026 (lokal Windows; CI menjalankan semuanya — termasuk MySQL):
-backend SQLite **201/201, 1173 assertions** (termasuk seeder-isolation ProductionSeederIsolationTest,
+backend SQLite **202/202, 1179 assertions** (termasuk seeder-isolation ProductionSeederIsolationTest,
 fitur refund (gated `business.refund.enabled` + jurnal pembalik), material stock-out, native export XLSX/PDF/DOCX, fitur refund+trial+digit-meter (gated config PRD §23), command `pdam:counts`, `pdam:openapi` & `pdam:mobile-coverage`
 H-10 kontrak endpoint mobile; **+29 tes GIS baru `GisMapTest` (12) & `GisNetworkTest` (17): klasifikasi warna 6 level,
 isolasi bocor per rumah, tenant isolation, geocode 1 req/s + User-Agent, routing OSRM proxy, DMA/NRW IWA, permission preset**);
 frontend Vitest **13 tests** (helper workbench, resources config,
-errors, auth flow, router, contract) + `npm run build` lulus; Flutter **50/50** + analyze **0 issue**
+errors, auth flow, router, contract) + `npm run build` lulus; Flutter **52/52** + analyze **0 issue**
 (duplikat konstan endpoints.dart dibersihkan); ML **32 tests** (pytest; inc. `test_telemetry_simulator` contract
 di CI; runner Win-ARM64 lokal tanpa wheel xgboost → compile-all saja); `php artisan pdam:counts`
 sinkron dengan `docs/COUNTS.json`. CI root [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — **run pertama 2909807: 6/6 hijau** — job: `backend-sqlite`, `mysql-production-gates` (migrate+seed MySQL 8.4, provisioning

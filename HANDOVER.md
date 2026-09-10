@@ -11,8 +11,8 @@
 
 > **Tautan wajib:** [`README.md`](README.md) · [`temuan2.md`](temuan2.md) · [`02_flow.md`](02_flow.md) · [`HANDOVER.md`](HANDOVER.md) · [`SECURITY_CHECKLIST.md`](SECURITY_CHECKLIST.md) · [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · [`docs/COUNTS.json`](docs/COUNTS.json) · [`ops/README.md`](ops/README.md) · [`backend/README.md`](backend/README.md) · [`backend/DEPLOY.md`](backend/DEPLOY.md) · [`backend/SEED_DATA.md`](backend/SEED_DATA.md) · [`ml/README.md`](ml/README.md) · [`docs/ML_CALIBRATION.md`](docs/ML_CALIBRATION.md) · [`docs/BUSINESS_DECISIONS.md`](docs/BUSINESS_DECISIONS.md)
 > <!-- doc-sync:links -->
-<!-- doc-sync:start verifikasi 7 Sept 2026 -->
-> **Verifikasi terintegrasi:** 201/201 (backend, 1173 assertions — +74 tes GIS jaringan/petugas/NRW) · Vitest 13 · Flutter analyze 0 issue + **50/50** · Dio client codegen `tools/generate_dio_client.py` (drift CI) · ML 32 (CI) · 439 method rows (378 API `/api/v1` + 61 web/admin & GIS panel) · 66 migration (refund) · 29 seeder · 24 command · 168 tabel statis · 137 model · 2026-09-09 (CI run 2909807 hijau 6/6). Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
+<!-- doc-sync:start verifikasi 10 Sept 2026 -->
+> **Verifikasi terintegrasi:** 202/202 (backend, 1179 assertions — +74 tes GIS jaringan/petugas/NRW + 2 piggyback & PDF download) · Vitest 13 · Flutter analyze **0 issue + 52/52** (test endpoints field-location & work-orders ditambahkan) · ML 32 (CI) · 440 method rows (381 API `/api/v1` + 59 web panel GIS incl `status.pdf`) · 66 migration (refund) · 29 seeder · 24 command · 168 tabel statis · 138 model · 2026-09-10. Kanoni angka: [`docs/COUNTS.json`](docs/COUNTS.json) · status resmi: [`temuan2.md`](temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](docs/DOC_MAP.md) · tooling: [`ops/README.md`](ops/README.md) · CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## 1. Ringkasan Produk
@@ -202,14 +202,14 @@ privacy purge dual-control, kontrak OCR KTP multipart, seeder production-safe (k
 blokade mutlak), reserve/stock-out material+idempotensi, kontrak export XLSX/PDF/DOCX native, **refund** (gated),
 **trial tenant** & **batas digit meter** (gated PRD §23), dan idempotensi refund.
 - Snapshot 9 September 2026 (lengkap di `docs/COUNTS.json`/`docs/DOC_MAP.md`): backend SQLite **201/201
-  (1173 assertions)** — termasuk 74 tes GIS `GisNetworkTest`/`GisMapTest`/`FieldOfficerMapTest`/
+  (1179 assertions)** — termasuk 74 tes GIS `GisNetworkTest`/`GisMapTest`/`FieldOfficerMapTest`/
   `NightFlowTrendTest`/`NetworkModuleTest` (jaringan pipa menyambung ke SETIAP rumah via node `tap`+pipa
   SR+MST; ** isolasi bocor GRAF TERARAH** dengan simulasi tutup valve minimal, petugas LIVE dari GPS mobile +
   dispatch WO terdekat, **MNF debit malam** 02–04 vs baseline, tren NRW cron, **validator kesehatan** jaringan,
   **peta risiko pipa** (bahan+umur+WO), preventif valve/hydrant→WO, feasibility SR, GeoJSON import/export,
   lembar status cetak);
   **panel web GIS/OSM/Leaflet `/admin/gis/map` & `/admin/network`** (route web 19→59); frontend Vitest
-  **7 file/13 tests** + build lulus; Flutter **50/50** (analyze **0 issue**; +dio client contract); ML
+  **7 file/13 tests** + build lulus; Flutter **52/52** (analyze **0 issue**; +dio client contract; +test endpoint field/location & work-orders); ML
   **32** test (CI); route registry: **439** API+web endpoint method rows (378 API; `docs/openapi.json`).
   Rebuild jaringan: **`php artisan pdam:seed-network`** (§5.17).
   CI `mysql-production-gates` **lulus run 2909807** menjalankan migration+seed, privileges drill,

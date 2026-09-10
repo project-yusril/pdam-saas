@@ -2,7 +2,6 @@
 
 namespace App\Services\Geo;
 
-use App\Models\DmaZone;
 use App\Models\PdamOrganization;
 use App\Support\TenantContext;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -102,7 +101,9 @@ class NetworkStatusPdfService
         $html .= '<h2>MNF malam 02:00–04:00 vs baseline (deteksi bocor halus)</h2>';
         $html .= '<table><thead><tr><th>DMA</th><th>MNF m³/hari</th><th>Baseline m³/hari</th><th>% Baseline</th><th>Status</th></tr></thead><tbody>';
         foreach ($mnf as $m) {
-            $cls3 = match ($m['status']) { 'merah' => 'crit', 'waspada' => 'warn', 'baik' => 'ok', default => '' };
+            $cls3 = match ($m['status']) {
+                'merah' => 'crit', 'waspada' => 'warn', 'baik' => 'ok', default => ''
+            };
             $html .= '<tr><td>'.e($m['code']).'</td><td>'.($m['mnf_m3day'] ?? '–').' <span class="muted">('.$m['n_samples'].' baca)</span></td>'
                 .'<td>'.($m['base_m3day'] ?? '–').($m['base_source'] === 'estimasi_koneksi' ? ' <span class="muted">(est)</span>' : '').'</td>'
                 .'<td>'.($m['pct_of_base'] ?? '–').'%</td><td class="'.$cls3.'">'.e($m['status']).'</td></tr>';

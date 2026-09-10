@@ -6,7 +6,7 @@ semuanya harus mengarah ke [`../temuan2.md`](../temuan2.md) sebagai **sumber sta
 authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 
 <!-- doc-sync:start verifikasi 9 Sept 2026 -->
-> **Verifikasi terintegrasi:** 201/201 (201 test backend, 1173 assertions — +74 tes GIS 9 Sept) · Vitest 13 · Flutter analyze 0 issue + 50/50 · ML 32 (CI) · 379 method /api/v1 (303 path registry; 44 web) · 66 migration · 29 seeder · 22 command · 168 tabel statis · 137 model · 2026-09-09. Kanoni angka: [`docs/COUNTS.json`](COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
+> **Verifikasi terintegrasi:** 202/202 (202 test backend, 1179 assertions — +74 tes GIS 9–10 Sept) · Vitest 13 · Flutter analyze 0 issue + 50/50 · ML 32 (CI) · 379 method /api/v1 (303 path registry; 44 web) · 66 migration · 29 seeder · 22 command · 168 tabel statis · 137 model · 2026-09-09. Kanoni angka: [`docs/COUNTS.json`](COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## 1. Kepemilikan dokumen (satu topik = satu pemilik)
@@ -30,7 +30,7 @@ authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 
 | Metrik | Nilai | Sumber |
 |---|---|---|
-| Baris route registry | **439 method rows** (380 API `/api/v1` + 59 web admin/GIS panel) | `php artisan pdam:openapi`/counts + `COUNTS.json` |
+| Baris route registry | **440 method rows** (380 API `/api/v1` + 60 web admin/GIS panel) | `php artisan pdam:openapi`/counts + `COUNTS.json` |
 | URI API unik | **303** | `route:list --json` |
 | OpenAPI kanonik (drift CI) | **303 path/380 method** di `docs/openapi.json` | `php artisan pdam:openapi --out=../docs/openapi.json` && CI `git diff --exit-code` |
 | Models | **138** | `COUNTS.json` |
@@ -38,9 +38,9 @@ authoritative** (enam gate production canonical ada di `temuan2.md` §13).
 | Seeder classes | **29** (production path: 4 — kernel+permission/module/role; **+`PipeNetworkDemoSeeder` GIS**) | `COUNTS.json`, `SEED_DATA.md` |
 | Tabel (statis dari migration) | **168** | `COUNTS.json` |
 | Command artisan `pdam:*` + GIS | **24** (openapi, mobile-coverage, audit/queue/integrations-health, ml export, counts, +`seed-network`, **`nrw-monthly`**, **`mnt-network`** GIS 9 Sept) | `COUNTS.json` |
-| Test backend (SQLite) | **201/201** (1173 assertions) (9 Sept: +29 tes GIS jaringan/peta +74 lanjutan — warna 6-level, isolasi per rumah, DMA/NRW, geocode/routing proxy + tenant & permission) | `php artisan test` |
+| Test backend (SQLite) | **202/202** (1179 assertions) (9–10 Sept: +74 tes GIS (warna 6-level, graf terarah, petugas LIVE + dispatch, MNF, tren+NRW cron, validator, risiko, MNT, feasibility, GeoJSON/print/pdf) + 2 piggyback survey/PDF — auth/tenant/permission gate juga lulus) | `php artisan test` |
 | Test frontend Vitest | **7 files / 13 tests** + `npm run build` OK | `npm run test -- --run` |
-| Test Flutter | **50/50** + analyze **0 issue** | `flutter test` |
+| Test Flutter | **52/52** + analyze **0 issue** | `flutter test` |
 | Test Python (ml) | **32 test methods** (29 sebelumnya + 3 contract simulator tier-3) — dieksekusi CI `ml` (xgboost tak tersedia di runner Win-ARM64 lokal) | `test_*.py` + workflow |
 | CI root | `.github/workflows/ci.yml` (run 2909807 lulus 6/6): `backend-sqlite` (pint, PHPUnit, counts-drift, openapi drift, mobile-coverage, YAML validation), `mysql-production-gates`, `frontend`, `mobile`, `ml`, `security`. Nightly ops: `.github/workflows/nightly-ops.yml` (k6 + simulator tier-3) — hanya jalan bila `LOAD_ENABLED=true` vars repo |
 

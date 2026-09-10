@@ -40,8 +40,9 @@ class _RouteTasksPageState extends ConsumerState<RouteTasksPage> {
       appBar: AppBar(
         title: const Text('Rute Baca Meter'),
         actions: [
-          LocationReportButton(),
-          IconButton(onPressed: _onRefresh, icon: const Icon(Icons.refresh_rounded)),
+          const LocationReportButton(),
+          IconButton(
+              onPressed: _onRefresh, icon: const Icon(Icons.refresh_rounded)),
         ],
       ),
       body: RefreshIndicator(

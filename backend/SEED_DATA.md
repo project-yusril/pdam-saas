@@ -34,7 +34,7 @@ baca meter → tagihan → pembayaran → jurnal → neraca, plus gudang → sto
 > **Tautan wajib:** [`README.md`](../README.md) · [`temuan2.md`](../temuan2.md) · [`02_flow.md`](../02_flow.md) · [`HANDOVER.md`](../HANDOVER.md) · [`SECURITY_CHECKLIST.md`](../SECURITY_CHECKLIST.md) · [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · [`docs/COUNTS.json`](../docs/COUNTS.json) · [`ops/README.md`](../ops/README.md) · [`backend/README.md`](../README.md) · [`backend/DEPLOY.md`](DEPLOY.md) · [`backend/SEED_DATA.md`](SEED_DATA.md) · [`ml/README.md`](../ml/README.md) · [`docs/ML_CALIBRATION.md`](../docs/ML_CALIBRATION.md) · [`docs/BUSINESS_DECISIONS.md`](../docs/BUSINESS_DECISIONS.md)
 > <!-- doc-sync:links -->
 <!-- doc-sync:start verifikasi 7 Sept 2026 -->
-> **Verifikasi terintegrasi:** 164/164 (164 test backend, 986 assertions) · Vitest 13 · Flutter analyze 0 issue + 50/50 · ML 32 (CI) · 379 method /api/v1 (302 path registry; 44 web) · 66 migration · 29 seeder · 22 command · 168 tabel statis · 137 model · 2026-09-09. Kanoni angka: [`docs/COUNTS.json`](../docs/COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
+> **Verifikasi terintegrasi:** 202/202 (202 test backend, 1179 assertions) · Vitest 13 · Flutter analyze 0 issue + 52/52 · ML 32 (CI) · 379 method /api/v1 (302 path registry; 44 web) · 66 migration · 29 seeder · 22 command · 168 tabel statis · 137 model · 2026-09-09. Kanoni angka: [`docs/COUNTS.json`](../docs/COUNTS.json) · status resmi: [`temuan2.md`](../temuan2.md) §13 · peta dokumen: [`docs/DOC_MAP.md`](../docs/DOC_MAP.md) · tooling: [`ops/README.md`](../ops/README.md) · CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) + `nightly-ops.yml`.
 <!-- doc-sync:end -->
 
 ## 1. Dua Tenant Demo
@@ -535,6 +535,13 @@ Tes end-to-end mencakup:
 
 Command baru di `routes/console.php`: `NrwMonthly` (tgl 1 04:00) & `MntNetwork` (harian 05:00). Semua threshold = `.env` (lihat `PDAM_MNF_*`, `PDAM_SR_*`, `PDAM_GIS_RISK_*` di `.env.example`). Kontrak lama isolasi/NRW layer TIDAK berubah.
 
+**Integrasi mobile (app Flutter) — closed loop dengan peta kantor:**
+
+- Tombol **Lapor Lokasi** (📍) di AppBar Tugas Survey & Rute Baca Meter → `POST /api/v1/field/location` (GPS asli `GpsHelper`) → titik petugas tampil hidup di `/admin/network` (layer 👷, polling 30 dtk), status online/offline via `PDAM_GIS_OFFICER_STALE_MINUTES`.
+- Layar **WO Saya** (`/work-orders`, role `field_technician`) → daftar `GET /work-orders?mine=1` (id dipaksa server-side, tak bisa mengintip WO orang lain), aksi **Mulai** (`/start`) & **Selesai** (`/complete`, resolusi wajib) menulis status + log FSM yang sama dengan web; hasil **dispatch GIS** tiba sebagai notifikasi FCM pada petugas.
+- Provider Riverpod: `features/field/presentation/providers/field_provider.dart`; remote source: `location_remote_source.dart` + `work_remote_source.dart`; tes kontrak endpoint: `test/core/network/endpoints_test.dart` (52/52 flutter).
+- PDF server-side: `/admin/network/status.pdf` (`NetworkStatusPdfService`, dompdf) — lampiran laporan/surel; lembar SVG tetap lewat `/admin/network/print` (cetak browser).
+
 ### Demo data (Sambas)
 
 Koordinat pelanggan Sambas di-seed **di sekitar centroid kecamatan aslinya** (konstanta `DISTRICT_CENTERS` di `SambasTenantSeeder` — Sambas Kota, Pemangkat, Tebas, Jawai, Teluk Keramat, Selakau, Paloh) dengan sebaran spiral golden-angle per rute, sehingga **1 rute baca = 1 klaster rumah** yang nyata. Bucket pembayaran: 70% lunas (hijau), 10% tunggak 1 bln (kuning), 10% 2 bln (oranye), 5% 3 bln (merah), 5% isolir/putus (hitam).
@@ -563,7 +570,7 @@ Tenant admin selalu tembus RBAC (tetap perlu modul `GIS` aktif — Sambas & Cana
 
 ### Test
 
-`tests/Feature/GisNetworkTest.php` (20) + `GisMapTest.php` (20) + `FieldOfficerMapTest.php` (9) + `NightFlowTrendTest.php` (10) + `NetworkModuleTest.php` (15) = **74** test GIS (±330 assertion): semantik isolasi terarah (rim minimal, pasokan loop via jalur lain aman, klaster yatim), auto-wire, cascade delete, tenant isolation, incidents+dispatch, petugas LIVE (stale/role/org), MNF window+baseline+command NRW bulanan, validator kesehatan 5 pola, risk scoring, GeoJSON e/impor + print, preventif MNT→WO, feasibility tarif/nol-karangan, geocode proxy, gate auth/permission.
+`tests/Feature/GisNetworkTest.php` (20) + `GisMapTest.php` (20) + `FieldOfficerMapTest.php` (9) + `NightFlowTrendTest.php` (10) + `NetworkModuleTest.php` (16) = **75** test GIS (±330 assertion), +PDF download: semantik isolasi terarah (rim minimal, pasokan loop via jalur lain aman, klaster yatim), auto-wire, cascade delete, tenant isolation, incidents+dispatch, petugas LIVE (stale/role/org), MNF window+baseline+command NRW bulanan, validator kesehatan 5 pola, risk scoring, GeoJSON e/impor + print, preventif MNT→WO, feasibility tarif/nol-karangan, geocode proxy, gate auth/permission.
 
 ### Rebuild / reset
 

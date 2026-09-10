@@ -10,6 +10,7 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/onboarding_page.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
+import 'features/field/presentation/pages/work_orders_page.dart';
 import 'features/meter_reading/presentation/pages/reading_form_page.dart';
 import 'features/meter_reading/presentation/pages/route_tasks_page.dart';
 import 'features/portal/presentation/pages/bills_page.dart';
@@ -20,7 +21,6 @@ import 'features/portal/presentation/pages/usage_page.dart';
 import 'features/shared/widgets/bottom_nav.dart';
 import 'features/survey/presentation/pages/survey_form_page.dart';
 import 'features/survey/presentation/pages/survey_tasks_page.dart';
-import 'features/field/presentation/pages/work_orders_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -167,8 +167,8 @@ class _PdamMobileAppState extends ConsumerState<PdamMobileApp> {
           GoRoute(
             path: '/work-orders',
             name: 'work-orders',
-            builder: (context, state) => const WorkOrdersPage(), // TODO import
-            routes: [],
+            builder: (context, state) => const WorkOrdersPage(), // TODOimport
+            routes: const [],
           ),
         ],
       ),

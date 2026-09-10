@@ -11,22 +11,27 @@ class LocationReportButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(locationProvider);
-    bool isSending = state.status == LocationReportState.sending;
+    final bool isSending = state.status == LocationReportState.sending;
 
     return Tooltip(
-      message:
-          state.lastReportedAt != null ? 'Posisi terakhir: ${state.lastReportedAt!.toLocal()}' : 'Klik untuk kirim GPS',
+      message: state.lastReportedAt != null
+          ? 'Posisi terakhir: ${state.lastReportedAt!.toLocal()}'
+          : 'Klik untuk kirim GPS',
       child: IconButton(
         onPressed: isSending ? null : () => _report(context, ref),
-        icon: Icon(isSending ? Icons.sync_alt_rounded : Icons.my_location_rounded),
+        icon: Icon(
+            isSending ? Icons.sync_alt_rounded : Icons.my_location_rounded),
         color: Colors.white,
-        style: IconButton.styleFrom(foregroundColor: Colors.white, backgroundColor: AppColors.primary),
+        style: IconButton.styleFrom(
+            foregroundColor: Colors.white, backgroundColor: AppColors.primary),
       ),
     );
   }
 
   static Future<void> _report(BuildContext context, WidgetRef ref) async {
     await ref.read(locationProvider.notifier).report();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil lapor lokasi'), backgroundColor: Color(0xFF43A047)));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Berhasil lapor lokasi'),
+        backgroundColor: Color(0xFF43A047)));
   }
 }

@@ -19,7 +19,8 @@ class SurveyRemoteSource {
     int perPage = 10,
     String? status,
   }) async {
-    final response = await _api.getTasks(page: page, perPage: perPage, status: status);
+    final response =
+        await _api.getTasks(page: page, perPage: perPage, status: status);
     return response.data as Map<String, dynamic>;
   }
 

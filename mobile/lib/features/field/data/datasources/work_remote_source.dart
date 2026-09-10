@@ -15,8 +15,8 @@ class WorkRemoteSource {
     int page = 1,
     int perPage = 25,
   }) async {
-    final response =
-        await _api.list(mine: true, status: status, page: page, perPage: perPage);
+    final response = await _api.list(
+        mine: true, status: status, page: page, perPage: perPage);
     final data = (response.data as Map)['data'] as List? ?? const [];
 
     return data
