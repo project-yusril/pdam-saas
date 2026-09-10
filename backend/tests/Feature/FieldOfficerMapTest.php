@@ -102,11 +102,41 @@ class FieldOfficerMapTest extends TestCase
             ->assertStatus(422);
     }
 
-    public function test_piggyback_location_from_submit(): void
+    public function test_piggyback_gps_from_submit_survey_http(): void
     {
-        $this->actingAs($this->tech1, 'sanctum');
-        $this->field->report($this->tech1, -0.72, 109.22, 4.0);
-        $this->assertDatabaseHas('technician_locations', ['user_id' => $this->tech1->id]);
+        Module::firstOrCreate(['code' => 'SRV'], ['name' => 'SRV', 'is_active' => true]);
+        SubscriptionModule::create(['pdam_org_id' => $this->orgId, 'module_code' => 'SRV', 'status' => 'active']);
+        $prospect = \App\Models\CustomerProspect::create([
+            'pdam_org_id' => $this->orgId, 'registration_number' => 'SR-PIGGY-1',
+            'full_name' => 'Uji SR', 'installation_address' => 'Jl. Uji 9',
+            'assigned_surveyor_id' => $this->tech1->id, 'status' => 'surveying',
+        ]);
+        // Piggyback direkam utk user yang submit → pakai admin tenant (tembus RBAC).
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/v1/prospects/'.$prospect->id.'/survey', [
+                'photo_house_urls' => [
+                    $this->orgId.'/survey/a.jpg',
+                    $this->orgId.'/survey/b.jpg',
+                ],
+                'distance_to_main_pipe' => 12.5,
+                'building_condition' => ' permanen<5 lantai',
+                'accessibility' => 'mobil masuk',
+                'land_status' => 'milik_sendiri',
+                'latitude' => -0.91,
+                'longitude' => 109.50,
+                'location_accuracy' => 4.5,
+                'estimated_materials' => [],
+                'estimated_cost' => 3500000,
+                'recommendation' => 'feasible',
+                'surveyor_notes' => 'Uji alur piggyback GPS.',
+            ])
+            ->assertCreated();
+
+        $loc = TechnicianLocation::where('user_id', $this->admin->id)->firstOrFail();
+        $this->assertEquals(-0.91, (float) $loc->latitude);
+        $this->assertEquals(109.50, (float) $loc->longitude);
+        // satu laporan = satu titik (upsert, bukan baris baru tiap submit)
+        $this->assertSame(1, TechnicianLocation::where('user_id', $this->admin->id)->count());
     }
 
     // ── peta live ───────────────────────────────────────────────────────

@@ -117,8 +117,31 @@ class PipeNetworkDemoSeeder extends Seeder
             $this->seedPreviousMonthReadings($c);
         }
 
+        $this->refreshOfficerDemo();
+
         TenantContext::clear();
         $this->command?->info('[NET] '.self::MARKER.': '.count($clusters).' rute → trunk+distro+DMA dari koordinat rumah nyata.');
+    }
+
+    /** Refresh officer locations agar demo peta GIS selalu tampil "live" (+ titik di area network). */
+    private function refreshOfficerDemo(): void
+    {
+        $role = DB::table('roles')->where('code', 'field_technician')->value('id');
+        if (! $role) {
+            $this->command?->line('[NET] role field_technician belum ada — skip refresh officer.');
+
+            return;
+        }
+        // Aktifkan semua user org ini dengan role field_technician → update technician_locations ke now()+koordinat dekat pompa/reservoir.
+        DB::table('users')->where('pdam_org_id', $this->orgId)->get(['id'])->filter(fn ($u) => DB::table('user_roles')->where('user_id', $u->id)->where('role_id', $role)->exists())
+            ->each(function ($u) use ($role) {
+                $coords = [-0.759, 109.33]; // Sambas center: pump≈-0.76 lng, 109.33 (pump/reservoir area)
+                DB::table('technician_locations')->updateOrInsert(
+                    ['user_id' => $u->id],
+                    ['latitude' => (float) $coords[0] + (($u->id % 5) - 2) * 0.001, 'longitude' => (float) $coords[1] + (($u->id % 5) - 2) * 0.001, 'accuracy' => 5.0, 'updated_at' => now(), 'created_at' => now()]
+                );
+                $this->command?->line('[NET] Officer #'.$u->id.' diperbarui (online).');
+            });
     }
 
     // ── data gathering ─────────────────────────────────────────────────────
