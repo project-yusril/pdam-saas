@@ -749,6 +749,17 @@ class NetworkWebController extends Controller
         ]);
     }
 
+    /** Unduhan PDF status jaringan server-side (dompdf) utk lampiran/surel. */
+    public function statusPdf(Request $request, \App\Services\Geo\NetworkStatusPdfService $pdfService): \Symfony\Component\HttpFoundation\Response
+    {
+        $bytes = $pdfService->render($request->input('period') ?: null);
+
+        return response($bytes, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="status-jaringan-'.now()->format('Ymd-His').'.pdf"',
+        ]);
+    }
+
     /** Lembar status jaringan (A4 landscape + peta skema) untuk cetak PDF. */
     public function printView(Request $request): View
     {

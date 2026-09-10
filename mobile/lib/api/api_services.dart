@@ -94,3 +94,47 @@ class MeterApi {
   Future<Response<dynamic>> uploadPhoto(FormData form) =>
       _api.uploadFile(Endpoints.uploadFile, formData: form);
 }
+
+/// Titik petugas LIVE untuk peta GIS kantor (FieldLocationController@store;
+/// GET kontrak web panel — lihat `backend/SEED_DATA.md` §11)
+class FieldApi {
+  const FieldApi(this._api);
+  final ApiClient _api;
+
+  Future<Response<dynamic>> reportLocation({
+    required double latitude,
+    required double longitude,
+    double? accuracy,
+  }) =>
+      _api.post(Endpoints.fieldLocation, data: {
+        'latitude': latitude,
+        'longitude': longitude,
+        if (accuracy != null) 'accuracy': accuracy,
+      });
+}
+
+/// Work Order teknis (WorkOrderController — FSM fase 15).
+class WorkApi {
+  const WorkApi(this._api);
+  final ApiClient _api;
+
+  /// mine=true → hanya WO milik user login (layar "WO Saya").
+  Future<Response<dynamic>> list({bool mine = false, String? status, int page = 1, int perPage = 20}) {
+    final q = <String, dynamic>{'page': page, 'per_page': perPage};
+    if (mine) q['mine'] = 1;
+    if (status != null && status.isNotEmpty) q['status'] = status;
+    return _api.get(Endpoints.workOrders, queryParameters: q);
+  }
+
+  Future<Response<dynamic>> show(int id) => _api.get(Endpoints.workOrderDetail(id));
+
+  Future<Response<dynamic>> start(int id) => _api.post(Endpoints.workOrderStart(id));
+
+  Future<Response<dynamic>> complete(int id, Map<String, dynamic> body) =>
+      _api.post(Endpoints.workOrderComplete(id), data: body);
+
+  Future<Response<dynamic>> dashboard() => _api.get(Endpoints.workOrderDashboard);
+
+  Future<Response<dynamic>> uploadPhoto(FormData form) =>
+      _api.uploadFile(Endpoints.uploadFile, formData: form);
+}

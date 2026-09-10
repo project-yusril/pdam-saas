@@ -22,7 +22,7 @@ class AppConstants {
   static const String roleCustomer = 'customer';
   static const String roleMeterOfficer = 'meter_officer';
   static const String roleSurveyOfficer = 'survey_officer';
-
+  static const String roleFieldTechnician = 'field_technician'; // petugas jaringan / dispatcher
   static const String cacheBoxMeterReadings = 'meter_readings_queue';
   static const String cacheBoxSurveyDrafts = 'survey_drafts';
   static const String cacheBoxCustomerBills = 'customer_bills';

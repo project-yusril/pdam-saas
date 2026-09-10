@@ -16,7 +16,10 @@ class WorkOrderController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        // mine=1 → layar mobile "WO Saya": hanya milik user yang login (id
+        // tidak bisa dipalsukan utk mengintip WO orang lain).
         $query = WorkOrder::with(['assignedTo:id,name'])
+            ->when($request->boolean('mine'), fn ($q) => $q->where('assigned_to', $request->user()->id))
             ->when($request->input('status'), fn ($q, $v) => $q->where('status', $v))
             ->when($request->input('type'), fn ($q, $v) => $q->where('type', $v))
             ->when($request->input('assigned_to'), fn ($q, $v) => $q->where('assigned_to', $v))

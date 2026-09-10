@@ -55,7 +55,8 @@
             <span style="margin-left:auto"></span>
             <button type="button" class="btn-xs" id="btn-refresh">↻</button>
             <button type="button" class="btn-xs" id="btn-fit">⤢</button>
-            <a class="btn-xs" target="_blank" href="{{ url('admin/network/print') }}">🖨 Status PDF</a>
+            <a class="btn-xs" target="_blank" href="{{ url('admin/network/print') }}">🖨 Cetak lembar</a>
+            <a class="btn-xs" href="{{ url('admin/network/status.pdf') }}">📄 Unduh PDF</a>
         </div>
         <div class="layer-toggle">
             <label><input type="checkbox" id="lay-pipes" checked> Pipa</label>

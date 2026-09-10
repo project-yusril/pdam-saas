@@ -267,6 +267,16 @@ class NetworkModuleTest extends TestCase
             ->assertSee('DMA-C');
     }
 
+    public function test_status_pdf_download_is_real_pdf_bytes(): void
+    {
+        $this->cleanNetwork();
+        $res = $this->actingAs($this->admin, 'sanctum')->get('/admin/network/status.pdf');
+        $res->assertOk();
+        $this->assertSame('application/pdf', $res->headers->get('Content-Type'));
+        $bytes = $res->getContent();
+        $this->assertStringStartsWith('%PDF', substr($bytes, 0, 4), 'bytes harus PDF asli (dompdf)');
+    }
+
     // ── #8 preventif MNT ───────────────────────────────────────────────────
 
     public function test_schedule_valve_run_convert_due_to_wo(): void

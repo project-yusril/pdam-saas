@@ -20,6 +20,7 @@ import 'features/portal/presentation/pages/usage_page.dart';
 import 'features/shared/widgets/bottom_nav.dart';
 import 'features/survey/presentation/pages/survey_form_page.dart';
 import 'features/survey/presentation/pages/survey_tasks_page.dart';
+import 'features/field/presentation/pages/work_orders_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -148,23 +149,29 @@ class _PdamMobileAppState extends ConsumerState<PdamMobileApp> {
                 ),
               ],
             ),
-            GoRoute(
-              path: '/survey',
-              name: 'survey',
-              builder: (context, state) => const SurveyTasksPage(),
-              routes: [
-                GoRoute(
-                  path: 'form/:taskId',
-                  name: 'survey-form',
-                  builder: (context, state) {
-                    final taskId = int.parse(state.pathParameters['taskId']!);
-                    return SurveyFormPage(taskId: taskId);
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
+          GoRoute(
+            path: '/survey',
+            name: 'survey',
+            builder: (context, state) => const SurveyTasksPage(),
+            routes: [
+              GoRoute(
+                path: 'form/:taskId',
+                name: 'survey-form',
+                builder: (context, state) {
+                  final taskId = int.parse(state.pathParameters['taskId']!);
+                  return SurveyFormPage(taskId: taskId);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/work-orders',
+            name: 'work-orders',
+            builder: (context, state) => const WorkOrdersPage(), // TODO import
+            routes: [],
+          ),
+        ],
+      ),
       ],
       errorBuilder: (context, state) {
         return Scaffold(
@@ -206,6 +213,8 @@ class _PdamMobileAppState extends ConsumerState<PdamMobileApp> {
         return '/meter-reading';
       case AppConstants.roleSurveyOfficer:
         return '/survey';
+      case AppConstants.roleFieldTechnician:
+        return '/work-orders';
       default:
         return '/portal';
     }
@@ -229,6 +238,9 @@ class _PdamMobileAppState extends ConsumerState<PdamMobileApp> {
         if (location.startsWith('/survey')) return 0;
         if (location.startsWith('/portal/profile')) return 3;
         return 0;
+      case AppConstants.roleFieldTechnician:
+        // WO Saya = index 0; Profil = 1
+        return location.startsWith('/work-orders') ? 0 : 1;
       default:
         return 0;
     }

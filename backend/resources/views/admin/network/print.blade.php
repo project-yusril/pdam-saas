@@ -50,7 +50,7 @@
 </style>
 </head>
 <body>
-<div class="noprint"><button onclick="window.print()">🖨 Cetak / simpan PDF</button></div>
+<div class="noprint"><a href="{{ route('admin.network.status.pdf') }}" style="display:inline-block;padding:8px 14px;border-radius:8px;background:#0d9488;color:#fff;font-weight:700;text-decoration:none;margin-right:8px">📄 Unduh PDF</a><button onclick="window.print()">🖨 Cetak / simpan PDF</button></div>
 
 <header>
   <div>

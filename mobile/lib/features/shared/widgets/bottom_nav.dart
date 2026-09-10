@@ -105,6 +105,19 @@ class BottomNav extends StatelessWidget {
             label: 'Profil',
           ),
         ];
+      case AppConstants.roleFieldTechnician:
+        return const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping_rounded, color: Colors.white),
+            activeIcon: Icon(Icons.local_shipping, color: Colors.white),
+            label: 'WO Saya',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profil',
+          ),
+        ];
       default:
         return const [];
     }
@@ -149,6 +162,15 @@ class BottomNav extends StatelessWidget {
           case 2:
             return '/survey';
           case 3:
+            return '/portal/profile';
+          default:
+            return null;
+        }
+      case AppConstants.roleFieldTechnician:
+        switch (index) {
+          case 0:
+            return '/work-orders';
+          case 1:
             return '/portal/profile';
           default:
             return null;

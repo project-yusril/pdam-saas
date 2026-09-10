@@ -40,4 +40,13 @@ void main() {
   test('meter submit collection path has no ignored reading ID contract', () {
     expect(Endpoints.meterReadingSubmit, '/meter-readings');
   });
+
+  test('field location endpoint exists', () {
+    expect(Endpoints.fieldLocation, '/field/location');
+  });
+
+  test('work orders mine endpoint has correct base path', () {
+    expect(Endpoints.workOrders, '/work-orders');
+    // WorkApi uses query params mine=1 — not an additional endpoint
+  });
 }

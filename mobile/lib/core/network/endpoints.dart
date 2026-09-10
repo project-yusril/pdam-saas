@@ -43,6 +43,17 @@ class Endpoints {
   static String surveySubmit(int id) => '/prospects/${_id(id)}/survey';
   static String surveyReview(int id) => '/survey-reports/${_id(id)}/review';
 
+  // ── GIS: titik lokasi petugas LIVE (peta jaringan kantor) ───────
+  static const String fieldLocation = '/field/location';
+
+  // ── Work Order (FSM) — kartu tugas teknis ──────────────────────
+  // Daftar "WO Saya": GET workOrders dengan query mine=1 (lihat WorkApi).
+  static const String workOrders = '/work-orders';
+  static const String workOrderDashboard = '/work-orders/technician/dashboard';
+  static String workOrderDetail(int id) => '/work-orders/${_id(id)}';
+  static String workOrderStart(int id) => '/work-orders/${_id(id)}/start';
+  static String workOrderComplete(int id) => '/work-orders/${_id(id)}/complete';
+
   // ── OCR ────────────────────────────────────────────────────────
   static const String ocrKtpUpload = '/prospects/upload-ktp';
   static const String ocrKtpParse = '/prospects/parse-ktp';

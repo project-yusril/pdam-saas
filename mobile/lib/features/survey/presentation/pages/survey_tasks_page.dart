@@ -10,6 +10,7 @@ import '../../../shared/widgets/error_state.dart';
 import '../../../shared/widgets/loading_skeleton.dart';
 import '../../domain/models/survey_task.dart';
 import '../providers/survey_provider.dart';
+import '../../../field/presentation/widgets/location_report_button.dart';
 
 class SurveyTasksPage extends ConsumerStatefulWidget {
   const SurveyTasksPage({super.key});
@@ -43,6 +44,10 @@ class _SurveyTasksPageState extends ConsumerState<SurveyTasksPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tugas Survey'),
+        actions: [
+          LocationReportButton(),
+          IconButton(onPressed: _onRefresh, icon: const Icon(Icons.refresh_rounded)),
+        ],
       ),
       body: Column(
         children: [

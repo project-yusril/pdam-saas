@@ -58,6 +58,7 @@ Route::middleware(['auth:sanctum', 'tenant'])->prefix('admin')->group(function (
             ->name('export-geojson');
         Route::post('import.geojson', [NetworkWebController::class, 'importGeojson'])->middleware('permission:gis.feature.create')->name('import-geojson');
         Route::get('print', [NetworkWebController::class, 'printView'])->middleware('permission:gis.feature.view')->name('print');
+        Route::get('status.pdf', [NetworkWebController::class, 'statusPdf'])->middleware('permission:gis.feature.view')->name('status.pdf');
         // Preventif valve/hydrant: pintu masuk lewat panel GIS — pakai permission GIS
         // (modul MNT penuh tetap lewat /api/v1/mnt/* dengan permission mnt.*).
         Route::get('maintenance.json', [NetworkWebController::class, 'maintenance'])->middleware('permission:gis.feature.view')->name('maintenance');

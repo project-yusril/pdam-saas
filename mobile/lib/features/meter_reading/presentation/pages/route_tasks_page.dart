@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../field/presentation/widgets/location_report_button.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/error_state.dart';
@@ -37,7 +38,11 @@ class _RouteTasksPageState extends ConsumerState<RouteTasksPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tugas Rute'),
+        title: const Text('Rute Baca Meter'),
+        actions: [
+          LocationReportButton(),
+          IconButton(onPressed: _onRefresh, icon: const Icon(Icons.refresh_rounded)),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
